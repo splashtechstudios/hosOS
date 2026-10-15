@@ -283,3 +283,72 @@ export interface GeneratorRunLog {
     loggedByName: string;
     notes?: string;
 }
+export type LoyaltyTier = 'STANDARD' | 'SILVER' | 'GOLD' | 'PLATINUM_VIP';
+export interface GuestProfile {
+    id: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    nationalIdOrPassport: string;
+    loyaltyTier: LoyaltyTier;
+    loyaltyPoints: number;
+    totalLifetimeSpend: number;
+    totalStaysCount: number;
+    totalDiningOrdersCount: number;
+    roomPreferences: string[];
+    dietaryRestrictions: string[];
+    corporateCompanyId?: string;
+    corporateCompanyName?: string;
+    whatsappOptIn: boolean;
+    notes: string;
+    lastVisitDate: string;
+    createdAt: string;
+}
+export type CRMDealStage = 'LEAD_INCOMING' | 'SITE_INSPECTION' | 'CONTRACT_QUOTED' | 'DEPOSIT_PAID' | 'EVENT_ACTIVE' | 'INVOICED_SETTLED' | 'CLOSED_LOST';
+export interface CorporateDeal {
+    id: string;
+    dealTitle: string;
+    companyName: string;
+    contactPerson: string;
+    contactEmail: string;
+    contactPhone: string;
+    dealValue: number;
+    depositPaid: number;
+    balanceDue: number;
+    stage: CRMDealStage;
+    hallOrLawn: string;
+    roomsBlocked: number;
+    eventDate: string;
+    assignedAccountManager: string;
+    createdAt: string;
+}
+export type DepartmentType = 'EXECUTIVE' | 'ROOMS_DIVISION' | 'FOOD_AND_BEVERAGE' | 'MAINTENANCE_ENGINEERING' | 'ACCOUNTS_FINANCE' | 'HUMAN_RESOURCES_SECURITY';
+export type OnboardingStatus = 'PENDING_DOCS' | 'BACKGROUND_CHECK' | 'TRAINING_IN_PROGRESS' | 'ACTIVE_CONFIRMED' | 'SUSPENDED';
+export interface StaffOnboardingRecord {
+    id: string;
+    staffId: string;
+    fullName: string;
+    email: string;
+    phoneNumber: string;
+    ninOrIdNumber: string;
+    department: DepartmentType;
+    designation: string;
+    roleAssigned: UserRole;
+    salaryTier: string;
+    bankName: string;
+    bankAccountNumber: string;
+    onboardingStatus: OnboardingStatus;
+    posQuickPinIssued: string;
+    onboardedByStaffName: string;
+    onboardedByUserId: string;
+    createdAt: string;
+    completedAt?: string;
+}
+export type AppPermission = 'rooms.audit.view' | 'rooms.status.override' | 'orders.create' | 'orders.increment' | 'discounts.approve' | 'voids.execute' | 'cash.receive' | 'maintenance.raise' | 'maintenance.signoff' | 'reports.export' | 'users.onboard' | 'crm.manage' | 'diesel.log';
+export interface RoleRBACDefinition {
+    role: UserRole;
+    displayName: string;
+    department: DepartmentType;
+    description: string;
+    permissions: AppPermission[];
+}

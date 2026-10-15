@@ -24,7 +24,8 @@ import {
   Calendar,
   Layers,
   ChevronRight,
-  CheckCircle2
+  CheckCircle2,
+  Search
 } from 'lucide-react';
 
 interface RoomAuditViewProps {
@@ -64,7 +65,6 @@ export default function RoomAuditView({
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Filter timeline based on category
   const filteredTimeline = timeline.filter((item) => {
     if (filterCategory === 'ALL') return true;
     if (filterCategory === 'OCCUPANCY' && item.category === 'OCCUPANCY') return true;
@@ -85,16 +85,16 @@ export default function RoomAuditView({
   const getStatusBadge = (status: RoomStatus) => {
     switch (status) {
       case 'VACANT_CLEAN':
-        return <span className="badge badge-clean"><span className="pulse-dot pulse-dot-green"></span>Clean</span>;
+        return <span className="badge badge-clean">Clean & Inspected</span>;
       case 'OCCUPIED':
-        return <span className="badge badge-occupied"><span className="pulse-dot pulse-dot-blue"></span>Occupied</span>;
+        return <span className="badge badge-brand">Occupied</span>;
       case 'VACANT_DIRTY':
-        return <span className="badge badge-dirty"><span className="pulse-dot pulse-dot-amber"></span>Dirty</span>;
+        return <span className="badge badge-dirty">Housekeeping Dirty</span>;
       case 'MAINTENANCE':
       case 'OUT_OF_ORDER':
-        return <span className="badge badge-maintenance"><span className="pulse-dot pulse-dot-red"></span>Maintenance</span>;
+        return <span className="badge badge-maintenance">Under Maintenance</span>;
       default:
-        return <span className="badge">{status}</span>;
+        return <span className="badge badge-neutral">{status}</span>;
     }
   };
 
@@ -118,7 +118,6 @@ export default function RoomAuditView({
     }) + ' WAT';
   };
 
-  // Metrics calculation
   const totalOrdersSum = consumptionStats.reduce((acc, curr) => acc + curr.totalSpent, 0);
   const totalPaymentsReceived = timeline
     .filter(t => t.category === 'PAYMENT' && t.amount)
@@ -132,17 +131,17 @@ export default function RoomAuditView({
       
       {/* 1. TOP ROOM SELECTOR STRIP: See occupancy state of EVERY room */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <div>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#FFF' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
               All Resort Rooms & Live Occupancy State
             </h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               Click any room to open its internal 360° audit timeline, order increments, and maintenance logs.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <span className="badge badge-occupied">{rooms.filter(r => r.status === 'OCCUPIED').length} Occupied</span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <span className="badge badge-brand">{rooms.filter(r => r.status === 'OCCUPIED').length} Occupied</span>
             <span className="badge badge-clean">{rooms.filter(r => r.status === 'VACANT_CLEAN').length} Clean</span>
             <span className="badge badge-dirty">{rooms.filter(r => r.status === 'VACANT_DIRTY').length} Dirty</span>
             <span className="badge badge-maintenance">{rooms.filter(r => r.status === 'MAINTENANCE').length} Maint</span>
@@ -151,7 +150,7 @@ export default function RoomAuditView({
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
           gap: '12px',
         }}>
           {rooms.map((room) => {
@@ -163,22 +162,20 @@ export default function RoomAuditView({
                 style={{
                   textAlign: 'left',
                   padding: '14px',
-                  borderRadius: 'var(--radius-md)',
-                  background: isSelected 
-                    ? 'linear-gradient(135deg, rgba(224, 169, 109, 0.16) 0%, rgba(20, 30, 55, 0.95) 100%)' 
-                    : 'var(--bg-card)',
-                  border: isSelected ? '1.5px solid var(--gold-primary)' : '1px solid var(--border-subtle)',
-                  boxShadow: isSelected ? '0 0 16px rgba(224, 169, 109, 0.25)' : 'none',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: isSelected ? 'var(--brand-bg)' : '#FFFFFF',
+                  border: isSelected ? '1.5px solid var(--brand-primary)' : '1px solid var(--border-color)',
+                  boxShadow: isSelected ? 'var(--shadow-card)' : 'var(--shadow-subtle)',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <span style={{
-                    fontSize: '1.25rem',
+                    fontSize: '1.2rem',
                     fontWeight: 800,
-                    fontFamily: 'var(--font-heading)',
-                    color: isSelected ? 'var(--gold-primary)' : '#FFF',
+                    fontFamily: 'var(--font-mono)',
+                    color: isSelected ? 'var(--brand-primary)' : 'var(--text-primary)',
                   }}>
                     #{room.roomNumber}
                   </span>
@@ -191,7 +188,7 @@ export default function RoomAuditView({
 
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                   {room.currentGuestName ? (
-                    <span style={{ color: 'var(--sky-primary)' }}>👤 {room.currentGuestName}</span>
+                    <span style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>👤 {room.currentGuestName}</span>
                   ) : (
                     <span>Floor {room.floor} • {formatNaira(room.rackRatePerNight)}</span>
                   )}
@@ -202,8 +199,8 @@ export default function RoomAuditView({
         </div>
       </div>
 
-      {/* 2. SELECTED ROOM HEADER & 360° METRICS BANNER */}
-      <div className="glass-card" style={{ padding: '24px', borderLeft: '4px solid var(--gold-primary)' }}>
+      {/* 2. SELECTED ROOM HEADER & 360° AUDIT METRICS BANNER */}
+      <div className="ent-card" style={{ padding: '24px', borderLeft: '4px solid var(--brand-primary)' }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -212,21 +209,21 @@ export default function RoomAuditView({
           gap: '16px',
         }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 800 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                 Room {selectedRoom.roomNumber} Internal 360° Audit
               </h2>
               {getStatusBadge(selectedRoom.status)}
-              <span className="badge badge-gold">{selectedRoom.roomTypeName}</span>
+              <span className="badge badge-neutral">{selectedRoom.roomTypeName}</span>
             </div>
             
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '6px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px' }}>
               {selectedRoom.currentGuestName ? (
                 <span>
-                  Occupied by <strong style={{ color: '#FFF' }}>{selectedRoom.currentGuestName}</strong> • Folio: <strong style={{ color: 'var(--gold-primary)', fontFamily: 'var(--font-mono)' }}>{selectedRoom.currentFolioId || '#FOL-204-89'}</strong> • Check-in: 14:10 WAT (Mary Okon)
+                  Occupied by <strong style={{ color: 'var(--text-primary)' }}>{selectedRoom.currentGuestName}</strong> • Active Folio: <strong style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)' }}>{selectedRoom.currentFolioId || '#FOL-204-89'}</strong> • Check-In: 14:10 WAT (Mary Okon)
                 </span>
               ) : (
-                <span>Currently {selectedRoom.status.replace('_', ' ')} • Floor {selectedRoom.floor} • Rack Rate: {formatNaira(selectedRoom.rackRatePerNight)}/night</span>
+                <span>Currently {selectedRoom.status.replace(/_/g, ' ')} • Floor {selectedRoom.floor} • Rack Rate: {formatNaira(selectedRoom.rackRatePerNight)}/night</span>
               )}
             </p>
           </div>
@@ -235,37 +232,37 @@ export default function RoomAuditView({
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             <button
               onClick={onOpenOrderModal}
-              className="btn-gold"
+              className="btn-primary"
               title="Add food/drink order or increment existing order"
             >
-              <UtensilsCrossed size={16} />
+              <UtensilsCrossed size={15} />
               <span>+ Order / Increment Item</span>
             </button>
 
             <button
               onClick={onOpenMaintenanceModal}
-              className="btn-ghost"
+              className="btn-secondary"
               title="Raise ticket or log repairs with parts cost"
             >
-              <Wrench size={16} color="var(--amber-primary)" />
+              <Wrench size={15} color="var(--amber-primary)" />
               <span>+ Log Maintenance</span>
             </button>
 
             <button
               onClick={onOpenPaymentModal}
-              className="btn-ghost"
+              className="btn-secondary"
               title="Receive cash, POS or transfer credited to room"
             >
-              <Banknote size={16} color="var(--emerald-primary)" />
+              <Banknote size={15} color="var(--emerald-primary)" />
               <span>+ Receive Money</span>
             </button>
 
             <button
               onClick={onOpenStatusModal}
-              className="btn-ghost"
+              className="btn-secondary"
               title="Change occupancy state with staff PIN"
             >
-              <BedDouble size={16} color="var(--sky-primary)" />
+              <BedDouble size={15} color="var(--brand-primary)" />
               <span>Change Status</span>
             </button>
           </div>
@@ -278,52 +275,52 @@ export default function RoomAuditView({
           gap: '16px',
           marginTop: '20px',
           paddingTop: '20px',
-          borderTop: '1px solid var(--border-subtle)',
+          borderTop: '1px solid var(--border-color)',
         }}>
-          <div style={{ background: 'rgba(255,255,255,0.03)', padding: '14px', borderRadius: 'var(--radius-sm)' }}>
+          <div style={{ background: 'var(--bg-secondary)', padding: '14px', borderRadius: 'var(--radius-sm)' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
               Total F&B Orders Billed
             </div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--gold-primary)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
               {formatNaira(totalOrdersSum)}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              Across {consumptionStats.reduce((a, c) => a + c.totalQuantity, 0)} total meal & drink portions
+              Across {consumptionStats.reduce((a, c) => a + c.totalQuantity, 0)} meal & beverage portions
             </div>
           </div>
 
-          <div style={{ background: 'rgba(255,255,255,0.03)', padding: '14px', borderRadius: 'var(--radius-sm)' }}>
+          <div style={{ background: 'var(--bg-secondary)', padding: '14px', borderRadius: 'var(--radius-sm)' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
               Money Received Towards Room
             </div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--emerald-primary)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--emerald-primary)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
               {formatNaira(totalPaymentsReceived)}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              Deposits & POS cards fully receipted
+              Verified deposits & POS cards
             </div>
           </div>
 
-          <div style={{ background: 'rgba(255,255,255,0.03)', padding: '14px', borderRadius: 'var(--radius-sm)' }}>
+          <div style={{ background: 'var(--bg-secondary)', padding: '14px', borderRadius: 'var(--radius-sm)' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
               Maintenance Repairs Incurred
             </div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--amber-primary)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--amber-primary)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
               {formatNaira(maintenanceCostSum)}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              Parts replaced & technician sign-off
+              Parts consumed & labor verified
             </div>
           </div>
 
-          <div style={{ background: 'rgba(255,255,255,0.03)', padding: '14px', borderRadius: 'var(--radius-sm)' }}>
+          <div style={{ background: 'var(--bg-secondary)', padding: '14px', borderRadius: 'var(--radius-sm)' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
               Current Folio Balance
             </div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFF', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--brand-primary)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
               {formatNaira(selectedRoom.rackRatePerNight + totalOrdersSum - totalPaymentsReceived)}
             </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--sky-primary)', marginTop: '2px' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--emerald-primary)', marginTop: '2px', fontWeight: 600 }}>
               Credit Cap: ₦200,000 (Safe)
             </div>
           </div>
@@ -332,77 +329,71 @@ export default function RoomAuditView({
 
       {/* 3. SECTION A: CUMULATIVE FOOD & DRINK CONSUMPTION TABLE */}
       {/* "See the number of times a meal or drink is ordered, the price it was sold at" */}
-      <div className="glass-card" style={{ padding: '24px' }}>
+      <div className="ent-card" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <UtensilsCrossed size={20} color="var(--gold-primary)" />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>
+              <UtensilsCrossed size={18} color="var(--brand-primary)" />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 Room {selectedRoom.roomNumber} Food & Drink Consumption Breakdown
               </h3>
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
               Audit list of every dish and beverage served to this room, order counts, exact unit price charged, and staff attribution.
             </p>
           </div>
-          <span className="badge badge-purple">{consumptionStats.length} Unique Menu Items</span>
+          <span className="badge badge-brand">{consumptionStats.length} Unique Menu Items</span>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+          <table className="ent-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '0.7rem' }}>
-                <th style={{ padding: '12px 14px' }}>Item Ordered</th>
-                <th style={{ padding: '12px 14px' }}>Station</th>
-                <th style={{ padding: '12px 14px', textAlign: 'center' }}>Times Ordered</th>
-                <th style={{ padding: '12px 14px', textAlign: 'right' }}>Price Sold At</th>
-                <th style={{ padding: '12px 14px', textAlign: 'right' }}>Total Billed</th>
-                <th style={{ padding: '12px 14px' }}>Logged By Staff</th>
-                <th style={{ padding: '12px 14px' }}>Last Order Time</th>
+              <tr>
+                <th>Item Ordered</th>
+                <th>Station</th>
+                <th style={{ textAlign: 'center' }}>Times Ordered</th>
+                <th style={{ textAlign: 'right' }}>Price Sold At</th>
+                <th style={{ textAlign: 'right' }}>Total Billed</th>
+                <th>Logged By Staff</th>
+                <th>Last Order Time</th>
               </tr>
             </thead>
             <tbody>
-              {consumptionStats.map((item, idx) => (
-                <tr 
-                  key={item.id} 
-                  style={{ 
-                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                    backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'
-                  }}
-                >
-                  <td style={{ padding: '12px 14px', fontWeight: 600, color: '#FFF' }}>
+              {consumptionStats.map((item) => (
+                <tr key={item.id}>
+                  <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                     {item.itemName}
                   </td>
-                  <td style={{ padding: '12px 14px' }}>
-                    <span className={item.category === 'KITCHEN_FOOD' ? 'badge badge-gold' : 'badge badge-occupied'}>
-                      {item.category === 'KITCHEN_FOOD' ? 'Kitchen' : 'Bar / Lounge'}
+                  <td>
+                    <span className={item.category === 'KITCHEN_FOOD' ? 'badge badge-brand' : 'badge badge-purple'}>
+                      {item.category === 'KITCHEN_FOOD' ? 'Kitchen Food' : 'Bar / Beverage'}
                     </span>
                   </td>
-                  <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                  <td style={{ textAlign: 'center' }}>
                     <span style={{
-                      background: 'rgba(224, 169, 109, 0.15)',
-                      color: 'var(--gold-primary)',
-                      padding: '3px 10px',
-                      borderRadius: '12px',
+                      backgroundColor: 'var(--brand-bg)',
+                      color: 'var(--brand-primary)',
+                      padding: '2px 8px',
+                      borderRadius: '10px',
                       fontWeight: 700,
                       fontFamily: 'var(--font-mono)',
                     }}>
                       {item.totalQuantity}x
                     </span>
                   </td>
-                  <td style={{ padding: '12px 14px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                  <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
                     {formatNaira(item.unitPriceCharged)}
                   </td>
-                  <td style={{ padding: '12px 14px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--gold-primary)' }}>
+                  <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--brand-primary)' }}>
                     {formatNaira(item.totalSpent)}
                   </td>
-                  <td style={{ padding: '12px 14px', color: 'var(--text-secondary)' }}>
+                  <td style={{ color: 'var(--text-secondary)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <User size={13} color="var(--sky-primary)" />
+                      <User size={13} color="var(--brand-primary)" />
                       <span>{item.orderedByStaff}</span>
                     </div>
                   </td>
-                  <td style={{ padding: '12px 14px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+                  <td style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                     {formatTimestamp(item.lastOrderedAt)}
                   </td>
                 </tr>
@@ -413,7 +404,7 @@ export default function RoomAuditView({
       </div>
 
       {/* 4. SECTION B: 360° ACTIVITY TIMELINE (INCREMENTS, MAINTENANCE, PAYMENTS, STAFF & DATE) */}
-      <div className="glass-card" style={{ padding: '24px' }}>
+      <div className="ent-card" style={{ padding: '24px' }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -424,13 +415,13 @@ export default function RoomAuditView({
         }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Clock size={20} color="var(--sky-primary)" />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>
+              <Clock size={18} color="var(--brand-primary)" />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 Chronological Audit Trail (Who, What, When & Increments)
               </h3>
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Immutable log where every single order addition, maintenance repair, occupancy change, or cash receipt is stamped with time and staff name.
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Every single order addition, maintenance repair, occupancy change, or cash receipt is stamped with time and staff name.
             </p>
           </div>
 
@@ -447,13 +438,13 @@ export default function RoomAuditView({
                 key={f.id}
                 onClick={() => setFilterCategory(f.id)}
                 style={{
-                  padding: '6px 12px',
+                  padding: '5px 12px',
                   borderRadius: 'var(--radius-sm)',
                   fontSize: '0.75rem',
                   fontWeight: 600,
-                  backgroundColor: filterCategory === f.id ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)',
-                  color: filterCategory === f.id ? '#060A13' : 'var(--text-secondary)',
-                  border: '1px solid var(--border-subtle)',
+                  backgroundColor: filterCategory === f.id ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                  color: filterCategory === f.id ? '#FFFFFF' : 'var(--text-secondary)',
+                  border: '1px solid var(--border-color)',
                 }}
               >
                 {f.label}
@@ -468,69 +459,55 @@ export default function RoomAuditView({
           paddingLeft: '32px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '20px',
+          gap: '16px',
         }}>
-          {/* Timeline Vertical Axis Line */}
+          {/* Vertical Timeline Axis */}
           <div style={{
             position: 'absolute',
             left: '11px',
             top: '8px',
             bottom: '8px',
             width: '2px',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'var(--border-color)',
           }}></div>
 
           {filteredTimeline.map((event) => {
-            let nodeColor = 'var(--sky-primary)';
-            let NodeIcon = Clock;
-            if (event.category === 'ORDER_INCREMENT') {
-              nodeColor = 'var(--gold-primary)';
-              NodeIcon = TrendingUp;
-            } else if (event.category === 'ORDER') {
-              nodeColor = 'var(--gold-primary)';
-              NodeIcon = UtensilsCrossed;
-            } else if (event.category === 'MAINTENANCE') {
-              nodeColor = 'var(--amber-primary)';
-              NodeIcon = Wrench;
-            } else if (event.category === 'PAYMENT') {
-              nodeColor = 'var(--emerald-primary)';
-              NodeIcon = Banknote;
-            } else if (event.category === 'OCCUPANCY') {
-              nodeColor = 'var(--sky-primary)';
-              NodeIcon = BedDouble;
-            }
+            let badgeClass = 'badge badge-brand';
+            if (event.category === 'ORDER_INCREMENT') badgeClass = 'badge badge-brand';
+            else if (event.category === 'MAINTENANCE') badgeClass = 'badge badge-dirty';
+            else if (event.category === 'PAYMENT') badgeClass = 'badge badge-clean';
+            else if (event.category === 'OCCUPANCY') badgeClass = 'badge badge-neutral';
 
             return (
               <div 
                 key={event.id}
                 style={{
                   position: 'relative',
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '16px 20px',
-                  transition: 'all 0.2s ease',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '16px',
+                  boxShadow: 'var(--shadow-subtle)',
                 }}
               >
-                {/* Timeline Node Dot */}
+                {/* Timeline Dot */}
                 <div style={{
                   position: 'absolute',
                   left: '-31px',
                   top: '18px',
-                  width: '20px',
-                  height: '20px',
+                  width: '18px',
+                  height: '18px',
                   borderRadius: '50%',
-                  backgroundColor: 'var(--bg-primary)',
-                  border: `2px solid ${nodeColor}`,
+                  backgroundColor: '#FFFFFF',
+                  border: '2px solid var(--brand-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: `0 0 10px ${nodeColor}40`,
                 }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: nodeColor }}></div>
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--brand-primary)' }}></div>
                 </div>
 
-                {/* Event Header: Date/Time + Category + Staff Attribution */}
+                {/* Header: Date, Category & Staff Attribution */}
                 <div style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -539,24 +516,19 @@ export default function RoomAuditView({
                   gap: '8px',
                   marginBottom: '8px',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{
                       fontSize: '0.75rem',
                       fontFamily: 'var(--font-mono)',
                       color: 'var(--text-muted)',
-                      background: 'rgba(255,255,255,0.05)',
+                      backgroundColor: 'var(--bg-secondary)',
                       padding: '2px 8px',
                       borderRadius: '4px',
                     }}>
                       {formatTimestamp(event.timestamp)}
                     </span>
-                    <span className="badge" style={{
-                      backgroundColor: `${nodeColor}18`,
-                      color: nodeColor,
-                      border: `1px solid ${nodeColor}40`,
-                      fontSize: '0.65rem',
-                    }}>
-                      {event.category.replace('_', ' ')}
+                    <span className={badgeClass} style={{ fontSize: '0.65rem' }}>
+                      {event.category.replace(/_/g, ' ')}
                     </span>
                   </div>
 
@@ -565,58 +537,58 @@ export default function RoomAuditView({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    background: 'rgba(255,255,255,0.05)',
-                    padding: '4px 10px',
-                    borderRadius: '20px',
+                    backgroundColor: 'var(--bg-secondary)',
+                    padding: '3px 10px',
+                    borderRadius: '12px',
                     fontSize: '0.75rem',
                   }}>
-                    <User size={13} color="var(--gold-primary)" />
+                    <User size={12} color="var(--brand-primary)" />
                     <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                       Logged by: {event.actor.staffName}
                     </span>
                     <span className="badge badge-purple" style={{ fontSize: '0.6rem', padding: '1px 5px' }}>
-                      {event.actor.role.replace('_', ' ')}
+                      {event.actor.role.replace(/_/g, ' ')}
                     </span>
                   </div>
                 </div>
 
-                {/* Event Headline & Financial Impact */}
+                {/* Headline & Amount */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#FFF' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {event.headline}
                   </h4>
                   {event.amount !== undefined && (
                     <span style={{
-                      fontSize: '1rem',
+                      fontSize: '0.95rem',
                       fontWeight: 800,
                       fontFamily: 'var(--font-mono)',
-                      color: event.category === 'PAYMENT' ? 'var(--emerald-primary)' : 'var(--gold-primary)',
+                      color: event.category === 'PAYMENT' ? 'var(--emerald-primary)' : 'var(--brand-primary)',
                     }}>
                       {event.category === 'PAYMENT' ? `+${formatNaira(event.amount)}` : formatNaira(event.amount)}
                     </span>
                   )}
                 </div>
 
-                {/* Event Details Text */}
-                <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginTop: '6px', lineHeight: 1.5 }}>
+                {/* Event Details */}
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.5 }}>
                   {event.details}
                 </p>
 
-                {/* Extra Meta Badges (Receipt, Ticket, Items) */}
+                {/* Meta details (Refs, Prices) */}
                 {event.meta && (
                   <div style={{
                     display: 'flex',
                     flexWrap: 'wrap',
                     alignItems: 'center',
-                    gap: '10px',
-                    marginTop: '10px',
-                    paddingTop: '10px',
-                    borderTop: '1px solid rgba(255,255,255,0.04)',
+                    gap: '12px',
+                    marginTop: '8px',
+                    paddingTop: '8px',
+                    borderTop: '1px solid var(--border-subtle)',
                     fontSize: '0.75rem',
                     fontFamily: 'var(--font-mono)',
                   }}>
                     {event.meta.orderNumber && (
-                      <span style={{ color: 'var(--gold-primary)' }}>
+                      <span style={{ color: 'var(--brand-primary)' }}>
                         Order Ref: <strong>{event.meta.orderNumber}</strong>
                       </span>
                     )}
@@ -631,7 +603,7 @@ export default function RoomAuditView({
                       </span>
                     )}
                     {event.meta.priceSnapshot && (
-                      <span style={{ color: 'var(--sky-primary)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>
                         Unit Price Charged: {formatNaira(event.meta.priceSnapshot)}
                       </span>
                     )}

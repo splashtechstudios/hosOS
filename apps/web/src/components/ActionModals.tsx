@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { StaffUser, Room, RoomStatus } from '@hosos/types';
 import { X, UtensilsCrossed, Wrench, Banknote, BedDouble, ShieldAlert, Check } from 'lucide-react';
 
-// Common PIN Check Pill
+// Common PIN Check Box for Light Enterprise Theme
 function PinInput({
   staffList,
   selectedStaff,
@@ -22,21 +22,21 @@ function PinInput({
 }) {
   return (
     <div style={{
-      background: 'rgba(224, 169, 109, 0.06)',
-      border: '1px solid rgba(224, 169, 109, 0.25)',
+      background: 'var(--brand-bg)',
+      border: '1px solid var(--brand-border)',
       borderRadius: 'var(--radius-sm)',
-      padding: '12px',
-      marginTop: '16px',
+      padding: '12px 14px',
+      marginTop: '14px',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--gold-primary)', textTransform: 'uppercase' }}>
-          Staff Authentication Required (Every Action Logs User & Time)
+        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase' }}>
+          Staff Authentication (Every Action Logs User & Time)
         </span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: '10px' }}>
         <div>
-          <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+          <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
             Acting Staff Member
           </label>
           <select
@@ -45,18 +45,18 @@ function PinInput({
               const s = staffList.find(st => st.id === e.target.value);
               if (s) onSelectStaff(s);
             }}
-            style={{ width: '100%', fontSize: '0.8rem' }}
+            style={{ width: '100%', fontSize: '0.8rem', backgroundColor: '#FFFFFF' }}
           >
             {staffList.map(s => (
               <option key={s.id} value={s.id}>
-                {s.name} ({s.role.replace('_', ' ')})
+                {s.name} ({s.role.replace(/_/g, ' ')})
               </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+          <label style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
             Staff PIN Code
           </label>
           <input
@@ -65,13 +65,13 @@ function PinInput({
             placeholder={selectedStaff.pinCodeHash}
             value={pin}
             onChange={(e) => onPinChange(e.target.value)}
-            style={{ width: '100%', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}
+            style={{ width: '100%', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', backgroundColor: '#FFFFFF' }}
           />
         </div>
       </div>
 
       {pinError && (
-        <div style={{ color: 'var(--rose-primary)', fontSize: '0.75rem', marginTop: '6px' }}>
+        <div style={{ color: 'var(--rose-primary)', fontSize: '0.75rem', marginTop: '6px', fontWeight: 600 }}>
           ⚠️ {pinError}
         </div>
       )}
@@ -117,7 +117,7 @@ export function AddOrderModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (pin && pin !== selectedStaff.pinCodeHash) {
-      setPinError(`Invalid PIN! Hint for demo: Use ${selectedStaff.pinCodeHash}`);
+      setPinError(`Invalid PIN! Hint: Use ${selectedStaff.pinCodeHash}`);
       return;
     }
     onSuccess({
@@ -144,19 +144,19 @@ export function AddOrderModal({
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
-      backdropFilter: 'blur(8px)',
+      backgroundColor: 'rgba(15, 23, 42, 0.6)',
+      backdropFilter: 'blur(4px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 100,
       padding: '20px',
     }}>
-      <div className="glass-card" style={{ width: '100%', maxWidth: '520px', padding: '24px' }}>
+      <div className="ent-card" style={{ width: '100%', maxWidth: '520px', padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <UtensilsCrossed size={20} color="var(--gold-primary)" />
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>
+            <UtensilsCrossed size={20} color="var(--brand-primary)" />
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
               Add Order / Increment to Room {room.roomNumber}
             </h3>
           </div>
@@ -167,8 +167,8 @@ export function AddOrderModal({
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
-              Quick Select Preset or Enter Custom Item
+            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
+              Quick Select Preset or Custom Item
             </label>
             <select
               value={itemName}
@@ -182,7 +182,7 @@ export function AddOrderModal({
                   setItemName(e.target.value);
                 }
               }}
-              style={{ width: '100%', fontSize: '0.85rem' }}
+              style={{ width: '100%' }}
             >
               {menuPresets.map(m => (
                 <option key={m.name} value={m.name}>
@@ -194,7 +194,7 @@ export function AddOrderModal({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
                 Quantity to Add / Increment
               </label>
               <input
@@ -203,11 +203,11 @@ export function AddOrderModal({
                 max={50}
                 value={quantity}
                 onChange={(e) => setQuantity(Number(e.target.value))}
-                style={{ width: '100%', fontSize: '0.85rem' }}
+                style={{ width: '100%' }}
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
                 Price Sold At (₦)
               </label>
               <input
@@ -216,21 +216,21 @@ export function AddOrderModal({
                 step={100}
                 value={unitPrice}
                 onChange={(e) => setUnitPrice(Number(e.target.value))}
-                style={{ width: '100%', fontSize: '0.85rem' }}
+                style={{ width: '100%', fontFamily: 'var(--font-mono)', fontWeight: 600 }}
               />
             </div>
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
-              Increment Reason / Waiter Log
+            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
+              Increment Reason / Staff Notes
             </label>
             <input
               type="text"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Guest phoned for extra cold drinks"
-              style={{ width: '100%', fontSize: '0.85rem' }}
+              style={{ width: '100%' }}
             />
           </div>
 
@@ -244,11 +244,11 @@ export function AddOrderModal({
           />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
-            <button type="button" onClick={onClose} className="btn-ghost">
+            <button type="button" onClick={onClose} className="btn-secondary">
               Cancel
             </button>
-            <button type="submit" className="btn-gold">
-              Log Order & Increment (+₦{(quantity * unitPrice).toLocaleString()})
+            <button type="submit" className="btn-primary">
+              Log Order Increment (+₦{(quantity * unitPrice).toLocaleString()})
             </button>
           </div>
         </form>
@@ -302,19 +302,19 @@ export function AddMaintenanceModal({
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
-      backdropFilter: 'blur(8px)',
+      backgroundColor: 'rgba(15, 23, 42, 0.6)',
+      backdropFilter: 'blur(4px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 100,
       padding: '20px',
     }}>
-      <div className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: '24px' }}>
+      <div className="ent-card" style={{ width: '100%', maxWidth: '500px', padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Wrench size={20} color="var(--amber-primary)" />
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
               Log Maintenance for Room {room.roomNumber}
             </h3>
           </div>
@@ -325,35 +325,35 @@ export function AddMaintenanceModal({
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
               Fault / Repair Description
             </label>
             <input
               type="text"
               value={issue}
               onChange={(e) => setIssue(e.target.value)}
-              style={{ width: '100%', fontSize: '0.85rem' }}
+              style={{ width: '100%' }}
             />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
                 Priority Level
               </label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
-                style={{ width: '100%', fontSize: '0.85rem' }}
+                style={{ width: '100%' }}
               >
-                <option value="LOW">Low (Cosmetic)</option>
-                <option value="MEDIUM">Medium</option>
+                <option value="LOW">Low (Routine Check)</option>
+                <option value="MEDIUM">Medium (General)</option>
                 <option value="HIGH">High (Guest Impact)</option>
                 <option value="EMERGENCY_ROOM_DOWN">Emergency (Room Down)</option>
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
                 Parts Cost Logged (₦)
               </label>
               <input
@@ -362,7 +362,7 @@ export function AddMaintenanceModal({
                 step={500}
                 value={partsCost}
                 onChange={(e) => setPartsCost(Number(e.target.value))}
-                style={{ width: '100%', fontSize: '0.85rem' }}
+                style={{ width: '100%', fontFamily: 'var(--font-mono)' }}
               />
             </div>
           </div>
@@ -377,10 +377,10 @@ export function AddMaintenanceModal({
           />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
-            <button type="button" onClick={onClose} className="btn-ghost">
+            <button type="button" onClick={onClose} className="btn-secondary">
               Cancel
             </button>
-            <button type="submit" className="btn-gold">
+            <button type="submit" className="btn-primary">
               Log Maintenance Ticket
             </button>
           </div>
@@ -435,19 +435,19 @@ export function AddPaymentModal({
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
-      backdropFilter: 'blur(8px)',
+      backgroundColor: 'rgba(15, 23, 42, 0.6)',
+      backdropFilter: 'blur(4px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 100,
       padding: '20px',
     }}>
-      <div className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: '24px' }}>
+      <div className="ent-card" style={{ width: '100%', maxWidth: '500px', padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Banknote size={20} color="var(--emerald-primary)" />
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
               Receive Money for Room {room.roomNumber}
             </h3>
           </div>
@@ -458,7 +458,7 @@ export function AddPaymentModal({
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
               Amount Received (₦)
             </label>
             <input
@@ -473,13 +473,13 @@ export function AddPaymentModal({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
                 Payment Method
               </label>
               <select
                 value={method}
                 onChange={(e) => setMethod(e.target.value)}
-                style={{ width: '100%', fontSize: '0.85rem' }}
+                style={{ width: '100%' }}
               >
                 <option value="PHYSICAL_CASH">Physical Cash (Till-A)</option>
                 <option value="POS_TERMINAL">POS Terminal Card</option>
@@ -489,14 +489,14 @@ export function AddPaymentModal({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
                 Receipt / Terminal Ref
               </label>
               <input
                 type="text"
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
-                style={{ width: '100%', fontSize: '0.85rem' }}
+                style={{ width: '100%' }}
               />
             </div>
           </div>
@@ -511,10 +511,10 @@ export function AddPaymentModal({
           />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
-            <button type="button" onClick={onClose} className="btn-ghost">
+            <button type="button" onClick={onClose} className="btn-secondary">
               Cancel
             </button>
-            <button type="submit" className="btn-gold">
+            <button type="submit" className="btn-primary">
               Post Payment & Print Receipt
             </button>
           </div>
@@ -567,19 +567,19 @@ export function ChangeStatusModal({
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
-      backdropFilter: 'blur(8px)',
+      backgroundColor: 'rgba(15, 23, 42, 0.6)',
+      backdropFilter: 'blur(4px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 100,
       padding: '20px',
     }}>
-      <div className="glass-card" style={{ width: '100%', maxWidth: '480px', padding: '24px' }}>
+      <div className="ent-card" style={{ width: '100%', maxWidth: '480px', padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <BedDouble size={20} color="var(--sky-primary)" />
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>
+            <BedDouble size={20} color="var(--brand-primary)" />
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
               Change Status for Room {room.roomNumber}
             </h3>
           </div>
@@ -590,13 +590,13 @@ export function ChangeStatusModal({
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
               Target Occupancy State
             </label>
             <select
               value={newStatus}
               onChange={(e) => setNewStatus(e.target.value as RoomStatus)}
-              style={{ width: '100%', fontSize: '0.85rem' }}
+              style={{ width: '100%' }}
             >
               <option value="VACANT_CLEAN">Vacant Clean (Ready for Check-In)</option>
               <option value="OCCUPIED">Occupied (Guest In-House)</option>
@@ -606,14 +606,14 @@ export function ChangeStatusModal({
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
               Transition Audit Notes
             </label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              style={{ width: '100%', fontSize: '0.85rem' }}
+              style={{ width: '100%' }}
             />
           </div>
 
@@ -627,10 +627,10 @@ export function ChangeStatusModal({
           />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
-            <button type="button" onClick={onClose} className="btn-ghost">
+            <button type="button" onClick={onClose} className="btn-secondary">
               Cancel
             </button>
-            <button type="submit" className="btn-gold">
+            <button type="submit" className="btn-primary">
               Confirm Status Change
             </button>
           </div>

@@ -9,13 +9,9 @@ import {
   Trash2, 
   CreditCard, 
   Banknote, 
-  Send, 
   ShieldAlert, 
   CheckCircle2, 
-  AlertTriangle,
-  Receipt,
-  Clock,
-  UserCheck
+  Receipt
 } from 'lucide-react';
 
 interface POSViewProps {
@@ -33,13 +29,11 @@ export default function POSView({
   const [orderType, setOrderType] = useState<'DINE_IN' | 'ROOM_SERVICE' | 'BAR_TAB'>('ROOM_SERVICE');
   const [selectedRoomNumber, setSelectedRoomNumber] = useState('204');
   
-  // Cart state
   const [cart, setCart] = useState<Array<{ id: string; name: string; price: number; quantity: number }>>([
     { id: 'm-1', name: 'Spicy Goat Meat Pepper Soup', price: 7500, quantity: 2 },
     { id: 'm-4', name: 'Heineken Draught (Cold)', price: 2500, quantity: 3 },
   ]);
 
-  // Transfer verification simulation state
   const [transferPending, setTransferPending] = useState(false);
   const [transferVerified, setTransferVerified] = useState(false);
 
@@ -105,7 +99,7 @@ export default function POSView({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
         {/* Outlet & Mode Bar */}
-        <div className="glass-card" style={{ padding: '16px 20px' }}>
+        <div className="ent-card" style={{ padding: '16px 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', gap: '8px' }}>
               {(['RESTAURANT', 'POOL_BAR', 'LOUNGE'] as const).map(outlet => (
@@ -117,11 +111,11 @@ export default function POSView({
                     borderRadius: 'var(--radius-sm)',
                     fontWeight: 700,
                     fontSize: '0.8rem',
-                    backgroundColor: selectedOutlet === outlet ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)',
-                    color: selectedOutlet === outlet ? '#060A13' : 'var(--text-secondary)',
+                    backgroundColor: selectedOutlet === outlet ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                    color: selectedOutlet === outlet ? '#FFFFFF' : 'var(--text-secondary)',
                   }}
                 >
-                  {outlet.replace('_', ' ')}
+                  {outlet.replace(/_/g, ' ')}
                 </button>
               ))}
             </div>
@@ -143,8 +137,8 @@ export default function POSView({
 
         {/* Menu Cards */}
         <div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '14px', color: '#FFF' }}>
-            {selectedOutlet.replace('_', ' ')} Active Menu
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '14px', color: 'var(--text-primary)' }}>
+            {selectedOutlet.replace(/_/g, ' ')} Active Menu
           </h3>
 
           <div style={{
@@ -156,12 +150,12 @@ export default function POSView({
               <div
                 key={item.id}
                 onClick={() => addToCart(item)}
-                className="glass-card-interactive"
+                className="ent-card-interactive"
                 style={{ padding: '16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
               >
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span className={item.cat === 'Kitchen' ? 'badge badge-gold' : 'badge badge-occupied'}>
+                    <span className={item.cat === 'Kitchen' ? 'badge badge-brand' : 'badge badge-purple'}>
                       {item.cat}
                     </span>
                     <span style={{ fontSize: '0.75rem', color: 'var(--emerald-primary)', fontWeight: 600 }}>
@@ -169,18 +163,18 @@ export default function POSView({
                     </span>
                   </div>
 
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFF' }}>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {item.name}
                   </h4>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px' }}>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--gold-primary)' }}>
+                  <span style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
                     {formatNaira(item.price)}
                   </span>
                   <button
-                    className="btn-ghost"
-                    style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+                    className="btn-secondary"
+                    style={{ padding: '4px 8px', fontSize: '0.75rem' }}
                     onClick={(e) => {
                       e.stopPropagation();
                       addToCart(item);
@@ -194,11 +188,11 @@ export default function POSView({
           </div>
         </div>
 
-        {/* Nigeria Operational Feature: Manual Bank Transfer Verification Protocol */}
-        <div className="glass-card" style={{ padding: '20px', borderLeft: '4px solid var(--amber-primary)' }}>
+        {/* Anti-Fraud Manual Bank Transfer Verification Queue */}
+        <div className="ent-card" style={{ padding: '20px', borderLeft: '4px solid var(--amber-primary)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
             <ShieldAlert size={20} color="var(--amber-primary)" />
-            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFF' }}>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
               Anti-Fraud: Manual Bank Transfer Verification Queue
             </h4>
           </div>
@@ -206,13 +200,13 @@ export default function POSView({
             Prevents fake bank credit SMS and screenshot scams. Waiters log the transfer claim, which must be verified against resort accounts by the central cashier before orders are released.
           </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
             <button
               onClick={() => {
                 setTransferPending(true);
                 setTransferVerified(false);
               }}
-              className="btn-ghost"
+              className="btn-secondary"
               style={{ fontSize: '0.8rem' }}
             >
               Simulate Guest Transfer (₦35,000 via GTBank)
@@ -226,7 +220,7 @@ export default function POSView({
                     setTransferVerified(true);
                     setTransferPending(false);
                   }}
-                  className="btn-gold"
+                  className="btn-primary"
                   style={{ fontSize: '0.75rem', padding: '6px 10px' }}
                 >
                   Cashier Verify & Release
@@ -245,20 +239,20 @@ export default function POSView({
       </div>
 
       {/* Right: Active Ticket / Cart Drawer */}
-      <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: 'fit-content' }}>
+      <div className="ent-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: 'fit-content' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Active Order Ticket</h3>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>Active Order Ticket</h3>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Server: <strong style={{ color: '#FFF' }}>{activeStaff.name}</strong>
+              Server: <strong style={{ color: 'var(--text-primary)' }}>{activeStaff.name}</strong>
             </div>
           </div>
-          <span className="badge badge-gold">KOT Firing</span>
+          <span className="badge badge-brand">KOT Firing</span>
         </div>
 
         {/* Room / Destination Selector */}
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
             Bill Destination
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -269,8 +263,8 @@ export default function POSView({
                 borderRadius: 'var(--radius-sm)',
                 fontSize: '0.75rem',
                 fontWeight: 700,
-                backgroundColor: orderType === 'ROOM_SERVICE' ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)',
-                color: orderType === 'ROOM_SERVICE' ? '#060A13' : 'var(--text-secondary)',
+                backgroundColor: orderType === 'ROOM_SERVICE' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                color: orderType === 'ROOM_SERVICE' ? '#FFFFFF' : 'var(--text-secondary)',
               }}
             >
               Charge Room
@@ -282,8 +276,8 @@ export default function POSView({
                 borderRadius: 'var(--radius-sm)',
                 fontSize: '0.75rem',
                 fontWeight: 700,
-                backgroundColor: orderType === 'DINE_IN' ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)',
-                color: orderType === 'DINE_IN' ? '#060A13' : 'var(--text-secondary)',
+                backgroundColor: orderType === 'DINE_IN' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                color: orderType === 'DINE_IN' ? '#FFFFFF' : 'var(--text-secondary)',
               }}
             >
               Direct Cash/POS
@@ -299,7 +293,7 @@ export default function POSView({
               >
                 {rooms.map(r => (
                   <option key={r.id} value={r.roomNumber}>
-                    Room {r.roomNumber} ({r.currentGuestName || 'Unassigned'})
+                    Room #{r.roomNumber} ({r.currentGuestName || 'Unassigned'})
                   </option>
                 ))}
               </select>
@@ -330,13 +324,13 @@ export default function POSView({
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '8px 10px',
-                  background: 'rgba(255,255,255,0.03)',
+                  background: 'var(--bg-secondary)',
                   borderRadius: 'var(--radius-sm)',
                   fontSize: '0.85rem',
                 }}
               >
                 <div style={{ maxWidth: '160px' }}>
-                  <div style={{ fontWeight: 600, color: '#FFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {item.name}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
@@ -345,10 +339,10 @@ export default function POSView({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '4px' }}>
                     <button
                       onClick={() => updateQuantity(item.id, -1)}
-                      style={{ padding: '2px 6px', background: 'transparent', color: 'var(--text-muted)' }}
+                      style={{ padding: '2px 6px', background: 'transparent', color: 'var(--text-secondary)' }}
                     >
                       <Minus size={12} />
                     </button>
@@ -357,7 +351,7 @@ export default function POSView({
                     </span>
                     <button
                       onClick={() => updateQuantity(item.id, 1)}
-                      style={{ padding: '2px 6px', background: 'transparent', color: 'var(--text-muted)' }}
+                      style={{ padding: '2px 6px', background: 'transparent', color: 'var(--text-secondary)' }}
                     >
                       <Plus size={12} />
                     </button>
@@ -381,7 +375,7 @@ export default function POSView({
 
         {/* Calculation Totals */}
         <div style={{
-          borderTop: '1px solid var(--border-subtle)',
+          borderTop: '1px solid var(--border-color)',
           paddingTop: '12px',
           display: 'flex',
           flexDirection: 'column',
@@ -403,15 +397,15 @@ export default function POSView({
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
-            color: '#FFF',
+            color: 'var(--text-primary)',
             fontWeight: 800,
-            fontSize: '1.2rem',
+            fontSize: '1.15rem',
             marginTop: '8px',
             paddingTop: '8px',
-            borderTop: '1px solid var(--border-subtle)',
+            borderTop: '1px solid var(--border-color)',
           }}>
             <span>Total</span>
-            <span style={{ color: 'var(--gold-primary)', fontFamily: 'var(--font-mono)' }}>
+            <span style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)' }}>
               {formatNaira(total)}
             </span>
           </div>
@@ -423,11 +417,11 @@ export default function POSView({
             <button
               onClick={handleChargeToRoom}
               disabled={cart.length === 0}
-              className="btn-gold"
+              className="btn-primary"
               style={{ width: '100%', justifyContent: 'center', opacity: cart.length === 0 ? 0.5 : 1 }}
             >
               <Receipt size={16} />
-              <span>Charge to Room {selectedRoomNumber} Folio</span>
+              <span>Charge to Room #{selectedRoomNumber} Folio</span>
             </button>
           ) : (
             <button
@@ -436,7 +430,7 @@ export default function POSView({
                 setCart([]);
               }}
               disabled={cart.length === 0}
-              className="btn-gold"
+              className="btn-primary"
               style={{ width: '100%', justifyContent: 'center', opacity: cart.length === 0 ? 0.5 : 1 }}
             >
               <CreditCard size={16} />

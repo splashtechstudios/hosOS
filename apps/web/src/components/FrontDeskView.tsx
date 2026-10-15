@@ -34,16 +34,16 @@ export default function FrontDeskView({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 0' }}>
       
       {/* Header Banner */}
-      <div className="glass-card" style={{ padding: '24px' }}>
+      <div className="ent-card" style={{ padding: '20px 24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Hotel size={24} color="var(--gold-primary)" />
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>
+              <Hotel size={24} color="var(--brand-primary)" />
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                 Front Desk Operations & Tape Chart Board
               </h2>
             </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem', marginTop: '4px' }}>
               Real-time room occupancy grid, keycard management, and consolidated guest folio monitors.
             </p>
           </div>
@@ -59,13 +59,13 @@ export default function FrontDeskView({
                 key={f.id}
                 onClick={() => setFilterFloor(f.id as any)}
                 style={{
-                  padding: '8px 14px',
+                  padding: '6px 14px',
                   borderRadius: 'var(--radius-sm)',
                   fontSize: '0.8rem',
                   fontWeight: 600,
-                  backgroundColor: filterFloor === f.id ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)',
-                  color: filterFloor === f.id ? '#060A13' : 'var(--text-secondary)',
-                  border: '1px solid var(--border-subtle)',
+                  backgroundColor: filterFloor === f.id ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                  color: filterFloor === f.id ? '#FFFFFF' : 'var(--text-secondary)',
+                  border: '1px solid var(--border-color)',
                 }}
               >
                 {f.label}
@@ -82,20 +82,16 @@ export default function FrontDeskView({
         gap: '16px',
       }}>
         {filteredRooms.map((room) => {
-          let statusColor = 'var(--emerald-primary)';
           let statusBadgeClass = 'badge badge-clean';
           let statusText = 'Vacant Clean';
 
           if (room.status === 'OCCUPIED') {
-            statusColor = 'var(--sky-primary)';
-            statusBadgeClass = 'badge badge-occupied';
+            statusBadgeClass = 'badge badge-brand';
             statusText = 'Occupied';
           } else if (room.status === 'VACANT_DIRTY') {
-            statusColor = 'var(--amber-primary)';
             statusBadgeClass = 'badge badge-dirty';
             statusText = 'Vacant Dirty';
           } else if (room.status === 'MAINTENANCE' || room.status === 'OUT_OF_ORDER') {
-            statusColor = 'var(--rose-primary)';
             statusBadgeClass = 'badge badge-maintenance';
             statusText = 'Maintenance';
           }
@@ -103,13 +99,13 @@ export default function FrontDeskView({
           return (
             <div 
               key={room.id}
-              className="glass-card-interactive"
-              style={{ padding: '20px', borderTop: `4px solid ${statusColor}` }}
+              className="ent-card-interactive"
+              style={{ padding: '20px' }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                 <div>
-                  <span style={{ fontSize: '1.6rem', fontWeight: 800, fontFamily: 'var(--font-heading)', color: '#FFF' }}>
-                    Room {room.roomNumber}
+                  <span style={{ fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
+                    Room #{room.roomNumber}
                   </span>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     {room.roomTypeName} • Floor {room.floor}
@@ -120,26 +116,26 @@ export default function FrontDeskView({
 
               {room.currentGuestName ? (
                 <div style={{
-                  background: 'rgba(56, 189, 248, 0.08)',
-                  border: '1px solid rgba(56, 189, 248, 0.2)',
+                  background: 'var(--brand-bg)',
+                  border: '1px solid var(--brand-border)',
                   borderRadius: 'var(--radius-sm)',
                   padding: '12px',
                   marginBottom: '14px',
                 }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--brand-primary)', textTransform: 'uppercase', fontWeight: 700 }}>
                     In-House Guest
                   </div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFF', marginTop: '2px' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
                     👤 {room.currentGuestName}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--sky-primary)', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>
-                    Folio: {room.currentFolioId || '#FOL-204-89'}
+                  <div style={{ fontSize: '0.75rem', color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>
+                    Active Folio: {room.currentFolioId || '#FOL-204-89'}
                   </div>
                 </div>
               ) : (
                 <div style={{
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--border-subtle)',
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-sm)',
                   padding: '12px',
                   marginBottom: '14px',
@@ -147,26 +143,24 @@ export default function FrontDeskView({
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                     Standard Rack Rate
                   </div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--gold-primary)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
                     {formatNaira(room.rackRatePerNight)} <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--text-muted)' }}>/ night</span>
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    {room.lastCleanedAt ? `Cleaned at 11:30 by ${room.lastCleanedByStaffName}` : 'Ready for reservation'}
+                    {room.lastCleanedAt ? `Cleaned by ${room.lastCleanedByStaffName}` : 'Ready for reservation'}
                   </div>
                 </div>
               )}
 
               {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => onSelectRoomForAudit(room)}
-                  className="btn-gold"
-                  style={{ width: '100%', justifyContent: 'center', fontSize: '0.8rem', padding: '8px 12px' }}
-                >
-                  <ShieldCheck size={14} />
-                  <span>View 360° Internal Audit</span>
-                </button>
-              </div>
+              <button
+                onClick={() => onSelectRoomForAudit(room)}
+                className="btn-secondary"
+                style={{ width: '100%', justifyContent: 'center', fontSize: '0.8rem' }}
+              >
+                <ShieldCheck size={14} color="var(--brand-primary)" />
+                <span>Open 360° Internal Audit</span>
+              </button>
             </div>
           );
         })}

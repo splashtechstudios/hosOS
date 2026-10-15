@@ -1,19 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Fuel, Zap, AlertTriangle, ShieldCheck, Plus, CheckCircle2 } from 'lucide-react';
+import { Fuel, Zap, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
 
 export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser }) {
   const [meterStart, setMeterStart] = useState<number>(4210.5);
   const [meterEnd, setMeterEnd] = useState<number>(4218.5);
-  const [dieselAdded, setDieselAdded] = useState<number>(220); // Litres
-  const [fuelPricePerLitre, setFuelPricePerLitre] = useState<number>(1350); // ₦1,350/Litre
+  const [dieselAdded, setDieselAdded] = useState<number>(220);
+  const [fuelPricePerLitre, setFuelPricePerLitre] = useState<number>(1350);
 
   const runHours = Math.max(0, Number((meterEnd - meterStart).toFixed(1)));
   const burnRate = runHours > 0 ? Number((dieselAdded / runHours).toFixed(1)) : 0;
   const totalFuelCost = dieselAdded * fuelPricePerLitre;
-  const isAnomaly = burnRate > 29.0; // Perkins 250kVA benchmark is 27-28 L/hr at 65% load
+  const isAnomaly = burnRate > 29.0;
 
   const formatNaira = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -27,17 +27,17 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 0' }}>
       
       {/* Header Banner */}
-      <div className="glass-card" style={{ padding: '24px' }}>
+      <div className="ent-card" style={{ padding: '20px 24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Fuel size={24} color="var(--gold-primary)" />
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>
+              <Fuel size={24} color="var(--brand-primary)" />
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                 Diesel, Generator Run Logs & Energy OPEX Monitor
               </h2>
             </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
-              Essential Nigerian resort utility tracking. Monitor litre-per-hour consumption and prevent fuel siphoning.
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem', marginTop: '4px' }}>
+              Essential Nigerian resort utility tracking. Monitor litre-per-hour consumption and prevent fuel diversion.
             </p>
           </div>
 
@@ -45,7 +45,7 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
             <span className="badge badge-clean">
               <Zap size={12} /> Primary: Perkins 250kVA (Online)
             </span>
-            <span className="badge badge-gold">
+            <span className="badge badge-dirty">
               Backup: Mikano 100kVA (Standby)
             </span>
           </div>
@@ -59,25 +59,25 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
         gap: '20px',
       }}>
         {/* Perkins 250kVA */}
-        <div className="glass-card" style={{ padding: '24px', borderLeft: '4px solid var(--emerald-primary)' }}>
+        <div className="ent-card" style={{ padding: '24px', borderLeft: '4px solid var(--emerald-primary)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
             <div>
               <span className="badge badge-clean">Online & Supplying Load</span>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '8px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '8px', color: 'var(--text-primary)' }}>
                 Perkins 250kVA Heavy Diesel Generator
               </h3>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                 Asset Tag: #GEN-PERK-250 • Location: Central Power House
               </div>
             </div>
-            <Zap size={28} color="var(--emerald-primary)" />
+            <Zap size={26} color="var(--emerald-primary)" />
           </div>
 
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             gap: '12px',
-            background: 'rgba(255,255,255,0.02)',
+            background: 'var(--bg-secondary)',
             padding: '14px',
             borderRadius: 'var(--radius-sm)',
             fontSize: '0.85rem',
@@ -85,7 +85,7 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
           }}>
             <div>
               <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>TODAY RUN HOURS</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#FFF', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
                 {runHours} hrs
               </div>
             </div>
@@ -102,7 +102,7 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
             </div>
             <div>
               <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>DIESEL BURNT</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--gold-primary)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)' }}>
                 {dieselAdded} Litres
               </div>
             </div>
@@ -115,20 +115,20 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
           </div>
 
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-            Logged by: <strong style={{ color: '#FFF' }}>Engr. Tunde Bakare (Maintenance Lead)</strong> at 18:00 WAT.
+            Logged by: <strong style={{ color: 'var(--text-primary)' }}>Engr. Tunde Bakare (Maintenance Lead)</strong> at 18:00 WAT.
           </div>
         </div>
 
         {/* Live Shift Fuel Log Form */}
-        <div className="glass-card" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '14px', color: '#FFF' }}>
+        <div className="ent-card" style={{ padding: '24px' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '14px', color: 'var(--text-primary)' }}>
             Log Generator Shift & Meter Reading
           </h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
                   Hour Meter Start
                 </label>
                 <input
@@ -140,7 +140,7 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
                   Hour Meter Stop
                 </label>
                 <input
@@ -155,7 +155,7 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
                   Diesel Added (Litres)
                 </label>
                 <input
@@ -166,7 +166,7 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
                   Price/Litre (₦)
                 </label>
                 <input
@@ -179,8 +179,8 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
             </div>
 
             <div style={{
-              background: isAnomaly ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.08)',
-              border: `1px solid ${isAnomaly ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.2)'}`,
+              background: isAnomaly ? 'var(--rose-bg)' : 'var(--emerald-bg)',
+              border: `1px solid ${isAnomaly ? 'var(--rose-border)' : 'var(--emerald-border)'}`,
               padding: '10px 14px',
               borderRadius: 'var(--radius-sm)',
               fontSize: '0.8rem',
@@ -198,7 +198,7 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
 
             <button
               onClick={() => alert(`Generator log of ${runHours} hrs / ${dieselAdded}L submitted by ${activeStaff.name}`)}
-              className="btn-gold"
+              className="btn-primary"
               style={{ width: '100%', justifyContent: 'center', marginTop: '6px' }}
             >
               Submit Certified Fuel Log (Logged by {activeStaff.name})

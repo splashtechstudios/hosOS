@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileText, Moon, CheckCircle2, TrendingUp, AlertTriangle, Send, ShieldCheck, DollarSign } from 'lucide-react';
+import { FileText, Moon, CheckCircle2, TrendingUp, AlertTriangle, Send, ShieldCheck } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
 
 export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser }) {
@@ -28,16 +28,16 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 0' }}>
       
       {/* Top Banner */}
-      <div className="glass-card" style={{ padding: '24px' }}>
+      <div className="ent-card" style={{ padding: '20px 24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Moon size={24} color="var(--gold-primary)" />
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>
+              <Moon size={24} color="var(--brand-primary)" />
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                 End-of-Day Night Audit & Owner Flash Report Engine
               </h2>
             </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem', marginTop: '4px' }}>
               Automated 02:00 AM close. Posts room nightly room rates, audits cash-up variance, and delivers WhatsApp summary to Owner.
             </p>
           </div>
@@ -45,7 +45,7 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
           <button
             onClick={handleRunAudit}
             disabled={auditRunning}
-            className="btn-gold"
+            className="btn-primary"
           >
             <ShieldCheck size={16} />
             <span>{auditRunning ? 'Running Audit Steps...' : 'Execute Night Audit Close'}</span>
@@ -54,7 +54,7 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
       </div>
 
       {auditCompleted && (
-        <div className="glass-card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--emerald-primary)' }}>
+        <div className="ent-card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--emerald-primary)', background: 'var(--emerald-bg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--emerald-primary)', fontWeight: 700 }}>
             <CheckCircle2 size={20} />
             <span>Night Audit Completed Successfully by {activeStaff.name}! Operating Day Closed & Rolled to 2026-10-16.</span>
@@ -68,11 +68,11 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
         gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
         gap: '16px',
       }}>
-        <div className="glass-card" style={{ padding: '20px' }}>
+        <div className="ent-card" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
             Occupancy Rate
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--sky-primary)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--brand-primary)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
             71.4%
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
@@ -80,11 +80,11 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '20px' }}>
+        <div className="ent-card" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
             ADR (Avg Daily Rate)
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--gold-primary)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
             ₦132,000
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
@@ -92,11 +92,11 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '20px' }}>
+        <div className="ent-card" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
             RevPAR
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--emerald-primary)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--emerald-primary)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
             ₦94,285
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
@@ -104,11 +104,11 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '20px' }}>
+        <div className="ent-card" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
             Today Gross Revenue
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#FFF', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
             ₦1,428,500
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--emerald-primary)', marginTop: '2px' }}>
@@ -118,11 +118,11 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
       </div>
 
       {/* WhatsApp Flash Preview to Resort Owner */}
-      <div className="glass-card" style={{ padding: '24px', borderLeft: '4px solid var(--emerald-primary)' }}>
+      <div className="ent-card" style={{ padding: '24px', borderLeft: '4px solid var(--emerald-primary)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Send size={20} color="var(--emerald-primary)" />
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
               Owner WhatsApp Daily Flash Dispatch Preview
             </h3>
           </div>
@@ -130,14 +130,14 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
         </div>
 
         <div style={{
-          background: 'rgba(16, 185, 129, 0.05)',
-          border: '1px solid rgba(16, 185, 129, 0.2)',
-          borderRadius: 'var(--radius-md)',
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 'var(--radius-sm)',
           padding: '20px',
           fontFamily: 'var(--font-mono)',
-          fontSize: '0.85rem',
+          fontSize: '0.825rem',
           lineHeight: 1.6,
-          color: '#F8FAFC',
+          color: 'var(--text-primary)',
           whiteSpace: 'pre-line',
         }}>
           {`🏨 *OSEIKA RESORT & SUITES — DAILY FLASH REPORT*

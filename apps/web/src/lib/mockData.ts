@@ -1,13 +1,32 @@
 import {
   StaffUser,
   Room,
-  POSOrder,
   MaintenanceTicket,
-  GuestFolio,
-  InventoryItem,
   GeneratorRunLog,
-  RoomTimelineItem
+  RoomTimelineItem,
+  GuestProfile,
+  CorporateDeal,
+  StaffOnboardingRecord,
+  RoleRBACDefinition,
+  UserRole
 } from '@hosos/types';
+
+export const ENTERPRISE_ORG = {
+  name: 'Oseika Luxury Resort & Convention Centre',
+  legalEntity: 'Oseika Hospitality & Leisure Group Ltd',
+  registrationNumber: 'RC-1849204',
+  location: 'Plot 12, Waterfront Boulevard, Lekki Phase 1, Lagos, Nigeria',
+  currency: 'NGN (₦)',
+  taxId: 'TIN-09482941-0001',
+  departments: [
+    { id: 'EXECUTIVE', name: 'Executive Suite', head: 'Alhaji Ibrahim Danjuma (GM)' },
+    { id: 'ROOMS_DIVISION', name: 'Rooms Division & Front Office', head: 'Mary Okon (Front Office Lead)' },
+    { id: 'FOOD_AND_BEVERAGE', name: 'Food & Beverage', head: 'Chef Donald Umeh (Exec Chef)' },
+    { id: 'ACCOUNTS_FINANCE', name: 'Finance & Loss Prevention', head: 'Fatima Sanusi (Chief Cashier)' },
+    { id: 'MAINTENANCE_ENGINEERING', name: 'Engineering & Energy Facilities', head: 'Engr. Tunde Bakare (Chief Engr)' },
+    { id: 'HUMAN_RESOURCES_SECURITY', name: 'Human Resources & Safety', head: 'Chioma Adeleke (HR Director)' },
+  ],
+};
 
 export const INITIAL_STAFF: StaffUser[] = [
   {
@@ -79,6 +98,294 @@ export const INITIAL_STAFF: StaffUser[] = [
     department: 'F_AND_B',
     isActive: true,
     createdAt: '2026-01-15T08:00:00Z',
+  },
+];
+
+// Enterprise RBAC Matrix Definitions
+export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
+  {
+    role: 'OWNER',
+    displayName: 'Executive Owner / Board',
+    department: 'EXECUTIVE',
+    description: 'Full unconstrained visibility into every department, profit & loss, loss prevention, and executive audits.',
+    permissions: [
+      'rooms.audit.view', 'rooms.status.override', 'orders.create', 'orders.increment',
+      'discounts.approve', 'voids.execute', 'cash.receive', 'maintenance.raise',
+      'maintenance.signoff', 'reports.export', 'users.onboard', 'crm.manage', 'diesel.log'
+    ],
+  },
+  {
+    role: 'GENERAL_MANAGER',
+    displayName: 'General Manager (Operations)',
+    department: 'EXECUTIVE',
+    description: 'Total operational control across rooms division, F&B outlets, store requisitions, and daily flash sign-offs.',
+    permissions: [
+      'rooms.audit.view', 'rooms.status.override', 'orders.create', 'orders.increment',
+      'discounts.approve', 'voids.execute', 'cash.receive', 'maintenance.raise',
+      'maintenance.signoff', 'reports.export', 'users.onboard', 'crm.manage', 'diesel.log'
+    ],
+  },
+  {
+    role: 'FRONT_DESK',
+    displayName: 'Front Desk Lead / Agent',
+    department: 'ROOMS_DIVISION',
+    description: 'Guest check-in, keycard issuance, folio management, room moves, and cash deposit collection.',
+    permissions: [
+      'rooms.audit.view', 'rooms.status.override', 'orders.create', 'orders.increment',
+      'cash.receive', 'maintenance.raise', 'crm.manage'
+    ],
+  },
+  {
+    role: 'CASHIER',
+    displayName: 'Central Cashier & Audit Officer',
+    department: 'ACCOUNTS_FINANCE',
+    description: 'Cash drawer balancing, POS card settlement, bank transfer verification, and folio closure.',
+    permissions: [
+      'rooms.audit.view', 'cash.receive', 'reports.export'
+    ],
+  },
+  {
+    role: 'WAITER',
+    displayName: 'F&B Food & Beverage Waiter',
+    department: 'FOOD_AND_BEVERAGE',
+    description: 'Table order taking, room service delivery, and order increments with PIN authentication.',
+    permissions: [
+      'orders.create', 'orders.increment'
+    ],
+  },
+  {
+    role: 'BARTENDER',
+    displayName: 'Mixologist / Bar Cashier',
+    department: 'FOOD_AND_BEVERAGE',
+    description: 'Cocktail dispensing, spirit tot decrement, bar tabs, and shift tot dipstick counts.',
+    permissions: [
+      'orders.create', 'orders.increment', 'cash.receive'
+    ],
+  },
+  {
+    role: 'CHEF',
+    displayName: 'Executive Chef / Station Cook',
+    department: 'FOOD_AND_BEVERAGE',
+    description: 'Kitchen Display System (KDS), food preparation dispatch, and recipe ingredient reconciliation.',
+    permissions: [
+      'orders.create'
+    ],
+  },
+  {
+    role: 'HOUSEKEEPING',
+    displayName: 'Housekeeping Lead / Attendant',
+    department: 'ROOMS_DIVISION',
+    description: 'Daily cleaning boards, room inspection checklists, lost & found, and maintenance ticket raising.',
+    permissions: [
+      'rooms.audit.view', 'rooms.status.override', 'maintenance.raise'
+    ],
+  },
+  {
+    role: 'MAINTENANCE',
+    displayName: 'Chief Engineer / Maintenance Tech',
+    department: 'MAINTENANCE_ENGINEERING',
+    description: 'HVAC repair, generator run hours logging, diesel intake verification, and asset maintenance.',
+    permissions: [
+      'maintenance.raise', 'maintenance.signoff', 'diesel.log'
+    ],
+  },
+  {
+    role: 'ACCOUNTANT',
+    displayName: 'Financial Controller',
+    department: 'ACCOUNTS_FINANCE',
+    description: '7.5% VAT filings, night audit reconciliation, diesel cost vs revenue ratios, and payroll ledger.',
+    permissions: [
+      'rooms.audit.view', 'reports.export', 'cash.receive'
+    ],
+  },
+  {
+    role: 'STOREKEEPER',
+    displayName: 'Central Storekeeper',
+    department: 'FOOD_AND_BEVERAGE',
+    description: 'GRN inspection, bulk diesel discharge, inter-store requisitions, and shrinkage reporting.',
+    permissions: [
+      'diesel.log', 'reports.export'
+    ],
+  },
+];
+
+// Enterprise CRM Guest Profiles
+export const INITIAL_GUEST_PROFILES: GuestProfile[] = [
+  {
+    id: 'crm-gst-01',
+    fullName: 'Dr. Adeleke Bello',
+    email: 'dr.bello@lagosmed.ng',
+    phone: '+234 803 492 8810',
+    nationalIdOrPassport: 'NIN-94829410948',
+    loyaltyTier: 'PLATINUM_VIP',
+    loyaltyPoints: 14200,
+    totalLifetimeSpend: 4850000,
+    totalStaysCount: 8,
+    totalDiningOrdersCount: 32,
+    roomPreferences: ['Ocean View High Floor', 'Feather Pillows', 'Room Temperature 21°C'],
+    dietaryRestrictions: ['No Shellfish', 'Prefers Decaf Coffee'],
+    corporateCompanyId: 'corp-01',
+    corporateCompanyName: 'Chevron Nigeria Ltd',
+    whatsappOptIn: true,
+    notes: 'Chairman of West Africa Surgeons College. VIP treatment mandatory. Always requests fruit platter upon arrival.',
+    lastVisitDate: '2026-10-15',
+    createdAt: '2025-06-12T10:00:00Z',
+  },
+  {
+    id: 'crm-gst-02',
+    fullName: 'Chief Adeyemi Thomas',
+    email: 'chief.thomas@thomasgroup.com',
+    phone: '+234 802 331 4400',
+    nationalIdOrPassport: 'PASS-A09481924',
+    loyaltyTier: 'GOLD',
+    loyaltyPoints: 8900,
+    totalLifetimeSpend: 2950000,
+    totalStaysCount: 5,
+    totalDiningOrdersCount: 18,
+    roomPreferences: ['Ground Floor Pool Access', 'King Size Bed'],
+    dietaryRestrictions: ['Spicy Food Lover', 'Cognac Connoisseur'],
+    corporateCompanyId: 'corp-02',
+    corporateCompanyName: 'Zenith Bank PLC',
+    whatsappOptIn: true,
+    notes: 'Regular weekend guest. Frequently hosts 6-8 guests at Pool Bar Lounge.',
+    lastVisitDate: '2026-10-14',
+    createdAt: '2025-08-20T14:30:00Z',
+  },
+  {
+    id: 'crm-gst-03',
+    fullName: 'Senator N. Kalu',
+    email: 'senator.kalu@nass.gov.ng',
+    phone: '+234 809 111 8800',
+    nationalIdOrPassport: 'DIPLO-D984210',
+    loyaltyTier: 'PLATINUM_VIP',
+    loyaltyPoints: 31000,
+    totalLifetimeSpend: 11200000,
+    totalStaysCount: 12,
+    totalDiningOrdersCount: 54,
+    roomPreferences: ['Presidential Penthouse Suite Only', 'Private Security Detail Room Adjoining'],
+    dietaryRestrictions: ['Strictly Halal', 'Fresh Coconut Water Daily'],
+    whatsappOptIn: false,
+    notes: 'High security protocol. Requires discrete check-in via Executive Elevator. Folio billed to corporate account.',
+    lastVisitDate: '2026-10-15',
+    createdAt: '2024-11-05T09:00:00Z',
+  },
+];
+
+// Enterprise Corporate Deals & Events Pipeline
+export const INITIAL_CORPORATE_DEALS: CorporateDeal[] = [
+  {
+    id: 'deal-01',
+    dealTitle: 'Chevron Annual Leadership Strategy Summit 2026',
+    companyName: 'Chevron Nigeria Ltd',
+    contactPerson: 'Mrs. Folashade Alabi (VP HR)',
+    contactEmail: 'falabi@chevron.com',
+    contactPhone: '+234 803 555 1234',
+    dealValue: 18500000,
+    depositPaid: 10000000,
+    balanceDue: 8500000,
+    stage: 'CONTRACT_QUOTED',
+    hallOrLawn: 'Grand Marina Banquet Hall',
+    roomsBlocked: 18,
+    eventDate: '2026-11-12 to 2026-11-15',
+    assignedAccountManager: 'Mary Okon (Front Office Lead)',
+    createdAt: '2026-10-01T10:00:00Z',
+  },
+  {
+    id: 'deal-02',
+    dealTitle: 'Zenith Bank PLC Executive FinTech Gala Dinner',
+    companyName: 'Zenith Bank PLC',
+    contactPerson: 'Mr. Kelechi Nwosu (Head of Brand)',
+    contactEmail: 'knwosu@zenithbank.com',
+    contactPhone: '+234 802 888 9900',
+    dealValue: 7200000,
+    depositPaid: 7200000,
+    balanceDue: 0,
+    stage: 'DEPOSIT_PAID',
+    hallOrLawn: 'Palms Oceanfront Lawn',
+    roomsBlocked: 6,
+    eventDate: '2026-10-28',
+    assignedAccountManager: 'Alhaji Ibrahim Danjuma (GM)',
+    createdAt: '2026-09-18T14:00:00Z',
+  },
+  {
+    id: 'deal-03',
+    dealTitle: 'Dangote Regional Distributors Conference',
+    companyName: 'Dangote Industries Ltd',
+    contactPerson: 'Alhaji Sani Bello (Commercial Director)',
+    contactEmail: 'sbello@dangote.com',
+    contactPhone: '+234 803 777 6655',
+    dealValue: 24500000,
+    depositPaid: 5000000,
+    balanceDue: 19500000,
+    stage: 'SITE_INSPECTION',
+    hallOrLawn: 'Grand Ballroom & Conference Suites A-C',
+    roomsBlocked: 30,
+    eventDate: '2026-12-05',
+    assignedAccountManager: 'Alhaji Ibrahim Danjuma (GM)',
+    createdAt: '2026-10-08T11:00:00Z',
+  },
+];
+
+// Enterprise Staff Onboarding Pipeline Records
+export const INITIAL_STAFF_ONBOARDING: StaffOnboardingRecord[] = [
+  {
+    id: 'onb-01',
+    staffId: 'staff-02',
+    fullName: 'Mary Okon',
+    email: 'frontdesk.lead@oseikaresort.ng',
+    phoneNumber: '+234 802 990 1122',
+    ninOrIdNumber: 'NIN-99482910481',
+    department: 'ROOMS_DIVISION',
+    designation: 'Front Office Supervisor',
+    roleAssigned: 'FRONT_DESK',
+    salaryTier: 'Grade 7 (Senior Supervisor)',
+    bankName: 'Access Bank PLC',
+    bankAccountNumber: '0098492019',
+    onboardingStatus: 'ACTIVE_CONFIRMED',
+    posQuickPinIssued: '2002',
+    onboardedByStaffName: 'Alhaji Ibrahim Danjuma (GM)',
+    onboardedByUserId: 'staff-01',
+    createdAt: '2026-02-01T08:00:00Z',
+    completedAt: '2026-02-05T16:00:00Z',
+  },
+  {
+    id: 'onb-02',
+    staffId: 'staff-03',
+    fullName: 'Chidi Obi',
+    email: 'chidi.waiter@oseikaresort.ng',
+    phoneNumber: '+234 814 332 9988',
+    ninOrIdNumber: 'NIN-10948294019',
+    department: 'FOOD_AND_BEVERAGE',
+    designation: 'Senior Lounge Server',
+    roleAssigned: 'WAITER',
+    salaryTier: 'Grade 3 (Service Staff)',
+    bankName: 'Guaranty Trust Bank (GTB)',
+    bankAccountNumber: '0239481029',
+    onboardingStatus: 'ACTIVE_CONFIRMED',
+    posQuickPinIssued: '3003',
+    onboardedByStaffName: 'Chef Donald Umeh',
+    onboardedByUserId: 'staff-07',
+    createdAt: '2026-03-15T08:00:00Z',
+    completedAt: '2026-03-18T14:00:00Z',
+  },
+  {
+    id: 'onb-03',
+    staffId: 'staff-08',
+    fullName: 'Samuel Adeleke',
+    email: 'samuel.it@oseikaresort.ng',
+    phoneNumber: '+234 809 444 2211',
+    ninOrIdNumber: 'NIN-84920194820',
+    department: 'MAINTENANCE_ENGINEERING',
+    designation: 'Network & POS Infrastructure Specialist',
+    roleAssigned: 'MAINTENANCE',
+    salaryTier: 'Grade 6 (Technical Specialist)',
+    bankName: 'Zenith Bank PLC',
+    bankAccountNumber: '2094829104',
+    onboardingStatus: 'TRAINING_IN_PROGRESS',
+    posQuickPinIssued: '8008',
+    onboardedByStaffName: 'Engr. Tunde Bakare',
+    onboardedByUserId: 'staff-05',
+    createdAt: '2026-10-10T09:00:00Z',
   },
 ];
 
@@ -361,7 +668,6 @@ export const ROOM_204_TIMELINE: RoomTimelineItem[] = [
   },
 ];
 
-// Room 204 Cumulative Consumption Breakdown for Audit Analysis
 export const ROOM_204_CONSUMPTION_STATS = [
   {
     id: 'item-01',
@@ -429,40 +735,7 @@ export const INITIAL_MAINTENANCE_TICKETS: MaintenanceTicket[] = [
     raisedByName: 'Blessing Eze',
     raisedByRole: 'HOUSEKEEPING',
     status: 'CLOSED_VERIFIED',
-    statusHistory: [
-      {
-        timestamp: '2026-10-15T15:40:00Z',
-        fromStatus: 'OPEN',
-        toStatus: 'ASSIGNED',
-        updatedByUserId: 'staff-06',
-        updatedByName: 'Blessing Eze',
-        notes: 'Dispatched directly to Engr. Tunde',
-      },
-      {
-        timestamp: '2026-10-15T15:50:00Z',
-        fromStatus: 'ASSIGNED',
-        toStatus: 'IN_PROGRESS',
-        updatedByUserId: 'staff-05',
-        updatedByName: 'Engr. Tunde Bakare',
-        notes: 'Inspecting condensation pipe joint',
-      },
-      {
-        timestamp: '2026-10-15T16:30:00Z',
-        fromStatus: 'IN_PROGRESS',
-        toStatus: 'RESOLVED',
-        updatedByUserId: 'staff-05',
-        updatedByName: 'Engr. Tunde Bakare',
-        notes: 'Gasket replaced, pipe flushed with nitrogen',
-      },
-      {
-        timestamp: '2026-10-15T16:45:00Z',
-        fromStatus: 'RESOLVED',
-        toStatus: 'CLOSED_VERIFIED',
-        updatedByUserId: 'staff-06',
-        updatedByName: 'Blessing Eze',
-        notes: 'Inspected with guest present. No further dripping.',
-      },
-    ],
+    statusHistory: [],
     assignedTechnicianId: 'staff-05',
     assignedTechnicianName: 'Engr. Tunde Bakare',
     repairDetails: 'Replaced cracked rubber gasket and re-sealed drain clamp.',
@@ -480,25 +753,6 @@ export const INITIAL_MAINTENANCE_TICKETS: MaintenanceTicket[] = [
     verifiedAt: '2026-10-15T16:45:00Z',
     verifiedByUserId: 'staff-06',
     verifiedByName: 'Blessing Eze',
-  },
-  {
-    id: 'mnt-2026-0098',
-    ticketNumber: 'MNT-2026-0098',
-    roomNumber: '203',
-    assetName: 'Carrier 3.0HP Cassette AC',
-    priority: 'EMERGENCY_ROOM_DOWN',
-    category: 'HVAC_AIR_CONDITIONING',
-    issueDescription: 'Compressor capacitor short circuit. Room cooling failed.',
-    raisedAt: '2026-10-15T09:15:00Z',
-    raisedByUserId: 'staff-05',
-    raisedByName: 'Engr. Tunde Bakare',
-    raisedByRole: 'MAINTENANCE',
-    status: 'IN_PROGRESS',
-    statusHistory: [],
-    assignedTechnicianId: 'staff-05',
-    assignedTechnicianName: 'Engr. Tunde Bakare',
-    partsConsumed: [],
-    totalRepairCost: 0,
   },
 ];
 
@@ -520,56 +774,5 @@ export const INITIAL_GENERATOR_LOGS: GeneratorRunLog[] = [
     loggedByUserId: 'staff-05',
     loggedByName: 'Engr. Tunde Bakare',
     notes: 'Resort main load at 65%. Burn rate matches Perkins benchmark.',
-  },
-  {
-    id: 'gen-log-02',
-    generatorId: 'GEN-100KVA-MIKANO',
-    date: '2026-10-15',
-    startTime: '2026-10-15T02:00:00Z',
-    stopTime: '2026-10-15T06:00:00Z',
-    durationHours: 4.0,
-    meterStart: 1820.0,
-    meterEnd: 1824.0,
-    dieselAddedLitres: 64,
-    fuelCostPerLitre: 1350,
-    burnRateLitresPerHour: 16.0,
-    isAnomaly: false,
-    powerSourceTransition: 'GENERATOR_BACKUP',
-    loggedByUserId: 'staff-05',
-    loggedByName: 'Engr. Tunde Bakare',
-    notes: 'Night quiet-hours load.',
-  },
-];
-
-export const INITIAL_BAR_INVENTORY: InventoryItem[] = [
-  {
-    id: 'inv-henn',
-    sku: 'LIQ-HENN-VSOP',
-    name: 'Hennessy VSOP Cognac 750ml',
-    category: 'BEVERAGE_SPIRIT',
-    storeLocation: 'MAIN_BAR_STORE',
-    unitOfMeasure: 'BOTTLE',
-    currentStock: 4.8,
-    minimumThreshold: 2.0,
-    costPricePerUnit: 68000,
-    sellingPricePerUnit: 97500,
-    totSpecification: {
-      volumePerBottleMl: 750,
-      totSizeMl: 50,
-      totsPerBottle: 15,
-      remainingTotsInOpenedBottle: 12,
-    },
-  },
-  {
-    id: 'inv-heineken',
-    sku: 'BEER-HEIN-CAN',
-    name: 'Heineken Draught Cans 330ml',
-    category: 'BEVERAGE_BEER',
-    storeLocation: 'MAIN_BAR_STORE',
-    unitOfMeasure: 'CAN',
-    currentStock: 142,
-    minimumThreshold: 48,
-    costPricePerUnit: 1200,
-    sellingPricePerUnit: 2500,
   },
 ];

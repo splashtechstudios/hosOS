@@ -2,7 +2,11 @@
 
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
+import DashboardView from '@/components/DashboardView';
+import CRMView from '@/components/CRMView';
 import RoomAuditView from '@/components/RoomAuditView';
+import StaffOnboardingView from '@/components/StaffOnboardingView';
+import RBACView from '@/components/RBACView';
 import FrontDeskView from '@/components/FrontDeskView';
 import POSView from '@/components/POSView';
 import InventoryView from '@/components/InventoryView';
@@ -19,13 +23,14 @@ import {
   INITIAL_ROOMS,
   ROOM_204_TIMELINE,
   ROOM_204_CONSUMPTION_STATS,
+  ENTERPRISE_ORG,
 } from '@/lib/mockData';
-import { Room, StaffUser, RoomTimelineItem, RoomStatus } from '@hosos/types';
+import { Room, StaffUser, RoomTimelineItem, RoomStatus, UserRole } from '@hosos/types';
 
-export default function HosOSApp() {
-  const [currentTab, setCurrentTab] = useState<string>('room-audit');
+export default function HosOSEnterpriseApp() {
+  const [currentTab, setCurrentTab] = useState<string>('dashboard');
   const [staffList, setStaffList] = useState<StaffUser[]>(INITIAL_STAFF);
-  const [activeStaff, setActiveStaff] = useState<StaffUser>(INITIAL_STAFF[1]); // Mary Okon
+  const [activeStaff, setActiveStaff] = useState<StaffUser>(INITIAL_STAFF[0]); // Alhaji Ibrahim Danjuma (GM)
   const [rooms, setRooms] = useState<Room[]>(INITIAL_ROOMS);
   const [selectedRoom, setSelectedRoom] = useState<Room>(INITIAL_ROOMS[5]); // Room 204
   const [timeline, setTimeline] = useState<RoomTimelineItem[]>(ROOM_204_TIMELINE);
@@ -148,8 +153,8 @@ export default function HosOSApp() {
       id: `tl-${Date.now()}`,
       timestamp: nowIso,
       category: 'PAYMENT',
-      headline: `Payment Received & Credited to Folio (${data.method.replace('_', ' ')})`,
-      details: `Received ₦${data.amount.toLocaleString()} via ${data.method.replace('_', ' ')}. Receipt / Ref: ${data.reference}. Verified by cashier.`,
+      headline: `Payment Received & Credited to Folio (${data.method.replace(/_/g, ' ')})`,
+      details: `Received ₦${data.amount.toLocaleString()} via ${data.method.replace(/_/g, ' ')}. Receipt / Ref: ${data.reference}. Verified by cashier.`,
       amount: data.amount,
       actor: {
         staffId: data.staff.id,
@@ -173,7 +178,6 @@ export default function HosOSApp() {
     const nowIso = new Date().toISOString();
     const prevStatus = selectedRoom.status;
 
-    // Update in room list
     const updatedRoom: Room = {
       ...selectedRoom,
       status: data.status,
@@ -182,12 +186,11 @@ export default function HosOSApp() {
     setSelectedRoom(updatedRoom);
     setRooms(prev => prev.map(r => r.id === updatedRoom.id ? updatedRoom : r));
 
-    // Append to timeline
     const newTimelineItem: RoomTimelineItem = {
       id: `tl-${Date.now()}`,
       timestamp: nowIso,
       category: 'OCCUPANCY',
-      headline: `Room Status Changed to ${data.status.replace('_', ' ')}`,
+      headline: `Room Status Changed to ${data.status.replace(/_/g, ' ')}`,
       details: `Status transitioned from ${prevStatus} to ${data.status}. Audit Notes: "${data.notes}".`,
       actor: {
         staffId: data.staff.id,
@@ -207,7 +210,7 @@ export default function HosOSApp() {
       id: `tl-${Date.now()}`,
       timestamp: nowIso,
       category: 'ORDER',
-      headline: `POS F&B Order Charged to Room ${roomNumber}`,
+      headline: `POS F&B Order Charged to Room #${roomNumber}`,
       details: `Items ordered: ${itemsSummary}. Total Amount: ₦${amount.toLocaleString()}. Fired to kitchen/bar KDS.`,
       amount: amount,
       actor: {
@@ -223,10 +226,25 @@ export default function HosOSApp() {
     setTimeline(prev => [newTimelineItem, ...prev]);
   };
 
+  // 6. Handle Switching Active Role from RBAC View
+  const handleSelectRole = (newRole: UserRole) => {
+    const matchingStaff = staffList.find(s => s.role === newRole);
+    if (matchingStaff) {
+      setActiveStaff(matchingStaff);
+      alert(`Active user switched to ${matchingStaff.name} with role: ${newRole}`);
+    } else {
+      setActiveStaff({
+        ...activeStaff,
+        role: newRole,
+      });
+      alert(`Role temporarily assigned: ${newRole}`);
+    }
+  };
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)' }}>
       
-      {/* Universal Top Navigation */}
+      {/* Universal Enterprise Light Navigation */}
       <Navbar
         currentTab={currentTab}
         onTabChange={setCurrentTab}
@@ -237,6 +255,18 @@ export default function HosOSApp() {
 
       {/* Main Tab Content Container */}
       <main style={{ flex: 1, maxWidth: '1440px', width: '100%', margin: '0 auto', padding: '0 24px 60px 24px' }}>
+        
+        {/* Module 1: Executive Dashboard & Performance Reports */}
+        {currentTab === 'dashboard' && (
+          <DashboardView activeStaff={activeStaff} />
+        )}
+
+        {/* Module 2: Enterprise Guest & Corporate CRM */}
+        {currentTab === 'crm' && (
+          <CRMView activeStaff={activeStaff} />
+        )}
+
+        {/* Module 3: Room 360° Internal Audit & Occupancy State */}
         {currentTab === 'room-audit' && (
           <RoomAuditView
             rooms={rooms}
@@ -252,6 +282,20 @@ export default function HosOSApp() {
           />
         )}
 
+        {/* Module 4: Staff Onboarding Pipeline & Organisation Hierarchy */}
+        {currentTab === 'onboarding' && (
+          <StaffOnboardingView activeStaff={activeStaff} />
+        )}
+
+        {/* Module 5: Multi-Role RBAC Security Matrix */}
+        {currentTab === 'rbac' && (
+          <RBACView
+            activeStaff={activeStaff}
+            onSelectRole={handleSelectRole}
+          />
+        )}
+
+        {/* Module 6: Front Desk & Tape Chart */}
         {currentTab === 'front-desk' && (
           <FrontDeskView
             rooms={rooms}
@@ -263,6 +307,7 @@ export default function HosOSApp() {
           />
         )}
 
+        {/* Module 7: Restaurant & Bar POS */}
         {currentTab === 'pos' && (
           <POSView
             rooms={rooms}
@@ -271,17 +316,21 @@ export default function HosOSApp() {
           />
         )}
 
+        {/* Module 8: Stores & Spirit Tot Control */}
         {currentTab === 'inventory' && (
           <InventoryView activeStaff={activeStaff} />
         )}
 
+        {/* Module 9: Diesel & Facilities Energy OPEX */}
         {currentTab === 'facilities' && (
           <FacilitiesView activeStaff={activeStaff} />
         )}
 
+        {/* Module 10: Night Audit & Flash Reports */}
         {currentTab === 'night-audit' && (
           <NightAuditView activeStaff={activeStaff} />
         )}
+
       </main>
 
       {/* Action Modals */}
@@ -321,11 +370,11 @@ export default function HosOSApp() {
         onSuccess={handleChangeStatus}
       />
 
-      {/* Footer info bar */}
+      {/* Enterprise Light Footer */}
       <footer style={{
-        borderTop: '1px solid var(--border-subtle)',
+        borderTop: '1px solid var(--border-color)',
         padding: '16px 24px',
-        backgroundColor: 'rgba(6, 10, 19, 0.95)',
+        backgroundColor: '#FFFFFF',
         fontSize: '0.75rem',
         color: 'var(--text-muted)',
         display: 'flex',
@@ -334,15 +383,17 @@ export default function HosOSApp() {
         flexWrap: 'wrap',
         gap: '12px',
       }}>
-        <div>
-          HosOS v1.0 Enterprise • Oseika Resort & Suites • 360° Internal Room Audit Enabled
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <strong>{ENTERPRISE_ORG.name}</strong> • {ENTERPRISE_ORG.registrationNumber} • HosOS Enterprise v2.4
         </div>
         <div style={{ display: 'flex', gap: '16px' }}>
           <span>Lagos/WAT: UTC+1</span>
+          <span>Role-Based Access Control (RBAC) Active</span>
           <span>Zero-Trust Staff Action Logging</span>
-          <span>LAN Resilient Offline Sync</span>
+          <span>Tax TIN: {ENTERPRISE_ORG.taxId}</span>
         </div>
       </footer>
+
     </div>
   );
 }
