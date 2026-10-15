@@ -1,0 +1,261 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg-primary: #060A13;
+  --bg-secondary: #0D1424;
+  --bg-card: rgba(18, 27, 47, 0.75);
+  --bg-card-hover: rgba(25, 38, 66, 0.85);
+  --bg-input: #121B30;
+  
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.14);
+  --border-gold: rgba(224, 169, 109, 0.35);
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  
+  --gold-primary: #E0A96D;
+  --gold-hover: #F2C994;
+  --gold-bg: rgba(224, 169, 109, 0.12);
+
+  --emerald-primary: #10B981;
+  --emerald-bg: rgba(16, 185, 129, 0.12);
+  --emerald-border: rgba(16, 185, 129, 0.25);
+
+  --amber-primary: #F59E0B;
+  --amber-bg: rgba(245, 158, 11, 0.12);
+  --amber-border: rgba(245, 158, 11, 0.25);
+
+  --rose-primary: #EF4444;
+  --rose-bg: rgba(239, 68, 68, 0.12);
+  --rose-border: rgba(239, 68, 68, 0.25);
+
+  --sky-primary: #38BDF8;
+  --sky-bg: rgba(56, 189, 248, 0.12);
+  --sky-border: rgba(56, 189, 248, 0.25);
+
+  --purple-primary: #A855F7;
+  --purple-bg: rgba(168, 85, 247, 0.12);
+
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  
+  --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+  --shadow-glow: 0 0 20px rgba(224, 169, 109, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  line-height: 1.5;
+  background-image: 
+    radial-gradient(circle at 15% 10%, rgba(224, 169, 109, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 85% 60%, rgba(56, 189, 248, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 50% 90%, rgba(16, 185, 129, 0.03) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+input, select, textarea {
+  font-family: var(--font-body);
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 0 2px rgba(224, 169, 109, 0.2);
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.glass-card-interactive {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition: all 0.25s ease;
+}
+
+.glass-card-interactive:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-light);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* Luxury Gold Button */
+.btn-gold {
+  background: linear-gradient(135deg, #E0A96D 0%, #C98B4B 100%);
+  color: #060A13;
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(224, 169, 109, 0.25);
+}
+
+.btn-gold:hover {
+  background: linear-gradient(135deg, #F2C994 0%, #E0A96D 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(224, 169, 109, 0.35);
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--border-light);
+}
+
+/* Status Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+}
+
+.badge-clean {
+  background: var(--emerald-bg);
+  color: var(--emerald-primary);
+  border: 1px solid var(--emerald-border);
+}
+
+.badge-occupied {
+  background: var(--sky-bg);
+  color: var(--sky-primary);
+  border: 1px solid var(--sky-border);
+}
+
+.badge-dirty {
+  background: var(--amber-bg);
+  color: var(--amber-primary);
+  border: 1px solid var(--amber-border);
+}
+
+.badge-maintenance {
+  background: var(--rose-bg);
+  color: var(--rose-primary);
+  border: 1px solid var(--rose-border);
+}
+
+.badge-gold {
+  background: var(--gold-bg);
+  color: var(--gold-primary);
+  border: 1px solid var(--border-gold);
+}
+
+.badge-purple {
+  background: var(--purple-bg);
+  color: var(--purple-primary);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+/* Pulse indicator dot */
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.pulse-dot-green {
+  background-color: var(--emerald-primary);
+  box-shadow: 0 0 10px var(--emerald-primary);
+}
+
+.pulse-dot-blue {
+  background-color: var(--sky-primary);
+  box-shadow: 0 0 10px var(--sky-primary);
+}
+
+.pulse-dot-amber {
+  background-color: var(--amber-primary);
+  box-shadow: 0 0 10px var(--amber-primary);
+}
+
+.pulse-dot-red {
+  background-color: var(--rose-primary);
+  box-shadow: 0 0 10px var(--rose-primary);
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-primary);
+}

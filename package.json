@@ -1,0 +1,20 @@
+{
+  "name": "hosos-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HosOS - Complete Hospitality Operating System for Oseika Resort",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter @hosos/web dev",
+    "dev:api": "pnpm --filter @hosos/api dev",
+    "dev:all": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

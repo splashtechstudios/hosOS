@@ -1,0 +1,13 @@
+{
+  "name": "@hosos/types",
+  "version": "1.0.0",
+  "description": "Shared TypeScript definitions and interfaces for HosOS",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
