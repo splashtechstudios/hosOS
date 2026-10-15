@@ -35,11 +35,12 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
     }).format(amount);
   };
 
-  const handleExport = (reportType: string) => {
+  const handleExport = (reportType: string, exportEndpoint: string) => {
+    window.open(exportEndpoint, '_blank');
     showSuccess(
       'Enterprise Report Exported Successfully',
       `${reportType} generated and signed for ${activeStaff.name}.`,
-      'File formatted for Nigerian FIRS tax compliance and executive board review.'
+      'File downloaded and formatted for Nigerian FIRS tax compliance and executive board review.'
     );
   };
 
@@ -84,21 +85,21 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
 
             {/* Export Reports Buttons */}
             <button
-              onClick={() => handleExport('Daily Flash Report (PDF)')}
+              onClick={() => handleExport('Daily Flash & Trial Balance (CSV)', '/api/reports/export?type=TRIAL_BALANCE')}
               className="btn-secondary"
-              title="Download formal Daily Flash Report"
+              title="Download formal Daily Flash Report & Trial Balance"
             >
               <FileText size={15} color="var(--brand-primary)" />
-              <span>Export PDF Flash</span>
+              <span>Export Flash Balance</span>
             </button>
 
             <button
-              onClick={() => handleExport('7.5% VAT & Tax Reconciliation (Excel)')}
+              onClick={() => handleExport('7.5% FIRS VAT & Consumption Tax Schedule (CSV)', '/api/reports/export?type=TAX_SCHEDULE')}
               className="btn-secondary"
               title="Download VAT Ledger for tax filings"
             >
               <FileSpreadsheet size={15} color="var(--emerald-primary)" />
-              <span>Export Tax XLSX</span>
+              <span>Export Tax XLSX/CSV</span>
             </button>
           </div>
         </div>

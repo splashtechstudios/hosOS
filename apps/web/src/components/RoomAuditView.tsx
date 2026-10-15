@@ -25,7 +25,9 @@ import {
   Layers,
   ChevronRight,
   CheckCircle2,
-  Search
+  Search,
+  UserPlus,
+  LogOut
 } from 'lucide-react';
 
 interface RoomAuditViewProps {
@@ -48,6 +50,8 @@ interface RoomAuditViewProps {
   onOpenMaintenanceModal: () => void;
   onOpenPaymentModal: () => void;
   onOpenStatusModal: () => void;
+  onOpenCheckIn?: (room: Room) => void;
+  onOpenCheckOut?: (room: Room) => void;
 }
 
 export default function RoomAuditView({
@@ -61,6 +65,8 @@ export default function RoomAuditView({
   onOpenMaintenanceModal,
   onOpenPaymentModal,
   onOpenStatusModal,
+  onOpenCheckIn,
+  onOpenCheckOut,
 }: RoomAuditViewProps) {
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -230,6 +236,30 @@ export default function RoomAuditView({
 
           {/* Action Buttons to Log Actions live with Staff PIN attribution */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {selectedRoom.status === 'VACANT_CLEAN' && onOpenCheckIn && (
+              <button
+                onClick={() => onOpenCheckIn(selectedRoom)}
+                className="btn-primary"
+                style={{ backgroundColor: 'var(--emerald-primary)', borderColor: 'var(--emerald-primary)' }}
+                title="Express Check-in guest to this room"
+              >
+                <UserPlus size={15} />
+                <span>+ Check-In Guest</span>
+              </button>
+            )}
+
+            {selectedRoom.status === 'OCCUPIED' && onOpenCheckOut && (
+              <button
+                onClick={() => onOpenCheckOut(selectedRoom)}
+                className="btn-primary"
+                style={{ backgroundColor: 'var(--danger-primary)', borderColor: 'var(--danger-primary)' }}
+                title="Review folio and finalize checkout"
+              >
+                <LogOut size={15} />
+                <span>Review & Check-Out</span>
+              </button>
+            )}
+
             <button
               onClick={onOpenOrderModal}
               className="btn-primary"

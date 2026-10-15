@@ -17,6 +17,9 @@ import FacilitiesView from '@/components/FacilitiesView';
 import StaffOnboardingView from '@/components/StaffOnboardingView';
 import RBACView from '@/components/RBACView';
 import AddStaffModal from '@/components/AddStaffModal';
+import CheckInModal from '@/components/CheckInModal';
+import CheckOutModal from '@/components/CheckOutModal';
+import NewReservationModal from '@/components/NewReservationModal';
 import {
   AddOrderModal,
   AddMaintenanceModal,
@@ -66,6 +69,38 @@ function HosOSAppInner() {
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
+  const [isCheckOutModalOpen, setIsCheckOutModalOpen] = useState(false);
+  const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
+  const [targetRoom, setTargetRoom] = useState<Room>(INITIAL_ROOMS[0]);
+
+  const handleOpenCheckIn = (room: Room) => {
+    setTargetRoom(room);
+    setIsCheckInModalOpen(true);
+  };
+
+  const handleOpenCheckOut = (room: Room) => {
+    setTargetRoom(room);
+    setIsCheckOutModalOpen(true);
+  };
+
+  const handleCheckInSuccess = () => {
+    loadRooms();
+    if (selectedRoom?.roomNumber) {
+      loadRoomAudit(selectedRoom.roomNumber);
+    }
+  };
+
+  const handleCheckOutSuccess = () => {
+    loadRooms();
+    if (selectedRoom?.roomNumber) {
+      loadRoomAudit(selectedRoom.roomNumber);
+    }
+  };
+
+  const handleReservationSuccess = () => {
+    loadRooms();
+  };
 
   // 1. Check existing session on mount
   useEffect(() => {
@@ -491,6 +526,8 @@ function HosOSAppInner() {
               onOpenMaintenanceModal={() => setIsMaintenanceModalOpen(true)}
               onOpenPaymentModal={() => setIsPaymentModalOpen(true)}
               onOpenStatusModal={() => setIsStatusModalOpen(true)}
+              onOpenCheckIn={handleOpenCheckIn}
+              onOpenCheckOut={handleOpenCheckOut}
             />
           )}
 
@@ -502,6 +539,10 @@ function HosOSAppInner() {
                 setCurrentView('room-audit');
               }}
               activeStaff={currentUser}
+              onOpenCheckIn={handleOpenCheckIn}
+              onOpenCheckOut={handleOpenCheckOut}
+              onOpenNewReservation={() => setIsReservationModalOpen(true)}
+              onRefreshRooms={loadRooms}
             />
           )}
 
@@ -592,6 +633,33 @@ function HosOSAppInner() {
           staffList={staffList}
           activeStaff={currentUser}
           onSuccess={handleChangeStatus}
+        />
+
+        {/* Guest Check-In Wizard */}
+        <CheckInModal
+          isOpen={isCheckInModalOpen}
+          onClose={() => setIsCheckInModalOpen(false)}
+          room={targetRoom}
+          activeStaff={currentUser}
+          onCheckInSuccess={handleCheckInSuccess}
+        />
+
+        {/* Guest Check-Out & Folio Reconciliation Wizard */}
+        <CheckOutModal
+          isOpen={isCheckOutModalOpen}
+          onClose={() => setIsCheckOutModalOpen(false)}
+          room={targetRoom}
+          activeStaff={currentUser}
+          onCheckOutSuccess={handleCheckOutSuccess}
+        />
+
+        {/* New Reservation Date Collision Wizard */}
+        <NewReservationModal
+          isOpen={isReservationModalOpen}
+          onClose={() => setIsReservationModalOpen(false)}
+          rooms={rooms}
+          activeStaff={currentUser}
+          onReservationSuccess={handleReservationSuccess}
         />
 
       </div>
