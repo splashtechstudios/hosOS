@@ -3,8 +3,10 @@
 import React, { useState } from 'react';
 import { Fuel, Zap, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
+import { useFeedback } from '@/context/FeedbackContext';
 
 export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser }) {
+  const { showConfirm, showSuccess } = useFeedback();
   const [meterStart, setMeterStart] = useState<number>(4210.5);
   const [meterEnd, setMeterEnd] = useState<number>(4218.5);
   const [dieselAdded, setDieselAdded] = useState<number>(220);
@@ -197,7 +199,24 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
             </div>
 
             <button
-              onClick={() => alert(`Generator log of ${runHours} hrs / ${dieselAdded}L submitted by ${activeStaff.name}`)}
+              onClick={() => {
+                showConfirm(
+                  'Confirm Certified Fuel Log Entry',
+                  `Are you sure you want to submit generator fuel run log of ${runHours} hrs with ${dieselAdded}L diesel replenishment (${formatNaira(totalFuelCost)})?`,
+                  () => {
+                    showSuccess(
+                      'Generator Run Log Recorded Successfully',
+                      `Certified by ${activeStaff.name}. Burn rate calculated at ${burnRate} L/hr.`,
+                      `Gen-1 Perkins 500kVA | Run: ${runHours} hrs | Fuel Cost: ${formatNaira(totalFuelCost)}`
+                    );
+                  },
+                  {
+                    confirmText: 'Submit Certified Log',
+                    variant: isAnomaly ? 'danger' : 'primary',
+                    details: `Burn Rate: ${burnRate} L/hr | Status: ${isAnomaly ? 'HIGH BURN ANOMALY' : 'NORMAL'}`
+                  }
+                );
+              }}
               className="btn-primary"
               style={{ width: '100%', justifyContent: 'center', marginTop: '6px' }}
             >

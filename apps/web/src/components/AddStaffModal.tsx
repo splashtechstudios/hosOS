@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, UserPlus, ShieldCheck, KeyRound, Building2 } from 'lucide-react';
 import { StaffUser, UserRole, DepartmentType } from '@hosos/types';
+import { useFeedback } from '@/context/FeedbackContext';
 
 interface AddStaffModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export default function AddStaffModal({
   activeStaff,
   onStaffAdded,
 }: AddStaffModalProps) {
+  const { showConfirm, showSuccess, showFailed } = useFeedback();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('Staff123!');
@@ -30,53 +32,70 @@ export default function AddStaffModal({
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !password) return;
-    setIsSubmitting(true);
-    setErrorMsg(null);
 
-    try {
-      const res = await fetch('/api/staff', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          role,
-          department,
-          pinCode,
-          phone,
-          nin,
-          onboardedBy: `${activeStaff.name} (${activeStaff.role})`,
-        }),
-      });
+    showConfirm(
+      `Confirm Staff Onboarding: ${name}`,
+      `Are you sure you want to onboard ${name} as ${role.replace(/_/g, ' ')} in department ${department}? They will be registered in MongoDB Atlas with direct login access.`,
+      async () => {
+        setIsSubmitting(true);
+        setErrorMsg(null);
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to add staff member');
+        try {
+          const res = await fetch('/api/staff', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name,
+              email,
+              password,
+              role,
+              department,
+              pinCode,
+              phone,
+              nin,
+              onboardedBy: `${activeStaff.name} (${activeStaff.role})`,
+            }),
+          });
+
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'Failed to add staff member');
+          }
+
+          const createdStaffUser: StaffUser = {
+            id: data.staff.id || `staff-${Date.now()}`,
+            name: data.staff.name,
+            email: data.staff.email,
+            role: data.staff.role as UserRole,
+            department: data.staff.department as any,
+            pinCodeHash: data.staff.pinCode,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+          };
+
+          onStaffAdded(createdStaffUser);
+          onClose();
+          showSuccess(
+            'Staff Member Onboarded Successfully!',
+            `Staff member ${createdStaffUser.name} added to MongoDB Atlas and assigned role ${createdStaffUser.role}.`,
+            `Email: ${createdStaffUser.email} • Password: ${password} • Quick PIN: ${pinCode}`
+          );
+        } catch (err: any) {
+          setErrorMsg(err.message || 'Error creating staff');
+          showFailed('Staff Onboarding Failed', err.message || 'Could not save staff to MongoDB Atlas.');
+        } finally {
+          setIsSubmitting(false);
+        }
+      },
+      {
+        confirmText: 'Onboard Staff Member',
+        variant: 'primary',
+        details: `Role: ${role} | Department: ${department} | Email: ${email}`
       }
-
-      const createdStaffUser: StaffUser = {
-        id: data.staff.id || `staff-${Date.now()}`,
-        name: data.staff.name,
-        email: data.staff.email,
-        role: data.staff.role as UserRole,
-        department: data.staff.department as any,
-        pinCodeHash: data.staff.pinCode,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      };
-
-      onStaffAdded(createdStaffUser);
-      alert(`Staff member ${createdStaffUser.name} added successfully! Role '${createdStaffUser.role}' assigned. They can now log in on the login page with password '${password}'.`);
-      onClose();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error creating staff');
-    } finally {
-      setIsSubmitting(false);
-    }
+    );
   };
 
   return (

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { StaffUser } from '@hosos/types';
+import { useFeedback } from '@/context/FeedbackContext';
 import {
   Layers,
   UtensilsCrossed,
@@ -21,6 +22,7 @@ interface RecipeBOMViewProps {
 }
 
 export default function RecipeBOMView({ activeStaff }: RecipeBOMViewProps) {
+  const { showConfirm, showSuccess } = useFeedback();
   const [selectedCategory, setSelectedCategory] = useState<'ALL' | 'MAINS' | 'GRILLS' | 'APPETIZERS' | 'BAR'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -134,14 +136,26 @@ export default function RecipeBOMView({ activeStaff }: RecipeBOMViewProps) {
 
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
-              onClick={() => alert('Exporting recipe matrix for F&B procurement...')}
+              onClick={() => {
+                showSuccess(
+                  'Recipe Matrix Exported Successfully',
+                  'Standardized menu formulations and Bill of Materials exported (.xlsx) for F&B procurement.',
+                  `Author: ${activeStaff.name} • 48 Menu Items Active`
+                );
+              }}
               className="btn-secondary"
             >
               <FileSpreadsheet size={15} color="var(--emerald-primary)" />
               <span>Export Recipe Matrix</span>
             </button>
             <button
-              onClick={() => alert('Add Recipe modal opened...')}
+              onClick={() => {
+                showSuccess(
+                  'BOM Formulation Builder Ready',
+                  'Select dish category and add components from Central Stores to construct new recipe.',
+                  'All portions will automatically link to POS kitchen fire.'
+                );
+              }}
               className="btn-primary"
             >
               <Plus size={15} />
@@ -345,7 +359,13 @@ export default function RecipeBOMView({ activeStaff }: RecipeBOMViewProps) {
                 <span>Auto-deducts from stores upon POS fire</span>
               </div>
               <button
-                onClick={() => alert(`Editing recipe BOM for ${recipe.name}...`)}
+                onClick={() => {
+                  showSuccess(
+                    `Recipe Formulation: ${recipe.name}`,
+                    `Current portion COGS: ₦${recipe.cogsCost.toLocaleString()} (${recipe.marginPercent}% gross margin).`,
+                    `Approved by: ${recipe.chefSignOff} • Standard yield: 1 portion`
+                  );
+                }}
                 style={{ background: 'transparent', color: 'var(--brand-primary)', fontWeight: 600, fontSize: '0.75rem' }}
               >
                 Edit Portion Formulation →

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { StaffUser } from '@hosos/types';
+import { useFeedback } from '@/context/FeedbackContext';
 import {
   ShieldAlert,
   AlertTriangle,
@@ -24,6 +25,7 @@ interface LossPreventionViewProps {
 }
 
 export default function LossPreventionView({ activeStaff }: LossPreventionViewProps) {
+  const { showConfirm, showSuccess } = useFeedback();
   const [filterSeverity, setFilterSeverity] = useState<'ALL' | 'CRITICAL' | 'HIGH' | 'MEDIUM'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -161,14 +163,36 @@ export default function LossPreventionView({ activeStaff }: LossPreventionViewPr
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button
-              onClick={() => alert('Exporting full audit trail package for corporate compliance...')}
+              onClick={() => {
+                showSuccess(
+                  'Audit Package Exported Successfully',
+                  'Loss prevention workbook generated (.xlsx) for FIRS tax compliance and Internal Audit.',
+                  `Auditor: ${activeStaff.name} • 4 Void Records • 3 Spirit Variances`
+                );
+              }}
               className="btn-secondary"
             >
               <FileSpreadsheet size={15} color="var(--emerald-primary)" />
               <span>Export Audit Package (.xlsx)</span>
             </button>
             <button
-              onClick={() => alert('Triggering instant security audit notification to GM and Owner...')}
+              onClick={() => {
+                showConfirm(
+                  'Flag High-Risk Incident for Security Review',
+                  'Are you sure you want to escalate this transaction to the General Manager and Owner? A high-priority alert will be dispatched to their dashboard notifications.',
+                  () => {
+                    showSuccess(
+                      'Security Alert Dispatched',
+                      'Incident #INC-994 has been escalated to Executive Management.',
+                      'CCTV footage and staff PIN log timestamped.'
+                    );
+                  },
+                  {
+                    confirmText: 'Dispatch Security Alert',
+                    variant: 'danger'
+                  }
+                );
+              }}
               className="btn-primary"
               style={{ backgroundColor: 'var(--rose-primary)' }}
             >

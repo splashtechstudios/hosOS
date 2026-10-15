@@ -20,9 +20,11 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
+import { useFeedback } from '@/context/FeedbackContext';
 import { ENTERPRISE_ORG } from '@/lib/mockData';
 
 export default function DashboardView({ activeStaff }: { activeStaff: StaffUser }) {
+  const { showSuccess } = useFeedback();
   const [dateRange, setDateRange] = useState<'TODAY' | 'WEEK' | 'MTD' | 'QTD'>('MTD');
 
   const formatNaira = (amount: number) => {
@@ -34,7 +36,11 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
   };
 
   const handleExport = (reportType: string) => {
-    alert(`[Enterprise Export] ${reportType} generated successfully for ${activeStaff.name}. File formatted for FIRS tax compliance & corporate audit.`);
+    showSuccess(
+      'Enterprise Report Exported Successfully',
+      `${reportType} generated and signed for ${activeStaff.name}.`,
+      'File formatted for Nigerian FIRS tax compliance and executive board review.'
+    );
   };
 
   return (

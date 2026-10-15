@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { StaffUser, Room } from '@hosos/types';
+import { useFeedback } from '@/context/FeedbackContext';
 import { 
   UtensilsCrossed, 
   Plus, 
@@ -25,6 +26,7 @@ export default function POSView({
   activeStaff,
   onPostChargeToRoom,
 }: POSViewProps) {
+  const { showConfirm, showSuccess } = useFeedback();
   const [selectedOutlet, setSelectedOutlet] = useState<'RESTAURANT' | 'POOL_BAR' | 'LOUNGE'>('RESTAURANT');
   const [orderType, setOrderType] = useState<'DINE_IN' | 'ROOM_SERVICE' | 'BAR_TAB'>('ROOM_SERVICE');
   const [selectedRoomNumber, setSelectedRoomNumber] = useState('204');
@@ -87,9 +89,19 @@ export default function POSView({
 
   const handleChargeToRoom = () => {
     const summary = cart.map(c => `${c.quantity}x ${c.name}`).join(', ');
-    onPostChargeToRoom(selectedRoomNumber, total, summary);
-    alert(`Order of ${formatNaira(total)} posted to Room ${selectedRoomNumber} Folio! Logged under staff: ${activeStaff.name}`);
-    setCart([]);
+    showConfirm(
+      `Confirm Charge to Room #${selectedRoomNumber}`,
+      `Are you sure you want to post this order totaling ${formatNaira(total)} to Room #${selectedRoomNumber} folio?`,
+      () => {
+        onPostChargeToRoom(selectedRoomNumber, total, summary);
+        setCart([]);
+      },
+      {
+        confirmText: 'Charge Room Folio',
+        variant: 'primary',
+        details: `Items: ${summary} | Total Amount: ${formatNaira(total)} | Waiter: ${activeStaff.name}`
+      }
+    );
   };
 
   return (
@@ -426,8 +438,23 @@ export default function POSView({
           ) : (
             <button
               onClick={() => {
-                alert(`Order settled via Cash/POS! Logged by ${activeStaff.name}`);
-                setCart([]);
+                showConfirm(
+                  'Confirm Payment Settlement',
+                  `Are you sure you want to settle this order totaling ${formatNaira(total)} via Cash/POS card?`,
+                  () => {
+                    showSuccess(
+                      'Payment Settled & Receipt Printed!',
+                      `Order of ${formatNaira(total)} successfully settled and closed. Fired to kitchen & bar KDS.`,
+                      `Receipt #${Math.floor(100000 + Math.random() * 900000)} | Cashier: ${activeStaff.name}`
+                    );
+                    setCart([]);
+                  },
+                  {
+                    confirmText: 'Settle Payment Now',
+                    variant: 'emerald',
+                    details: `Outlet: ${selectedOutlet} | Items: ${cart.length} | Amount: ${formatNaira(total)}`
+                  }
+                );
               }}
               disabled={cart.length === 0}
               className="btn-primary"

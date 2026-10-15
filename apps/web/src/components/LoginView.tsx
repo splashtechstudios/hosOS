@@ -16,6 +16,7 @@ import {
   Users
 } from 'lucide-react';
 import { StaffUser, UserRole } from '@hosos/types';
+import { useFeedback } from '@/context/FeedbackContext';
 import { SEEDED_ACCOUNTS } from '@/lib/seededAccounts';
 import { ENTERPRISE_ORG } from '@/lib/mockData';
 
@@ -24,6 +25,7 @@ interface LoginViewProps {
 }
 
 export default function LoginView({ onLoginSuccess }: LoginViewProps) {
+  const { showConfirm, showSuccess, showFailed, showToast } = useFeedback();
   const [mode, setMode] = useState<'LOGIN' | 'CREATE_ADMIN'>('LOGIN');
 
   // Login form state
@@ -58,18 +60,29 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
         throw new Error(data.error || 'Authentication failed');
       }
 
-      onLoginSuccess({
-        id: data.user.id,
-        name: data.user.name,
-        email: data.user.email,
-        role: data.user.role as UserRole,
-        department: data.user.department as any,
-        pinCodeHash: data.user.pinCode,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      });
+        showToast({
+          type: 'success',
+          title: 'Authenticated Successfully',
+          message: `Signed in as ${data.user.name} (${data.user.role.replace(/_/g, ' ')}).`
+        });
+
+        onLoginSuccess({
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role as UserRole,
+          department: data.user.department as any,
+          pinCodeHash: data.user.pinCode,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+        });
     } catch (err: any) {
       setErrorMsg(err.message || 'Login failed. Please check credentials.');
+      showFailed(
+        'Authentication Failed',
+        err.message || 'Incorrect password or account not found in MongoDB Atlas. No OTP is required.',
+        'Use one of the instant role accounts below or create Super Admin.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -97,7 +110,12 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
         throw new Error(data.error || 'Failed to create Super Admin');
       }
 
-      alert('Super Admin created successfully in MongoDB Atlas! Signing in...');
+      showSuccess(
+        'Super Admin Initialized Successfully!',
+        `${data.user.name} registered as Super Admin in MongoDB Atlas. Access granted.`,
+        `Email: ${data.user.email} • Role: OWNER • Quick PIN: ${data.user.pinCode}`
+      );
+
       onLoginSuccess({
         id: data.user.id,
         name: data.user.name,
@@ -110,24 +128,42 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       });
     } catch (err: any) {
       setErrorMsg(err.message || 'Could not create Admin account');
+      showFailed('Super Admin Creation Failed', err.message || 'Could not register admin in MongoDB Atlas.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSeedAllRoles = async () => {
-    setSeedStatus('Seeding roles into MongoDB Atlas...');
-    try {
-      const res = await fetch('/api/auth/seed', { method: 'POST' });
-      const data = await res.json();
-      if (data.success) {
-        setSeedStatus(`✓ Successfully seeded ${data.users.length} staff roles into MongoDB Atlas!`);
-      } else {
-        setSeedStatus(`⚠️ Seed error: ${data.error}`);
+  const handleSeedAllRoles = () => {
+    showConfirm(
+      'Confirm MongoDB Atlas Role Seeding',
+      'Seed all 11 default resort roles into MongoDB Atlas? This will update passwords and enable 1-click login for all staff.',
+      async () => {
+        setSeedStatus('Seeding roles into MongoDB Atlas...');
+        try {
+          const res = await fetch('/api/auth/seed', { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            setSeedStatus(`✓ Successfully seeded ${data.users.length} staff roles into MongoDB Atlas!`);
+            showSuccess(
+              'Roles Seeded Successfully!',
+              `Seeded ${data.users.length} staff roles into MongoDB Atlas cluster.`,
+              'All 11 accounts are active and can sign in without OTP.'
+            );
+          } else {
+            setSeedStatus(`⚠️ Seed error: ${data.error}`);
+            showFailed('Database Seed Failed', data.error);
+          }
+        } catch (err: any) {
+          setSeedStatus(`⚠️ Connection error: ${err.message}`);
+          showFailed('MongoDB Connection Error', err.message);
+        }
+      },
+      {
+        confirmText: 'Seed Database Now',
+        variant: 'primary'
       }
-    } catch (err: any) {
-      setSeedStatus(`⚠️ Connection error: ${err.message}`);
-    }
+    );
   };
 
   const handleQuickRoleFill = (acc: typeof SEEDED_ACCOUNTS[0]) => {

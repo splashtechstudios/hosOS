@@ -33,7 +33,19 @@ import {
 import { Room, StaffUser, RoomTimelineItem, RoomStatus, UserRole } from '@hosos/types';
 import { Clock, ShieldCheck, Database, LogOut } from 'lucide-react';
 
+import { FeedbackProvider, useFeedback } from '@/context/FeedbackContext';
+
 export default function HosOSApp() {
+  return (
+    <FeedbackProvider>
+      <HosOSAppInner />
+    </FeedbackProvider>
+  );
+}
+
+function HosOSAppInner() {
+  const { showConfirm, showSuccess, showFailed, showToast } = useFeedback();
+
   // Authentication State
   const [currentUser, setCurrentUser] = useState<StaffUser | null>(INITIAL_STAFF[0]); // Defaults to Super Admin for easy access
   const [isAuthChecking, setIsAuthChecking] = useState(false);
@@ -80,35 +92,72 @@ export default function HosOSApp() {
     loadStaff();
   }, []);
 
-  // Seed MongoDB handler
-  const handleSeedDatabase = async () => {
-    try {
-      const res = await fetch('/api/auth/seed', { method: 'POST' });
-      const data = await res.json();
-      if (data.success) {
-        alert(`Success: Seeded ${data.users.length} staff roles into MongoDB Atlas!`);
-        // Refresh staff list
-        const staffRes = await fetch('/api/staff');
-        const staffData = await staffRes.json();
-        if (staffData.success) {
-          setStaffList(staffData.staff);
+  // Seed MongoDB handler with Enterprise Confirmation, Success, and Failed Pop-Up Boxes
+  const handleSeedDatabase = () => {
+    showConfirm(
+      'Confirm MongoDB Atlas Role Seeding',
+      'Are you sure you want to initialize and seed all 11 default enterprise staff roles into MongoDB Atlas? This will update existing demo roles and ensure all staff accounts can log in immediately.',
+      async () => {
+        try {
+          const res = await fetch('/api/auth/seed', { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            showSuccess(
+              'Database Seeded Successfully!',
+              `Successfully initialized and seeded ${data.users.length} staff roles into MongoDB Atlas cluster.`,
+              'All 11 roles (Owner, GM, Front Desk, Cashier, Waiter, Bartender, Chef, Housekeeping, Maintenance, Accountant, Storekeeper) can now sign in without OTP.'
+            );
+            // Refresh staff list
+            const staffRes = await fetch('/api/staff');
+            const staffData = await staffRes.json();
+            if (staffData.success) {
+              setStaffList(staffData.staff);
+            }
+          } else {
+            showFailed('Database Seeding Failed', data.error || 'Server error occurred during role seeding.');
+          }
+        } catch (err: any) {
+          showFailed('MongoDB Connection Error', err.message || 'Unable to connect to MongoDB Atlas cluster.');
         }
-      } else {
-        alert(`Database seed message: ${data.error}`);
+      },
+      {
+        confirmText: 'Seed Database Now',
+        cancelText: 'Cancel',
+        variant: 'primary',
+        details: 'Cluster: cluster0.8nmwbry.mongodb.net | Database: hosos | Accounts: 11 Staff Roles'
       }
-    } catch (err: any) {
-      alert(`MongoDB connection message: ${err.message}`);
-    }
+    );
   };
 
   // Add staff callback
   const handleStaffAdded = (newStaff: StaffUser) => {
     setStaffList(prev => [newStaff, ...prev]);
+    showToast({
+      type: 'success',
+      title: 'Staff Member Registered',
+      message: `${newStaff.name} added to live directory as ${newStaff.role.replace(/_/g, ' ')}.`
+    });
   };
 
-  // Logout handler
+  // Logout handler with Confirmation Pop-up Box
   const handleLogout = () => {
-    setCurrentUser(null);
+    showConfirm(
+      'Confirm Account Sign Out',
+      'Are you sure you want to end your current staff session? Any unsaved edits will be discarded.',
+      () => {
+        setCurrentUser(null);
+        showToast({
+          type: 'info',
+          title: 'Signed Out',
+          message: 'Staff session closed safely.'
+        });
+      },
+      {
+        confirmText: 'Sign Out',
+        cancelText: 'Stay Logged In',
+        variant: 'danger'
+      }
+    );
   };
 
   // 1. Handle Adding Order or Increment
@@ -175,6 +224,12 @@ export default function HosOSApp() {
     };
 
     setTimeline(prev => [newTimelineItem, ...prev]);
+
+    showSuccess(
+      'Order Increment Logged Successfully!',
+      `Added ${data.quantity}x ${data.itemName} (+₦${totalAmount.toLocaleString()}) to Room #${selectedRoom.roomNumber} folio.`,
+      `Acting Staff: ${data.staff.name} (${data.staff.role}) • Reason: "${data.reason || 'Guest request'}"`
+    );
   };
 
   // 2. Handle Maintenance
@@ -205,6 +260,12 @@ export default function HosOSApp() {
     };
 
     setTimeline(prev => [newTimelineItem, ...prev]);
+
+    showSuccess(
+      'Maintenance Ticket Raised Successfully!',
+      `Ticket #${ticketId} created for Room #${selectedRoom.roomNumber}. Assigned to engineering team.`,
+      `Fault: "${data.issue}" • Reported By: ${data.staff.name} (${data.staff.role}) • Priority: ${data.priority}`
+    );
   };
 
   // 3. Handle Payment
@@ -234,6 +295,12 @@ export default function HosOSApp() {
     };
 
     setTimeline(prev => [newTimelineItem, ...prev]);
+
+    showSuccess(
+      'Payment Recorded & Folio Updated!',
+      `Received ₦${data.amount.toLocaleString()} via ${data.method.replace(/_/g, ' ')} for Room #${selectedRoom.roomNumber}.`,
+      `Cashier: ${data.staff.name} • Reference Receipt: ${data.reference}`
+    );
   };
 
   // 4. Handle Status Change
@@ -267,6 +334,12 @@ export default function HosOSApp() {
     };
 
     setTimeline(prev => [newTimelineItem, ...prev]);
+
+    showSuccess(
+      'Room Status Updated!',
+      `Room #${selectedRoom.roomNumber} transitioned to ${data.status.replace(/_/g, ' ')}.`,
+      `Inspected and logged by ${data.staff.name} (${data.staff.role}). Audit Notes: "${data.notes}"`
+    );
   };
 
   // 5. Handle POS Direct Charge to Room
@@ -291,6 +364,12 @@ export default function HosOSApp() {
     };
 
     setTimeline(prev => [newTimelineItem, ...prev]);
+
+    showSuccess(
+      `POS Charge Posted to Room #${roomNumber}!`,
+      `Order total of ₦${amount.toLocaleString()} was successfully posted to guest folio. Kitchen & Bar KDS notified.`,
+      `Items: ${itemsSummary} • Logged by: ${currentUser ? currentUser.name : 'Staff'}`
+    );
   };
 
   // If user is not authenticated, show Login & Create Admin view

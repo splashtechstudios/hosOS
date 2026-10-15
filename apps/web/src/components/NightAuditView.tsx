@@ -3,8 +3,10 @@
 import React, { useState } from 'react';
 import { FileText, Moon, CheckCircle2, TrendingUp, AlertTriangle, Send, ShieldCheck } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
+import { useFeedback } from '@/context/FeedbackContext';
 
 export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser }) {
+  const { showConfirm, showSuccess } = useFeedback();
   const [auditRunning, setAuditRunning] = useState(false);
   const [auditCompleted, setAuditCompleted] = useState(false);
 
@@ -17,11 +19,27 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
   };
 
   const handleRunAudit = () => {
-    setAuditRunning(true);
-    setTimeout(() => {
-      setAuditRunning(false);
-      setAuditCompleted(true);
-    }, 1500);
+    showConfirm(
+      'Execute End-of-Day Night Audit Close?',
+      'This will close the active business day (2026-10-15) for Oseika Resort, reconcile all trial balance folios, post nightly room room rates, verify cash drawers, and roll to the next operating date.',
+      () => {
+        setAuditRunning(true);
+        setTimeout(() => {
+          setAuditRunning(false);
+          setAuditCompleted(true);
+          showSuccess(
+            'Night Audit Rollover Completed Successfully!',
+            `Business day closed by ${activeStaff.name}. Trial balance reconciled and rolled to 2026-10-16.`,
+            'FIRS Tax reports generated and Owner flash briefing compiled.'
+          );
+        }, 1200);
+      },
+      {
+        confirmText: 'Execute Midnight Rollover',
+        variant: 'primary',
+        details: 'Audit Date: 2026-10-15 → 2026-10-16 | Auditor: ' + activeStaff.name
+      }
+    );
   };
 
   return (
