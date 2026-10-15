@@ -22,8 +22,21 @@ import {
 import { GuestProfile, CorporateDeal, StaffUser, CRMDealStage } from '@hosos/types';
 import { INITIAL_GUEST_PROFILES, INITIAL_CORPORATE_DEALS } from '@/lib/mockData';
 
-export default function CRMView({ activeStaff }: { activeStaff: StaffUser }) {
-  const [activeTab, setActiveTab] = useState<'GUESTS' | 'CORPORATE_PIPELINE'>('GUESTS');
+export default function CRMView({ 
+  activeStaff, 
+  defaultTab = 'GUESTS' 
+}: { 
+  activeStaff: StaffUser; 
+  defaultTab?: 'GUESTS' | 'CORPORATE_PIPELINE';
+}) {
+  const [activeTab, setActiveTab] = useState<'GUESTS' | 'CORPORATE_PIPELINE'>(defaultTab);
+
+  React.useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab]);
+
   const [guestList, setGuestList] = useState<GuestProfile[]>(INITIAL_GUEST_PROFILES);
   const [dealList, setDealList] = useState<CorporateDeal[]>(INITIAL_CORPORATE_DEALS);
   const [searchQuery, setSearchQuery] = useState('');

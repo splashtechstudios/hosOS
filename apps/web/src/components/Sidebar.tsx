@@ -25,7 +25,11 @@ import {
   Database,
   PlusCircle,
   KeyRound,
-  CheckCircle2
+  CheckCircle2,
+  Search,
+  Sliders,
+  DollarSign,
+  AlertTriangle
 } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
 import { ENTERPRISE_ORG } from '@/lib/mockData';
@@ -43,6 +47,7 @@ interface SubMenuItem {
   id: string;
   label: string;
   icon: any;
+  tag?: string;
   highlight?: boolean;
 }
 
@@ -62,7 +67,7 @@ export default function Sidebar({
   onOpenAddStaffModal,
   onSeedDatabase,
 }: SidebarProps) {
-  // Collapsible department sections state
+  const [searchFilter, setSearchFilter] = useState('');
   const [collapsedDepts, setCollapsedDepts] = useState<Record<string, boolean>>({
     executive: false,
     crm: false,
@@ -84,9 +89,9 @@ export default function Sidebar({
       name: 'Executive & Reporting',
       icon: LayoutDashboard,
       submenus: [
-        { id: 'dashboard', label: 'Executive Overview', icon: LayoutDashboard },
-        { id: 'night-audit', label: 'Night Audit & Flash', icon: FileText },
-        { id: 'loss-prevention', label: 'Loss Prevention Watchlist', icon: ShieldAlert },
+        { id: 'dashboard', label: 'Executive Overview', icon: LayoutDashboard, tag: 'KPIs' },
+        { id: 'night-audit', label: 'Night Audit & Flash', icon: FileText, tag: 'Rollover' },
+        { id: 'loss-prevention', label: 'Loss Prevention Watchlist', icon: ShieldAlert, tag: 'Audit' },
       ],
     },
     {
@@ -95,18 +100,18 @@ export default function Sidebar({
       icon: Briefcase,
       badge: 'CRM',
       submenus: [
-        { id: 'crm-guests', label: 'VIP Guest Profiles', icon: Users },
-        { id: 'crm-deals', label: 'Corporate Event Deals', icon: Briefcase },
+        { id: 'crm-guests', label: 'VIP Guest Profiles', icon: Users, tag: '42 VIPs' },
+        { id: 'crm-deals', label: 'Corporate Event Deals', icon: Briefcase, tag: 'Pipeline' },
       ],
     },
     {
       key: 'rooms',
       name: 'Rooms Division',
       icon: Hotel,
-      badge: 'Audit Trail',
+      badge: 'Rooms',
       submenus: [
-        { id: 'room-audit', label: 'Room 360° Internal Audit', icon: ShieldCheck, highlight: true },
-        { id: 'front-desk', label: 'Tape Chart & Room Grid', icon: Hotel },
+        { id: 'room-audit', label: 'Room 360° Internal Audit', icon: ShieldCheck, highlight: true, tag: 'Live Ledger' },
+        { id: 'front-desk', label: 'Tape Chart & Room Grid', icon: Hotel, tag: '60 Rooms' },
       ],
     },
     {
@@ -114,7 +119,7 @@ export default function Sidebar({
       name: 'Food & Beverage',
       icon: UtensilsCrossed,
       submenus: [
-        { id: 'pos', label: 'Restaurant & Bar POS', icon: UtensilsCrossed },
+        { id: 'pos', label: 'Restaurant & Bar POS', icon: UtensilsCrossed, tag: 'Terminal' },
       ],
     },
     {
@@ -122,8 +127,8 @@ export default function Sidebar({
       name: 'Stores & Inventory',
       icon: Package,
       submenus: [
-        { id: 'inventory-tots', label: 'Bar Tot Dipstick Audit', icon: GlassWater },
-        { id: 'inventory-bom', label: 'Recipe Bill of Materials', icon: Layers },
+        { id: 'inventory-tots', label: 'Bar Tot Dipstick Audit', icon: GlassWater, tag: 'Spirits' },
+        { id: 'inventory-bom', label: 'Recipe Bill of Materials', icon: Layers, tag: 'Costing' },
       ],
     },
     {
@@ -131,24 +136,24 @@ export default function Sidebar({
       name: 'Facilities & Energy',
       icon: Fuel,
       submenus: [
-        { id: 'facilities-generators', label: 'Diesel & Generator Logs', icon: Fuel },
+        { id: 'facilities-generators', label: 'Diesel & Generator Logs', icon: Fuel, tag: 'Gen 1 & 2' },
       ],
     },
     {
       key: 'hr',
-      name: 'Human Resources & RBAC',
+      name: 'HR & Access Control',
       icon: Users,
       submenus: [
-        { id: 'onboarding-directory', label: 'Staff Directory', icon: Users },
-        { id: 'rbac-matrix', label: 'Multi-Role RBAC Matrix', icon: Lock },
+        { id: 'onboarding-directory', label: 'Staff Directory', icon: Users, tag: 'Atlas' },
+        { id: 'rbac-matrix', label: 'Multi-Role RBAC Matrix', icon: Lock, tag: '11 Roles' },
       ],
     },
   ];
 
   return (
     <aside style={{
-      width: '280px',
-      minWidth: '280px',
+      width: '260px',
+      minWidth: '260px',
       height: '100vh',
       position: 'sticky',
       top: 0,
@@ -156,21 +161,22 @@ export default function Sidebar({
       borderRight: '1px solid var(--border-color)',
       display: 'flex',
       flexDirection: 'column',
-      zIndex: 40,
-      boxShadow: 'var(--shadow-subtle)',
+      zIndex: 45,
+      boxShadow: 'var(--shadow-xs)',
     }}>
       
       {/* 1. Header: Enterprise Brand & Monolith Portal */}
       <div style={{
-        padding: '16px 20px',
+        padding: '14px 16px',
         borderBottom: '1px solid var(--border-color)',
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
+        gap: '10px',
+        backgroundColor: '#FFFFFF',
       }}>
         <div style={{
-          width: '38px',
-          height: '38px',
+          width: '34px',
+          height: '34px',
           borderRadius: 'var(--radius-sm)',
           backgroundColor: 'var(--brand-primary)',
           color: '#FFFFFF',
@@ -178,72 +184,105 @@ export default function Sidebar({
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 800,
+          fontSize: '1rem',
           boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)',
         }}>
-          <Building2 size={22} />
+          H
         </div>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-              HosOS Enterprise
-            </span>
-            <span className="badge badge-brand" style={{ fontSize: '0.6rem', padding: '1px 4px' }}>
-              v2.5
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: '0.875rem',
+            fontWeight: 800,
+            color: 'var(--text-primary)',
+            letterSpacing: '-0.02em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}>
+            <span>HosOS</span>
+            <span className="badge badge-brand" style={{ fontSize: '0.6rem', padding: '1px 5px' }}>
+              CRM
             </span>
           </div>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-            Oseika Resort & Suites • Lekki
+          <div style={{
+            fontSize: '0.7rem',
+            color: 'var(--text-muted)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}>
+            Oseika Luxury Resort
           </div>
         </div>
       </div>
 
-      {/* 2. Scrollable Department Menus & Submenus */}
+      {/* 2. Quick Search Filter */}
+      <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          backgroundColor: 'var(--bg-secondary)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '6px 10px',
+          border: '1px solid var(--border-color)',
+        }}>
+          <Search size={13} color="var(--text-muted)" />
+          <input
+            placeholder="Filter modules..."
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              padding: 0,
+              fontSize: '0.75rem',
+              outline: 'none',
+              width: '100%',
+              color: 'var(--text-primary)',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* 3. Department Sections with Action Submenus */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '14px 12px',
+        padding: '10px 10px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '14px',
+        gap: '6px',
       }}>
-        
-        {/* Quick In-App Add Staff Action Button */}
-        <button
-          onClick={onOpenAddStaffModal}
-          className="btn-primary"
-          style={{
-            width: '100%',
-            justifyContent: 'center',
-            fontSize: '0.8rem',
-            padding: '8px 12px',
-            borderRadius: 'var(--radius-sm)',
-          }}
-        >
-          <UserPlus size={15} />
-          <span>+ In-App Add Staff Member</span>
-        </button>
-
-        {departmentSections.map((dept) => {
-          const isCollapsed = collapsedDepts[dept.key];
+        {departmentSections.map(dept => {
+          const isCollapsed = collapsedDepts[dept.key] && !searchFilter;
           const DeptIcon = dept.icon;
 
+          // Filter submenus if search is active
+          const visibleSubmenus = searchFilter
+            ? dept.submenus.filter(s => s.label.toLowerCase().includes(searchFilter.toLowerCase()))
+            : dept.submenus;
+
+          if (searchFilter && visibleSubmenus.length === 0) return null;
+
           return (
-            <div key={dept.key} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              {/* Department Header Button */}
+            <div key={dept.key} style={{ display: 'flex', flexDirection: 'column' }}>
+              
+              {/* Department Header Accordion */}
               <button
                 onClick={() => toggleDept(dept.key)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '6px 10px',
+                  padding: '6px 8px',
                   borderRadius: 'var(--radius-sm)',
                   backgroundColor: 'transparent',
                   color: 'var(--text-muted)',
-                  fontSize: '0.7rem',
+                  fontSize: '0.675rem',
                   fontWeight: 700,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  letterSpacing: '0.06em',
                   width: '100%',
                   textAlign: 'left',
                 }}
@@ -252,22 +291,25 @@ export default function Sidebar({
                   <DeptIcon size={13} color="var(--text-muted)" />
                   <span>{dept.name}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {dept.badge && (
-                    <span className="badge badge-brand" style={{ fontSize: '0.55rem', padding: '0 4px' }}>
-                      {dept.badge}
-                    </span>
-                  )}
-                  {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
-                </div>
+                {isCollapsed ? (
+                  <ChevronRight size={12} color="var(--text-muted)" />
+                ) : (
+                  <ChevronDown size={12} color="var(--text-muted)" />
+                )}
               </button>
 
-              {/* Department Submenus */}
+              {/* Action Submenus */}
               {!isCollapsed && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '8px' }}>
-                  {dept.submenus.map((sub) => {
-                    const SubIcon = sub.icon;
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                  marginTop: '2px',
+                  paddingLeft: '4px',
+                }}>
+                  {visibleSubmenus.map(sub => {
                     const isActive = currentView === sub.id;
+                    const SubIcon = sub.icon;
 
                     return (
                       <button
@@ -277,27 +319,33 @@ export default function Sidebar({
                           display: 'flex',
                           alignItems: 'center',
                           gap: '8px',
-                          padding: '7px 10px',
+                          padding: '6px 10px',
                           borderRadius: 'var(--radius-sm)',
                           backgroundColor: isActive ? 'var(--brand-bg)' : 'transparent',
                           color: isActive ? 'var(--brand-primary)' : 'var(--text-secondary)',
                           fontSize: '0.8rem',
-                          fontWeight: isActive ? 700 : 500,
+                          fontWeight: isActive ? 600 : 500,
                           textAlign: 'left',
                           width: '100%',
-                          transition: 'all 0.15s ease',
+                          transition: 'all 0.12s ease',
                           borderLeft: isActive ? '3px solid var(--brand-primary)' : '3px solid transparent',
                         }}
                       >
                         <SubIcon size={14} color={isActive ? 'var(--brand-primary)' : 'var(--text-muted)'} />
-                        <span style={{ flex: 1 }}>{sub.label}</span>
-                        {sub.highlight && (
+                        <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {sub.label}
+                        </span>
+                        {sub.tag && (
                           <span style={{
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            backgroundColor: 'var(--brand-primary)',
-                          }}></span>
+                            fontSize: '0.625rem',
+                            padding: '1px 5px',
+                            borderRadius: '3px',
+                            backgroundColor: isActive ? 'rgba(37, 99, 235, 0.12)' : 'var(--bg-secondary)',
+                            color: isActive ? 'var(--brand-primary)' : 'var(--text-muted)',
+                            fontWeight: 600,
+                          }}>
+                            {sub.tag}
+                          </span>
                         )}
                       </button>
                     );
@@ -307,94 +355,87 @@ export default function Sidebar({
             </div>
           );
         })}
+      </div>
 
-        {/* Database & Seeds Section */}
+      {/* 4. Footer: Staff User Card & Quick Add Staff */}
+      <div style={{
+        padding: '12px 14px',
+        borderTop: '1px solid var(--border-color)',
+        backgroundColor: '#FFFFFF',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+      }}>
+        {/* In-App Add Staff Button */}
+        <button
+          onClick={onOpenAddStaffModal}
+          className="btn-primary"
+          style={{ width: '100%', padding: '7px 10px', fontSize: '0.75rem', justifyContent: 'center' }}
+        >
+          <UserPlus size={14} />
+          <span>+ In-App Add Staff</span>
+        </button>
+
+        {/* User Card */}
         <div style={{
-          marginTop: 'auto',
-          paddingTop: '12px',
-          borderTop: '1px solid var(--border-color)',
           display: 'flex',
-          flexDirection: 'column',
-          gap: '6px',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '6px 8px',
+          backgroundColor: 'var(--bg-secondary)',
+          borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--border-subtle)',
         }}>
-          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, padding: '0 8px' }}>
-            Database & System
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+            <div style={{
+              width: '26px',
+              height: '26px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--brand-primary)',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              flexShrink: 0,
+            }}>
+              {activeStaff.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+            </div>
+            <div style={{ minWidth: 0, lineHeight: 1.2 }}>
+              <div style={{
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>
+                {activeStaff.name}
+              </div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                {activeStaff.role.replace(/_/g, ' ')}
+              </div>
+            </div>
           </div>
+
           <button
-            onClick={onSeedDatabase}
-            className="btn-secondary"
+            onClick={onLogout}
+            title="Switch User / Logout"
             style={{
-              fontSize: '0.75rem',
-              padding: '6px 10px',
-              justifyContent: 'flex-start',
-              gap: '6px',
-              width: '100%',
+              padding: '4px',
+              borderRadius: '4px',
+              backgroundColor: 'transparent',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <Database size={13} color="var(--emerald-primary)" />
-            <span>Seed 11 Roles to MongoDB</span>
+            <LogOut size={13} color="var(--rose-primary)" />
           </button>
         </div>
-
       </div>
-
-      {/* 3. Bottom: Active Staff Card & Sign Out */}
-      <div style={{
-        padding: '14px 16px',
-        borderTop: '1px solid var(--border-color)',
-        backgroundColor: 'var(--bg-secondary)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', maxWidth: '180px' }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--brand-primary)',
-            color: '#FFFFFF',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.75rem',
-            fontWeight: 700,
-          }}>
-            {activeStaff.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-          </div>
-          <div style={{ overflow: 'hidden' }}>
-            <div style={{
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}>
-              {activeStaff.name}
-            </div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-              {activeStaff.role.replace(/_/g, ' ')}
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={onLogout}
-          title="Sign out of HosOS Enterprise"
-          style={{
-            background: 'transparent',
-            color: 'var(--text-muted)',
-            padding: '6px',
-            borderRadius: '4px',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--rose-primary)')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-        >
-          <LogOut size={16} />
-        </button>
-      </div>
-
     </aside>
   );
 }

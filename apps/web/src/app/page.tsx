@@ -2,17 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
+import CommandCenterHeader from '@/components/CommandCenterHeader';
 import LoginView from '@/components/LoginView';
 import DashboardView from '@/components/DashboardView';
+import NightAuditView from '@/components/NightAuditView';
+import LossPreventionView from '@/components/LossPreventionView';
 import CRMView from '@/components/CRMView';
 import RoomAuditView from '@/components/RoomAuditView';
-import StaffOnboardingView from '@/components/StaffOnboardingView';
-import RBACView from '@/components/RBACView';
 import FrontDeskView from '@/components/FrontDeskView';
 import POSView from '@/components/POSView';
 import InventoryView from '@/components/InventoryView';
+import RecipeBOMView from '@/components/RecipeBOMView';
 import FacilitiesView from '@/components/FacilitiesView';
-import NightAuditView from '@/components/NightAuditView';
+import StaffOnboardingView from '@/components/StaffOnboardingView';
+import RBACView from '@/components/RBACView';
 import AddStaffModal from '@/components/AddStaffModal';
 import {
   AddOrderModal,
@@ -311,77 +314,22 @@ export default function HosOSApp() {
       {/* 2. Main Enterprise Content Body */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         
-        {/* Top Header Bar */}
-        <header style={{
-          backgroundColor: '#FFFFFF',
-          borderBottom: '1px solid var(--border-color)',
-          padding: '12px 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          position: 'sticky',
-          top: 0,
-          zIndex: 30,
-        }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                {ENTERPRISE_ORG.name}
-              </span>
-              <span style={{ color: 'var(--text-muted)' }}>/</span>
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize' }}>
-                {currentView.replace(/-/g, ' ')}
-              </span>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'var(--emerald-bg)',
-              border: '1px solid var(--emerald-border)',
-              padding: '4px 10px',
-              borderRadius: '4px',
-              fontSize: '0.75rem',
-              color: 'var(--emerald-primary)',
-              fontWeight: 600,
-            }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--emerald-primary)' }}></span>
-              <span>Atlas MongoDB Connected</span>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '1px solid var(--border-color)', paddingLeft: '14px' }}>
-              <div style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--brand-primary)',
-                color: '#FFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-              }}>
-                {currentUser.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-              </div>
-              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {currentUser.name}
-              </div>
-              <span className="badge badge-purple" style={{ fontSize: '0.65rem' }}>
-                {currentUser.role.replace(/_/g, ' ')}
-              </span>
-            </div>
-          </div>
-        </header>
+        {/* Top Command Center Header Bar */}
+        <CommandCenterHeader
+          currentView={currentView}
+          onNavigate={setCurrentView}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          onOpenAddStaff={() => setIsAddStaffModalOpen(true)}
+          onOpenQuickOrder={() => setIsOrderModalOpen(true)}
+          onOpenQuickMaintenance={() => setIsMaintenanceModalOpen(true)}
+        />
 
         {/* Dynamic Submenu View Router */}
         <main style={{ flex: 1, padding: '0 24px 60px 24px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
           
           {/* Executive & Reporting */}
-          {(currentView === 'dashboard' || currentView === 'loss-prevention') && (
+          {currentView === 'dashboard' && (
             <DashboardView activeStaff={currentUser} />
           )}
 
@@ -389,9 +337,17 @@ export default function HosOSApp() {
             <NightAuditView activeStaff={currentUser} />
           )}
 
+          {currentView === 'loss-prevention' && (
+            <LossPreventionView activeStaff={currentUser} />
+          )}
+
           {/* Guest & Corporate CRM */}
-          {(currentView === 'crm-guests' || currentView === 'crm-deals') && (
-            <CRMView activeStaff={currentUser} />
+          {currentView === 'crm-guests' && (
+            <CRMView activeStaff={currentUser} defaultTab="GUESTS" />
+          )}
+
+          {currentView === 'crm-deals' && (
+            <CRMView activeStaff={currentUser} defaultTab="CORPORATE_PIPELINE" />
           )}
 
           {/* Rooms Division: 360° Internal Room Audit (Star Feature) */}
@@ -431,8 +387,12 @@ export default function HosOSApp() {
           )}
 
           {/* Stores & Inventory */}
-          {(currentView === 'inventory-tots' || currentView === 'inventory-bom') && (
+          {currentView === 'inventory-tots' && (
             <InventoryView activeStaff={currentUser} />
+          )}
+
+          {currentView === 'inventory-bom' && (
+            <RecipeBOMView activeStaff={currentUser} />
           )}
 
           {/* Facilities & Energy */}
