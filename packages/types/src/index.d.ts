@@ -4,8 +4,8 @@ export interface StaffUser {
     name: string;
     email: string;
     role: UserRole;
-    pinCodeHash: string;
-    department: 'FRONT_DESK' | 'F_AND_B' | 'HOUSEKEEPING' | 'MAINTENANCE' | 'MANAGEMENT' | 'FINANCE';
+    pinCodeHash?: string;
+    department: DepartmentType | 'FRONT_DESK' | 'F_AND_B' | 'HOUSEKEEPING' | 'MAINTENANCE' | 'MANAGEMENT' | 'FINANCE' | string;
     activeShiftId?: string;
     isActive: boolean;
     createdAt: string;
