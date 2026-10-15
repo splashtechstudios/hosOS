@@ -6,7 +6,7 @@ import { StaffUser } from '@hosos/types';
 import { useFeedback } from '@/context/FeedbackContext';
 
 export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser }) {
-  const { showConfirm, showSuccess } = useFeedback();
+  const { showConfirm, showSuccess, showFailed } = useFeedback();
   const [auditRunning, setAuditRunning] = useState(false);
   const [auditCompleted, setAuditCompleted] = useState(false);
 
@@ -21,23 +21,37 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
   const handleRunAudit = () => {
     showConfirm(
       'Execute End-of-Day Night Audit Close?',
-      'This will close the active business day (2026-10-15) for Oseika Resort, reconcile all trial balance folios, post nightly room room rates, verify cash drawers, and roll to the next operating date.',
-      () => {
+      'This will close the active business day for Oseika Resort in MongoDB Atlas, reconcile all trial balance folios, post nightly room rack rates + FIRS VAT (7.5%) + Consumption Tax (5%), lock registers, and roll to the next operating date.',
+      async () => {
         setAuditRunning(true);
-        setTimeout(() => {
+        try {
+          const res = await fetch('/api/night-audit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ staff: activeStaff }),
+          });
+          const data = await res.json();
           setAuditRunning(false);
-          setAuditCompleted(true);
-          showSuccess(
-            'Night Audit Rollover Completed Successfully!',
-            `Business day closed by ${activeStaff.name}. Trial balance reconciled and rolled to 2026-10-16.`,
-            'FIRS Tax reports generated and Owner flash briefing compiled.'
-          );
-        }, 1200);
+
+          if (data.success) {
+            setAuditCompleted(true);
+            showSuccess(
+              'Night Audit Rollover Completed Successfully!',
+              data.message,
+              `Business Date Rolled: ${data.summary.businessDate} → ${data.summary.nextBusinessDate} | Occupied Rooms: ${data.summary.totalRoomsOccupied} (${data.summary.occupancyRate}) | Total Daily Revenue: ₦${data.summary.totalDailyRevenue?.toLocaleString()}`
+            );
+          } else {
+            showFailed('Night Audit Failed', data.error || 'Server error occurred during rollover');
+          }
+        } catch (err: any) {
+          setAuditRunning(false);
+          showFailed('Network Error', err.message || 'Could not communicate with night audit API');
+        }
       },
       {
         confirmText: 'Execute Midnight Rollover',
         variant: 'primary',
-        details: 'Audit Date: 2026-10-15 → 2026-10-16 | Auditor: ' + activeStaff.name
+        details: 'Operating Ledger: MongoDB Atlas | Auditor: ' + activeStaff.name + ' (' + activeStaff.role + ')'
       }
     );
   };

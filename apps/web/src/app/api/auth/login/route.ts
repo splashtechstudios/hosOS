@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { SEEDED_ACCOUNTS } from '@/lib/seededAccounts';
+import { comparePassword, signJwt, setAuthCookieResponse } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
@@ -23,52 +24,69 @@ export async function POST(req: Request) {
       console.warn('MongoDB query failed, falling back to local registry:', dbErr);
     }
 
-    // Fallback if DB is booting or user is among seeded accounts
+    // Fallback if DB is empty or user is among seeded accounts
     if (!user) {
       const seeded = SEEDED_ACCOUNTS.find(
         (a) => a.email.toLowerCase() === email.toLowerCase().trim()
       );
-      if (seeded && seeded.password === password) {
-        user = {
-          _id: `seeded-${seeded.role.toLowerCase()}`,
-          ...seeded,
-        };
+      if (seeded) {
+        const isMatch = await comparePassword(password, seeded.password);
+        if (isMatch) {
+          user = {
+            _id: `seeded-${seeded.role.toLowerCase()}`,
+            ...seeded,
+          };
+        }
       }
     }
 
     if (!user) {
       return NextResponse.json(
-        { success: false, error: 'Account not found. Please verify your credentials or seed demo users.' },
+        { success: false, error: 'Account not found. Please verify your email or click "Seed Demo Roles in Atlas".' },
         { status: 401 }
       );
     }
 
-    if (user.password !== password) {
+    const isValidPassword = await comparePassword(password, user.password);
+    if (!isValidPassword) {
       return NextResponse.json(
         { success: false, error: 'Incorrect password. No OTP is required for HosOS access.' },
         { status: 401 }
       );
     }
 
-    // Return authenticated user profile
-    return NextResponse.json({
+    const tokenPayload = {
+      userId: String(user._id || user.id),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      department: user.department,
+    };
+
+    const token = signJwt(tokenPayload);
+
+    const userProfile = {
+      id: String(user._id || user.id),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      department: user.department,
+      pinCodeHash: user.pinCode || '1234',
+      isActive: user.isActive !== false,
+      createdAt: user.createdAt || new Date().toISOString(),
+    };
+
+    const response = NextResponse.json({
       success: true,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        department: user.department,
-        pinCode: user.pinCode,
-        phone: user.phone,
-        nin: user.nin,
-        onboardedBy: user.onboardedBy,
-      },
+      user: userProfile,
+      token,
     });
+
+    return setAuthCookieResponse(response, token);
   } catch (error: any) {
-    console.error('Login API error:', error);
+    console.error('Login error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Server error' },
+      { success: false, error: error.message || 'Internal server authentication error' },
       { status: 500 }
     );
   }

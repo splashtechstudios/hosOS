@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
+import { hashPassword } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
@@ -23,10 +24,12 @@ export async function POST(req: Request) {
       );
     }
 
+    const hashedPassword = await hashPassword(password);
+
     const newAdmin = await User.create({
       name,
       email: email.toLowerCase().trim(),
-      password,
+      password: hashedPassword,
       role: 'OWNER',
       department: 'EXECUTIVE',
       pinCode: pinCode || '1001',

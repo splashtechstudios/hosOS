@@ -18,7 +18,13 @@ import {
 interface POSViewProps {
   rooms: Room[];
   activeStaff: StaffUser;
-  onPostChargeToRoom: (roomNumber: string, amount: number, itemsSummary: string) => void;
+  onPostChargeToRoom: (
+    roomNumber: string,
+    amount: number,
+    itemsSummary: string,
+    items?: Array<{ name: string; quantity: number; unitPrice: number }>,
+    chargeToRoom?: boolean
+  ) => void;
 }
 
 export default function POSView({
@@ -89,11 +95,12 @@ export default function POSView({
 
   const handleChargeToRoom = () => {
     const summary = cart.map(c => `${c.quantity}x ${c.name}`).join(', ');
+    const itemsPayload = cart.map(c => ({ name: c.name, quantity: c.quantity, unitPrice: c.price }));
     showConfirm(
       `Confirm Charge to Room #${selectedRoomNumber}`,
       `Are you sure you want to post this order totaling ${formatNaira(total)} to Room #${selectedRoomNumber} folio?`,
       () => {
-        onPostChargeToRoom(selectedRoomNumber, total, summary);
+        onPostChargeToRoom(selectedRoomNumber, total, summary, itemsPayload, true);
         setCart([]);
       },
       {

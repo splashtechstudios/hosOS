@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Package, AlertCircle, ArrowRightLeft, GlassWater, Layers, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Package, AlertCircle, ArrowRightLeft, GlassWater, Layers, Sparkles, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
 
 export default function InventoryView({ activeStaff }: { activeStaff: StaffUser }) {
   const [selectedStore, setSelectedStore] = useState<'MAIN_BAR' | 'CENTRAL_STORE' | 'KITCHEN_STORE'>('MAIN_BAR');
+  const [liveItems, setLiveItems] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [openingBottles, setOpeningBottles] = useState<number>(3.5);
   const [totsSoldOnPOS, setTotsSoldOnPOS] = useState<number>(8); // 8 tots = 0.533 bottles
@@ -14,6 +16,25 @@ export default function InventoryView({ activeStaff }: { activeStaff: StaffUser 
   const expectedBottlesRemaining = Number((openingBottles - (totsSoldOnPOS / 15)).toFixed(2));
   const variance = Number((expectedBottlesRemaining - actualMeasuredBottles).toFixed(2));
   const isVarianceUnacceptable = Math.abs(variance) > 0.05;
+
+  const fetchInventory = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/inventory');
+      const data = await res.json();
+      if (data.success && data.items) {
+        setLiveItems(data.items);
+      }
+    } catch (err) {
+      console.warn('Failed to load inventory from MongoDB:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInventory();
+  }, []);
 
   const formatNaira = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -191,6 +212,81 @@ export default function InventoryView({ activeStaff }: { activeStaff: StaffUser 
               <li>• <strong>Fresh Cucumber & Citrus Garnish:</strong> -1 slice</li>
             </ul>
           </div>
+        </div>
+      </div>
+
+      {/* Live Warehouse & Store Stock Ledger (MongoDB Atlas) */}
+      <div className="ent-card" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Package size={18} color="var(--brand-primary)" />
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              Live Warehouse & Store Stock Ledger (MongoDB Atlas)
+            </h3>
+          </div>
+          <button
+            onClick={fetchInventory}
+            disabled={isLoading}
+            className="btn-secondary"
+            style={{ padding: '6px 12px', fontSize: '0.775rem' }}
+          >
+            <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+            <span>Sync Stock</span>
+          </button>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table className="ent-table" style={{ width: '100%', fontSize: '0.8125rem' }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: '10px 14px' }}>SKU</th>
+                <th style={{ textAlign: 'left', padding: '10px 14px' }}>Item Name</th>
+                <th style={{ textAlign: 'left', padding: '10px 14px' }}>Category</th>
+                <th style={{ textAlign: 'right', padding: '10px 14px' }}>Quantity On Hand</th>
+                <th style={{ textAlign: 'right', padding: '10px 14px' }}>Min Threshold</th>
+                <th style={{ textAlign: 'right', padding: '10px 14px' }}>Unit Cost</th>
+                <th style={{ textAlign: 'center', padding: '10px 14px' }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {liveItems.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
+                    Loading live inventory from MongoDB Atlas...
+                  </td>
+                </tr>
+              ) : (
+                liveItems.map((item) => {
+                  const isLowStock = item.quantityOnHand <= item.minThreshold;
+                  return (
+                    <tr key={item.sku} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{item.sku}</td>
+                      <td style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--text-primary)' }}>{item.name}</td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <span className="badge badge-brand">{item.category.replace(/_/g, ' ')}</span>
+                      </td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+                        {item.quantityOnHand.toFixed(1)} {item.unit}
+                      </td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                        {item.minThreshold} {item.unit}
+                      </td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                        {formatNaira(item.unitCost)}
+                      </td>
+                      <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                        {isLowStock ? (
+                          <span className="badge badge-maintenance">⚠️ Low Stock Reorder</span>
+                        ) : (
+                          <span className="badge badge-clean">✓ Healthy</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

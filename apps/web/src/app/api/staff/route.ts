@@ -3,6 +3,8 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { SEEDED_ACCOUNTS } from '@/lib/seededAccounts';
 
+import { hashPassword } from '@/lib/auth';
+
 export async function GET() {
   try {
     await connectToDatabase();
@@ -86,7 +88,7 @@ export async function POST(req: Request) {
     const createdStaff = await User.create({
       name,
       email: email.toLowerCase().trim(),
-      password,
+      password: await hashPassword(password),
       role,
       department: department || 'FOOD_AND_BEVERAGE',
       pinCode: pinCode || '1234',
