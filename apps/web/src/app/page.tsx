@@ -34,7 +34,8 @@ import {
   ENTERPRISE_ORG,
 } from '@/lib/mockData';
 import { Room, StaffUser, RoomTimelineItem, RoomStatus, UserRole } from '@hosos/types';
-import { Clock, ShieldCheck, Database, LogOut } from 'lucide-react';
+import { Clock, ShieldCheck, Database, LogOut, Lock, ShieldAlert } from 'lucide-react';
+import { canAccessView, getDefaultViewForRole, VIEW_TITLES } from '@/lib/rbac';
 
 import { FeedbackProvider, useFeedback } from '@/context/FeedbackContext';
 
@@ -49,9 +50,9 @@ export default function HosOSApp() {
 function HosOSAppInner() {
   const { showConfirm, showSuccess, showFailed, showToast } = useFeedback();
 
-  // Authentication State
-  const [currentUser, setCurrentUser] = useState<StaffUser | null>(INITIAL_STAFF[0]); // Defaults to active demo user, verified via session
-  const [isAuthChecking, setIsAuthChecking] = useState(false);
+  // Authentication State - Defaults to null: Default landing page is Auth View
+  const [currentUser, setCurrentUser] = useState<StaffUser | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   // Active View in Department Submenus
   const [currentView, setCurrentView] = useState<string>('dashboard');
@@ -107,10 +108,44 @@ function HosOSAppInner() {
     async function verifySession() {
       try {
         setIsAuthChecking(true);
+        // Check local storage session cache
+        const saved = localStorage.getItem('hosos_active_user');
+        let initialUser: StaffUser | null = null;
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed && parsed.email && parsed.role) {
+              initialUser = parsed;
+              setCurrentUser(parsed);
+              setCurrentView(getDefaultViewForRole(parsed.role));
+            }
+          } catch (_) {}
+        }
+
         const res = await fetch('/api/auth/me');
         const data = await res.json();
         if (data.success && data.authenticated && data.user) {
-          setCurrentUser(data.user);
+          const verifiedUser: StaffUser = {
+            id: data.user.id,
+            name: data.user.name,
+            email: data.user.email,
+            role: data.user.role as UserRole,
+            department: data.user.department,
+            pinCodeHash: data.user.pinCodeHash || data.user.pinCode || '1234',
+            isActive: data.user.isActive !== false,
+            createdAt: data.user.createdAt || new Date().toISOString(),
+          };
+          setCurrentUser(verifiedUser);
+          localStorage.setItem('hosos_active_user', JSON.stringify(verifiedUser));
+          if (!initialUser) {
+            setCurrentView(getDefaultViewForRole(verifiedUser.role));
+          }
+        } else {
+          // Unauthenticated: clear any stale cache
+          if (!initialUser) {
+            setCurrentUser(null);
+            localStorage.removeItem('hosos_active_user');
+          }
         }
       } catch (err) {
         console.warn('Session check warning:', err);
@@ -248,11 +283,13 @@ function HosOSAppInner() {
         } catch (err) {
           console.warn('Logout API error:', err);
         }
+        localStorage.removeItem('hosos_active_user');
         setCurrentUser(null);
+        setCurrentView('dashboard');
         showToast({
           type: 'info',
           title: 'Signed Out',
-          message: 'Staff session closed safely.'
+          message: 'Staff session closed safely. Please log in to continue.'
         });
       },
       {
@@ -463,9 +500,57 @@ function HosOSAppInner() {
     }
   };
 
-  // If user is not authenticated, show Login & Create Admin view
+  // 1. Splash Screen while checking initial authentication
+  if (isAuthChecking && !currentUser) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#0F172A',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#FFFFFF',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        gap: '16px',
+      }}>
+        <div style={{
+          width: '54px',
+          height: '54px',
+          borderRadius: '12px',
+          backgroundColor: 'var(--brand-primary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 800,
+          fontSize: '1.4rem',
+          boxShadow: '0 6px 24px rgba(37, 99, 235, 0.4)',
+        }}>
+          H
+        </div>
+        <div style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
+          HosOS Enterprise
+        </div>
+        <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>
+          Verifying secure staff session...
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Default Page: If user is not authenticated, show Login & Create Admin view
   if (!currentUser) {
-    return <LoginView onLoginSuccess={(user) => setCurrentUser(user)} />;
+    return (
+      <LoginView
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
+          localStorage.setItem('hosos_active_user', JSON.stringify(user));
+          setCurrentView(getDefaultViewForRole(user.role));
+          loadRooms();
+          loadStaff();
+        }}
+      />
+    );
   }
 
   return (
@@ -495,13 +580,49 @@ function HosOSAppInner() {
           onOpenQuickMaintenance={() => setIsMaintenanceModalOpen(true)}
         />
 
-        {/* Dynamic Submenu View Router */}
+        {/* Dynamic Submenu View Router with RBAC Role Enforcement */}
         <main style={{ flex: 1, padding: '0 24px 60px 24px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
           
-          {/* Executive & Reporting */}
-          {currentView === 'dashboard' && (
-            <DashboardView activeStaff={currentUser} />
-          )}
+          {/* RBAC 403 Security Screen if unauthorized */}
+          {!canAccessView(currentUser.role, currentView) ? (
+            <div className="ent-card" style={{ padding: '48px 32px', textAlign: 'center', margin: '40px auto', maxWidth: '640px' }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--rose-bg)',
+                color: 'var(--rose-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 18px auto',
+                border: '1.5px solid var(--rose-border)',
+              }}>
+                <Lock size={32} />
+              </div>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                Access Restricted: 403 Forbidden
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
+                Your account is assigned the <strong>{currentUser.role.replace(/_/g, ' ')}</strong> role.
+                You do not have security clearance to access the <strong>{VIEW_TITLES[currentView] || currentView}</strong> module.
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setCurrentView(getDefaultViewForRole(currentUser.role))}
+                  className="btn-primary"
+                  style={{ padding: '8px 18px', fontSize: '0.85rem' }}
+                >
+                  Return to {currentUser.role.replace(/_/g, ' ')} Workspace ({VIEW_TITLES[getDefaultViewForRole(currentUser.role)] || 'Dashboard'})
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Executive & Reporting */}
+              {currentView === 'dashboard' && (
+                <DashboardView activeStaff={currentUser} />
+              )}
 
           {currentView === 'night-audit' && (
             <NightAuditView activeStaff={currentUser} />
@@ -588,11 +709,24 @@ function HosOSAppInner() {
                 const found = staffList.find(s => s.role === newRole);
                 if (found) {
                   setCurrentUser(found);
+                  localStorage.setItem('hosos_active_user', JSON.stringify(found));
+                  setCurrentView(getDefaultViewForRole(found.role));
                 } else {
-                  setCurrentUser({ ...currentUser, role: newRole });
+                  const updated: StaffUser = { ...currentUser, role: newRole };
+                  setCurrentUser(updated);
+                  localStorage.setItem('hosos_active_user', JSON.stringify(updated));
+                  setCurrentView(getDefaultViewForRole(newRole));
                 }
+                showToast({
+                  type: 'info',
+                  title: 'RBAC Role Switched',
+                  message: `Now acting as ${newRole.replace(/_/g, ' ')}. Role-based permissions applied.`
+                });
               }}
             />
+          )}
+
+            </>
           )}
 
         </main>

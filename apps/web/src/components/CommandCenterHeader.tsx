@@ -129,8 +129,9 @@ export default function CommandCenterHeader({
   ];
 
   const filteredCmdItems = cmdItems.filter(item =>
-    item.title.toLowerCase().includes(cmdSearch.toLowerCase()) ||
-    item.category.toLowerCase().includes(cmdSearch.toLowerCase())
+    canAccessView(currentUser?.role, item.id) &&
+    (item.title.toLowerCase().includes(cmdSearch.toLowerCase()) ||
+     item.category.toLowerCase().includes(cmdSearch.toLowerCase()))
   );
 
   const getBreadcrumbTitle = () => {
@@ -338,23 +339,27 @@ export default function CommandCenterHeader({
 
           {/* Quick Action Buttons */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <button
-              onClick={onOpenAddStaff}
-              className="btn-primary"
-              style={{ padding: '5px 10px', fontSize: '0.75rem' }}
-            >
-              <UserPlus size={13} />
-              <span>Add Staff</span>
-            </button>
+            {hasPermission(currentUser?.role, 'users.onboard') && (
+              <button
+                onClick={onOpenAddStaff}
+                className="btn-primary"
+                style={{ padding: '5px 10px', fontSize: '0.75rem' }}
+              >
+                <UserPlus size={13} />
+                <span>Add Staff</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => onNavigate('pos')}
-              className="btn-secondary"
-              style={{ padding: '5px 10px', fontSize: '0.75rem' }}
-            >
-              <UtensilsCrossed size={13} color="var(--brand-primary)" />
-              <span>Quick POS</span>
-            </button>
+            {hasPermission(currentUser?.role, 'orders.create') && (
+              <button
+                onClick={() => onNavigate('pos')}
+                className="btn-secondary"
+                style={{ padding: '5px 10px', fontSize: '0.75rem' }}
+              >
+                <UtensilsCrossed size={13} color="var(--brand-primary)" />
+                <span>Quick POS</span>
+              </button>
+            )}
           </div>
 
           {/* Notification Bell with Badge */}
@@ -537,22 +542,26 @@ export default function CommandCenterHeader({
                 </div>
 
                 <div style={{ padding: '6px 0' }}>
-                  <button
-                    onClick={() => { onNavigate('onboarding-directory'); setIsUserMenuOpen(false); }}
-                    className="btn-ghost"
-                    style={{ width: '100%', justifyContent: 'flex-start' }}
-                  >
-                    <UserPlus size={14} />
-                    <span>Staff Directory & Profile</span>
-                  </button>
-                  <button
-                    onClick={() => { onNavigate('rbac-matrix'); setIsUserMenuOpen(false); }}
-                    className="btn-ghost"
-                    style={{ width: '100%', justifyContent: 'flex-start' }}
-                  >
-                    <ShieldCheck size={14} />
-                    <span>Role & Permissions</span>
-                  </button>
+                  {canAccessView(currentUser?.role, 'onboarding-directory') && (
+                    <button
+                      onClick={() => { onNavigate('onboarding-directory'); setIsUserMenuOpen(false); }}
+                      className="btn-ghost"
+                      style={{ width: '100%', justifyContent: 'flex-start' }}
+                    >
+                      <UserPlus size={14} />
+                      <span>Staff Directory & Profile</span>
+                    </button>
+                  )}
+                  {canAccessView(currentUser?.role, 'rbac-matrix') && (
+                    <button
+                      onClick={() => { onNavigate('rbac-matrix'); setIsUserMenuOpen(false); }}
+                      className="btn-ghost"
+                      style={{ width: '100%', justifyContent: 'flex-start' }}
+                    >
+                      <ShieldCheck size={14} />
+                      <span>Role & Permissions</span>
+                    </button>
+                  )}
                 </div>
 
                 <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '6px' }}>
