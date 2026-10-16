@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { StaffUser } from '@hosos/types';
 import { ENTERPRISE_ORG } from '@/lib/mockData';
+import { canAccessView, hasPermission } from '@/lib/rbac';
 import {
   Building2,
   Search,

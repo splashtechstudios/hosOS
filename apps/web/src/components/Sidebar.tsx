@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
 import { ENTERPRISE_ORG } from '@/lib/mockData';
+import { canAccessView, hasPermission } from '@/lib/rbac';
 
 interface SidebarProps {
   currentView: string;
@@ -258,12 +259,16 @@ export default function Sidebar({
           const isCollapsed = collapsedDepts[dept.key] && !searchFilter;
           const DeptIcon = dept.icon;
 
-          // Filter submenus if search is active
-          const visibleSubmenus = searchFilter
-            ? dept.submenus.filter(s => s.label.toLowerCase().includes(searchFilter.toLowerCase()))
-            : dept.submenus;
+          // 1. RBAC: Filter submenus by staff role clearance
+          const roleAllowedSubmenus = dept.submenus.filter(s => canAccessView(activeStaff?.role, s.id));
+          if (roleAllowedSubmenus.length === 0) return null;
 
-          if (searchFilter && visibleSubmenus.length === 0) return null;
+          // 2. Filter submenus if search is active
+          const visibleSubmenus = searchFilter
+            ? roleAllowedSubmenus.filter(s => s.label.toLowerCase().includes(searchFilter.toLowerCase()))
+            : roleAllowedSubmenus;
+
+          if (visibleSubmenus.length === 0) return null;
 
           return (
             <div key={dept.key} style={{ display: 'flex', flexDirection: 'column' }}>
@@ -366,15 +371,17 @@ export default function Sidebar({
         flexDirection: 'column',
         gap: '8px',
       }}>
-        {/* In-App Add Staff Button */}
-        <button
-          onClick={onOpenAddStaffModal}
-          className="btn-primary"
-          style={{ width: '100%', padding: '7px 10px', fontSize: '0.75rem', justifyContent: 'center' }}
-        >
-          <UserPlus size={14} />
-          <span>+ In-App Add Staff</span>
-        </button>
+        {/* In-App Add Staff Button (Admin/Executive Only) */}
+        {hasPermission(activeStaff?.role, 'users.onboard') && (
+          <button
+            onClick={onOpenAddStaffModal}
+            className="btn-primary"
+            style={{ width: '100%', padding: '7px 10px', fontSize: '0.75rem', justifyContent: 'center' }}
+          >
+            <UserPlus size={14} />
+            <span>+ In-App Add Staff</span>
+          </button>
+        )}
 
         {/* User Card */}
         <div style={{
