@@ -12,6 +12,7 @@
     "dev:api": "pnpm --filter @hosos/api dev",
     "dev:all": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
+    "start": "pnpm --filter @hosos/web start",
     "lint": "pnpm -r lint"
   },
   "devDependencies": {
