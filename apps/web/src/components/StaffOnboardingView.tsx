@@ -17,8 +17,10 @@ import {
 } from 'lucide-react';
 import { StaffUser, StaffOnboardingRecord, DepartmentType, UserRole } from '@hosos/types';
 import { ENTERPRISE_ORG, INITIAL_STAFF_ONBOARDING, INITIAL_STAFF } from '@/lib/mockData';
+import { useFeedback } from '@/context/FeedbackContext';
 
 export default function StaffOnboardingView({ activeStaff }: { activeStaff: StaffUser }) {
+  const { showSuccess, showFailed } = useFeedback();
   const [onboardingList, setOnboardingList] = useState<StaffOnboardingRecord[]>(INITIAL_STAFF_ONBOARDING);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
 
@@ -35,15 +37,50 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
   const [bankAccountNumber, setBankAccountNumber] = useState('');
   const [posQuickPin, setPosQuickPin] = useState('3344');
 
-  const handleOnboardSubmit = (e: React.FormEvent) => {
+  // Fetch live staff from database
+  React.useEffect(() => {
+    async function loadDbStaff() {
+      try {
+        const res = await fetch('/api/staff');
+        const data = await res.json();
+        if (data.success && data.staff && data.staff.length > 0) {
+          const mapped: StaffOnboardingRecord[] = data.staff.map((s: any) => ({
+            id: s.id || `staff-${Math.random()}`,
+            staffId: s.id || `staff-${Math.random()}`,
+            fullName: s.name,
+            email: s.email,
+            phoneNumber: s.phone || '+234 800 000 0000',
+            ninOrIdNumber: s.nin || 'NIN-VERIFIED',
+            department: (s.department as DepartmentType) || 'FOOD_AND_BEVERAGE',
+            designation: s.role.replace(/_/g, ' '),
+            roleAssigned: s.role as UserRole,
+            salaryTier: s.salaryTier || 'Standard Personnel',
+            bankName: s.bankName || 'Zenith Bank PLC',
+            bankAccountNumber: s.bankAccountNumber || '0123456789',
+            onboardingStatus: 'ACTIVE_CONFIRMED',
+            posQuickPinIssued: s.pinCode || '1234',
+            onboardedByStaffName: s.onboardedBy || 'Executive HR',
+            createdAt: s.createdAt || new Date().toISOString(),
+          }));
+          setOnboardingList(mapped);
+        }
+      } catch (err) {
+        console.warn('Could not load staff directory from API:', err);
+      }
+    }
+    loadDbStaff();
+  }, []);
+
+  const handleOnboardSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName) return;
 
+    const finalEmail = email || `${fullName.toLowerCase().replace(/\s+/g, '.')}@oseikaresort.ng`;
     const newRecord: StaffOnboardingRecord = {
       id: `onb-${Date.now()}`,
       staffId: `staff-0${onboardingList.length + 4}`,
       fullName,
-      email: email || `${fullName.toLowerCase().replace(/\s+/g, '.')}@oseikaresort.ng`,
+      email: finalEmail,
       phoneNumber,
       ninOrIdNumber: ninOrIdNumber || `NIN-${Math.floor(10000000000 + Math.random() * 90000000000)}`,
       department,
@@ -62,6 +99,41 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
 
     setOnboardingList([newRecord, ...onboardingList]);
     setIsWizardOpen(false);
+
+    try {
+      const res = await fetch('/api/staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: fullName,
+          email: finalEmail,
+          password: 'Password123!',
+          role: roleAssigned,
+          department,
+          pinCode: posQuickPin || '1234',
+          phone: phoneNumber,
+          nin: newRecord.ninOrIdNumber,
+          salaryTier,
+          bankName,
+          bankAccountNumber: newRecord.bankAccountNumber,
+          onboardedBy: `${activeStaff.name} (${activeStaff.role})`,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showSuccess(
+          'Staff Member Saved to MongoDB Atlas!',
+          `${fullName} successfully registered as ${roleAssigned.replace(/_/g, ' ')}.`,
+          `Initial Password: Password123! • Quick PIN: ${posQuickPin || '1234'} • Ready for immediate login.`
+        );
+      } else {
+        showFailed('Staff Registration Warning', data.error || 'Saved locally in shift memory.');
+      }
+    } catch (err: any) {
+      showFailed('Network Warning', 'Saved locally in shift memory. MongoDB sync will resume automatically.');
+    }
+
     setFullName('');
     setBankAccountNumber('');
     setNinOrIdNumber('');

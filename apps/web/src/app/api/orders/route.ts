@@ -6,6 +6,8 @@ import { Room } from '@/models/Room';
 import { AuditLog } from '@/models/AuditLog';
 import { InventoryItem } from '@/models/InventoryItem';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     await connectToDatabase();

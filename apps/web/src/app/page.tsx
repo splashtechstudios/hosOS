@@ -413,7 +413,7 @@ function HosOSAppInner() {
     }
   };
 
-  // 5. Handle POS Direct Charge to Room (Live MongoDB + Inventory Depletion + Audit Trail)
+  // 5. Handle POS Direct Charge to Room or Table Walk-In (Live MongoDB + Inventory Depletion + Audit Trail)
   const handlePostChargeToRoom = async (
     roomNumber: string,
     amount: number,
@@ -423,14 +423,15 @@ function HosOSAppInner() {
   ) => {
     try {
       const itemsList = items && items.length > 0 ? items : [{ name: itemsSummary, quantity: 1, unitPrice: amount }];
+      const isRoomCharge = Boolean(chargeToRoom && roomNumber);
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          outlet: 'ROOM_SERVICE',
-          roomNumber,
+          outlet: isRoomCharge ? 'ROOM_SERVICE' : 'MAIN_RESTAURANT',
+          roomNumber: isRoomCharge ? roomNumber : undefined,
           items: itemsList,
-          chargeToRoom,
+          chargeToRoom: isRoomCharge,
           waiterName: currentUser ? currentUser.name : 'Staff Member',
           waiterId: currentUser ? currentUser.id : 'staff-01',
           waiterRole: currentUser ? currentUser.role : 'FRONT_DESK',
@@ -440,19 +441,25 @@ function HosOSAppInner() {
       const result = await res.json();
       if (result.success) {
         showSuccess(
-          `POS Charge Posted to Room #${roomNumber} in MongoDB Atlas!`,
-          `Order total of ₦${amount.toLocaleString()} was successfully posted to guest folio. Kitchen & Bar KDS notified.`,
-          `Items: ${itemsSummary} • Logged by: ${currentUser ? currentUser.name : 'Staff'} • Stock depleted from warehouse.`
+          isRoomCharge
+            ? `POS Charge Posted to Room #${roomNumber} in MongoDB Atlas!`
+            : `POS Table Order Settled & Saved to MongoDB Atlas!`,
+          isRoomCharge
+            ? `Order total of ₦${amount.toLocaleString()} was successfully posted to guest folio. Kitchen & Bar KDS notified.`
+            : `Direct order of ₦${amount.toLocaleString()} settled. Receipt #${result.order?.orderNumber || 'ORD-NEW'} issued and logged to ledger.`,
+          `Items: ${itemsSummary} • Acting Staff: ${currentUser ? currentUser.name : 'Staff'} • Stock deducted from warehouse.`
         );
-        loadRooms();
-        if (selectedRoom.roomNumber === roomNumber) {
-          loadRoomAudit(roomNumber);
+        if (isRoomCharge) {
+          loadRooms();
+          if (selectedRoom.roomNumber === roomNumber) {
+            loadRoomAudit(roomNumber);
+          }
         }
       } else {
         showFailed('POS Order Failed', result.error || 'Server error occurred');
       }
     } catch (err: any) {
-      showFailed('Network Error', err.message || 'Could not post charge to room');
+      showFailed('Network Error', err.message || 'Could not post order');
     }
   };
 

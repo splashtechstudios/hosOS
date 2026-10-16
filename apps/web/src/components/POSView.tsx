@@ -445,21 +445,19 @@ export default function POSView({
           ) : (
             <button
               onClick={() => {
+                const summary = cart.map(c => `${c.quantity}x ${c.name}`).join(', ');
+                const itemsPayload = cart.map(c => ({ name: c.name, quantity: c.quantity, unitPrice: c.price }));
                 showConfirm(
                   'Confirm Payment Settlement',
                   `Are you sure you want to settle this order totaling ${formatNaira(total)} via Cash/POS card?`,
                   () => {
-                    showSuccess(
-                      'Payment Settled & Receipt Printed!',
-                      `Order of ${formatNaira(total)} successfully settled and closed. Fired to kitchen & bar KDS.`,
-                      `Receipt #${Math.floor(100000 + Math.random() * 900000)} | Cashier: ${activeStaff.name}`
-                    );
+                    onPostChargeToRoom('', total, summary, itemsPayload, false);
                     setCart([]);
                   },
                   {
                     confirmText: 'Settle Payment Now',
                     variant: 'emerald',
-                    details: `Outlet: ${selectedOutlet} | Items: ${cart.length} | Amount: ${formatNaira(total)}`
+                    details: `Outlet: ${selectedOutlet.replace(/_/g, ' ')} | Items: ${summary} | Amount: ${formatNaira(total)}`
                   }
                 );
               }}

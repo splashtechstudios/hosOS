@@ -62,7 +62,7 @@ function PinInput({
           <input
             type="password"
             maxLength={4}
-            placeholder={selectedStaff.pinCodeHash}
+            placeholder="••••"
             value={pin}
             onChange={(e) => onPinChange(e.target.value)}
             style={{ width: '100%', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', backgroundColor: '#FFFFFF' }}
@@ -116,8 +116,12 @@ export function AddOrderModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin && pin !== selectedStaff.pinCodeHash) {
-      setPinError(`Invalid PIN! Hint: Use ${selectedStaff.pinCodeHash}`);
+    if (!pin) {
+      setPinError('Staff PIN code is required to authorize this action');
+      return;
+    }
+    if (pin !== selectedStaff.pinCodeHash) {
+      setPinError('Invalid 4-digit PIN for selected staff member');
       return;
     }
     onSuccess({
@@ -290,8 +294,12 @@ export function AddMaintenanceModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin && pin !== selectedStaff.pinCodeHash) {
-      setPinError(`Invalid PIN! Hint: Use ${selectedStaff.pinCodeHash}`);
+    if (!pin) {
+      setPinError('Staff PIN code is required to authorize this action');
+      return;
+    }
+    if (pin !== selectedStaff.pinCodeHash) {
+      setPinError('Invalid 4-digit PIN for selected staff member');
       return;
     }
     onSuccess({ issue, priority, partsCost, staff: selectedStaff });
@@ -423,8 +431,12 @@ export function AddPaymentModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin && pin !== selectedStaff.pinCodeHash) {
-      setPinError(`Invalid PIN! Hint: Use ${selectedStaff.pinCodeHash}`);
+    if (!pin) {
+      setPinError('Staff PIN code is required to authorize this action');
+      return;
+    }
+    if (pin !== selectedStaff.pinCodeHash) {
+      setPinError('Invalid 4-digit PIN for selected staff member');
       return;
     }
     onSuccess({ amount, method, reference, staff: selectedStaff });
@@ -555,8 +567,12 @@ export function ChangeStatusModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin && pin !== selectedStaff.pinCodeHash) {
-      setPinError(`Invalid PIN! Hint: Use ${selectedStaff.pinCodeHash}`);
+    if (!pin) {
+      setPinError('Staff PIN code is required to authorize this action');
+      return;
+    }
+    if (pin !== selectedStaff.pinCodeHash) {
+      setPinError('Invalid 4-digit PIN for selected staff member');
       return;
     }
     onSuccess({ status: newStatus, notes, staff: selectedStaff });
