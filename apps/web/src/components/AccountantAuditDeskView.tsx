@@ -138,7 +138,8 @@ export default function AccountantAuditDeskView({ activeStaff }: AccountantAudit
     const netCash = grossInflow - totalOutflow;
 
     const csvRows = [
-      ['OSIEKA RESORT & SUITES — INTERNAL FINANCIAL AUDIT SCHEDULE'],
+      ['OSIEKA RESORT — NO. 3 RESORT CLOSE, AIYEROMI QUARTERS, OGORI, KOGI STATE'],
+      ['INTERNAL FINANCIAL AUDIT SCHEDULE'],
       ['Audit Sheet Reference', s.sheetId],
       ['Operational Business Date', s.date],
       ['Auditing Officer', activeStaff.name],

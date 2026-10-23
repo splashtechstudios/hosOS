@@ -15,7 +15,7 @@ export const ENTERPRISE_ORG = {
   name: 'Osieka Luxury Resort & Convention Centre',
   legalEntity: 'Osieka Hospitality & Leisure Group Ltd',
   registrationNumber: 'RC-1849204',
-  location: 'Plot 12, Waterfront Boulevard, Lekki Phase 1, Lagos, Nigeria',
+  location: 'No. 3, Resort Close, Aiyeromi Quarters, Ogori, Kogi State, Nigeria',
   currency: 'NGN (₦)',
   taxId: 'TIN-09482941-0001',
   departments: [
