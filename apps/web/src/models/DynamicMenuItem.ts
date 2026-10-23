@@ -10,6 +10,7 @@ export interface IDynamicMenuItem {
   priceFloor: number;
   dailyPriceSnapshot?: number;
   description?: string;
+  imageUrl?: string;
   addedBy: string;
   isAvailable: boolean;
   createdAt?: Date;
@@ -31,6 +32,7 @@ const DynamicMenuItemSchema = new Schema<IDynamicMenuItem>(
     priceFloor: { type: Number, default: 0 },
     dailyPriceSnapshot: { type: Number, default: 0 },
     description: { type: String },
+    imageUrl: { type: String },
     addedBy: { type: String, default: 'Resort Manager' },
     isAvailable: { type: Boolean, default: true },
   },

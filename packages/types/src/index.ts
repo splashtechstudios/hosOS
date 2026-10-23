@@ -531,6 +531,7 @@ export interface DynamicMenuItem {
   addedBy: string;
   isAvailable: boolean;
   dailyPriceSnapshot?: number; // Today's active price entered by manager
+  imageUrl?: string; // Local fast-loading menu image asset path (/menu/...)
 }
 
 // ------------------------------------------

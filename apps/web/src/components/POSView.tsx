@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { StaffUser, Room, DynamicMenuItem } from '@hosos/types';
 import { useFeedback } from '@/context/FeedbackContext';
+import { getItemImageUrl } from '@/lib/menuImages';
 import { 
   UtensilsCrossed, 
   Plus, 
@@ -20,7 +21,10 @@ import {
   Flame,
   Soup,
   List,
-  LayoutGrid
+  LayoutGrid,
+  Search,
+  ArrowRight,
+  ShoppingBag
 } from 'lucide-react';
 
 interface POSViewProps {
@@ -792,10 +796,29 @@ export default function POSView({
     },
   ];
 
-  const [menuItems, setMenuItems] = useState<DynamicMenuItem[]>(DEFAULT_MENU_ITEMS);
+  const [menuItems, setMenuItems] = useState<DynamicMenuItem[]>(() =>
+    DEFAULT_MENU_ITEMS.map((it) => ({
+      ...it,
+      imageUrl: it.imageUrl || getItemImageUrl(it.id, it.name, it.category),
+    }))
+  );
 
-  // View Mode: Default to List View for faster checkout (can switch to Cards on Mobile / Desktop)
-  const [viewMode, setViewMode] = useState<'LIST' | 'GRID'>('LIST');
+  // Responsive screen detection: Chowdeck & Glovo Mobile UX (Mobile = Cards default)
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [userViewMode, setUserViewMode] = useState<'LIST' | 'GRID' | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Effective view mode: Mobile defaults to Cards ('GRID'); Desktop defaults to List ('LIST'). Manual toggle overrides.
+  const effectiveViewMode = userViewMode ?? (isMobile ? 'GRID' : 'LIST');
 
   // Superadmin Authority check
   const isSuperAdmin =
@@ -815,7 +838,12 @@ export default function POSView({
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.items && data.items.length > 0) {
-          setMenuItems(data.items);
+          setMenuItems(
+            data.items.map((it: any) => ({
+              ...it,
+              imageUrl: it.imageUrl || getItemImageUrl(it.id || it.itemId, it.name, it.category),
+            }))
+          );
         }
       })
       .catch((e) => console.warn('Could not fetch dynamic menu for POS:', e));
@@ -944,16 +972,29 @@ export default function POSView({
     );
   };
 
-  // Category filtering
+  // Fast Live Search & Category Filtering (Chowdeck & Glovo responsiveness)
   const filteredMenuItems = menuItems.filter((item) => {
-    if (selectedCategory === 'ALL') return true;
-    return item.category.toUpperCase().replace(/\s+/g, '') === selectedCategory.toUpperCase().replace(/\s+/g, '');
+    const matchesCategory =
+      selectedCategory === 'ALL' ||
+      item.category.toUpperCase().replace(/\s+/g, '') === selectedCategory.toUpperCase().replace(/\s+/g, '');
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      item.name.toLowerCase().includes(q) ||
+      item.category.toLowerCase().includes(q);
+    return matchesCategory && matchesSearch;
   });
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '24px', padding: '24px 0' }}>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: isMobile ? '1fr' : '1fr 400px',
+      gap: '24px',
+      padding: '24px 0',
+      position: 'relative',
+    }}>
       
-      {/* Left: Outlet Switcher + Menu Grid */}
+      {/* Left: Outlet Switcher + Search + Menu Grid */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
         {/* Outlet & Mode Bar */}
@@ -993,6 +1034,48 @@ export default function POSView({
           </div>
         </div>
 
+        {/* Chowdeck / Glovo Responsive Live Search Input */}
+        <div style={{ position: 'relative', width: '100%' }}>
+          <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search authentic Nigerian meals (Eba, Egusi, Jollof) or chilled drink bottles..."
+            style={{
+              width: '100%',
+              padding: '11px 16px 11px 40px',
+              borderRadius: '24px',
+              border: '1px solid var(--border-color)',
+              backgroundColor: '#FFFFFF',
+              fontSize: '0.85rem',
+              color: 'var(--text-primary)',
+              outline: 'none',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+            }}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                fontWeight: 700,
+                fontSize: '0.8rem',
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
         {/* Dynamic Pricing Explanatory Banner */}
         <div style={{
           padding: '12px 18px',
@@ -1005,8 +1088,7 @@ export default function POSView({
         }}>
           <Fish size={20} color="var(--brand-primary)" />
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            <strong>Osieka Dynamic Menu:</strong> Coastal catch, special orders & authentic local dishes have <strong>no fixed prices</strong>.
-            Click dishes to assemble guest meals (Swallow + Soup + Protein). You can adjust unit prices directly in the ticket.
+            <strong>Authentic Nigerian Menu:</strong> Coastal catch, special orders & authentic local dishes have <strong>no fixed prices</strong> (Price on Order). Only official bar drinks have printed prices.
           </div>
         </div>
 
@@ -1020,7 +1102,7 @@ export default function POSView({
             { id: 'PASTA MENU', label: '🍝 Pasta Menu' },
             { id: 'PROTEINS', label: '🥩 Proteins' },
             { id: 'GRILL', label: '🍢 Grill / BBQ' },
-            { id: 'BAR', label: '🍹 Bar & Drinks' },
+            { id: 'BAR', label: '🍹 Bar Drinks' },
           ].map((cat) => (
             <button
               key={cat.id}
@@ -1041,7 +1123,7 @@ export default function POSView({
           ))}
         </div>
 
-        {/* Menu Items Container (Default: List View; Toggleable to Cards View) */}
+        {/* Menu Items Container (Chowdeck & Glovo: Mobile Cards Default, Desktop List Default) */}
         <div>
           <div style={{
             display: 'flex',
@@ -1052,7 +1134,7 @@ export default function POSView({
             gap: '12px',
           }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-              {selectedCategory === 'ALL' ? 'All Dishes & Drinks' : selectedCategory} ({filteredMenuItems.length} available)
+              {selectedCategory === 'ALL' ? 'All Authentic Dishes & Drinks' : selectedCategory} ({filteredMenuItems.length} available)
             </h3>
 
             {/* List vs Cards View Switcher */}
@@ -1065,7 +1147,7 @@ export default function POSView({
             }}>
               <button
                 type="button"
-                onClick={() => setViewMode('LIST')}
+                onClick={() => setUserViewMode('LIST')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1074,19 +1156,19 @@ export default function POSView({
                   borderRadius: '6px',
                   fontSize: '0.75rem',
                   fontWeight: 700,
-                  backgroundColor: viewMode === 'LIST' ? '#FFFFFF' : 'transparent',
-                  color: viewMode === 'LIST' ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                  backgroundColor: effectiveViewMode === 'LIST' ? '#FFFFFF' : 'transparent',
+                  color: effectiveViewMode === 'LIST' ? 'var(--brand-primary)' : 'var(--text-secondary)',
                   border: 'none',
-                  boxShadow: viewMode === 'LIST' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  boxShadow: effectiveViewMode === 'LIST' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
                 }}
               >
                 <List size={14} />
-                <span>☰ List View (Default)</span>
+                <span>☰ List View</span>
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode('GRID')}
+                onClick={() => setUserViewMode('GRID')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1095,27 +1177,27 @@ export default function POSView({
                   borderRadius: '6px',
                   fontSize: '0.75rem',
                   fontWeight: 700,
-                  backgroundColor: viewMode === 'GRID' ? '#FFFFFF' : 'transparent',
-                  color: viewMode === 'GRID' ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                  backgroundColor: effectiveViewMode === 'GRID' ? '#FFFFFF' : 'transparent',
+                  color: effectiveViewMode === 'GRID' ? 'var(--brand-primary)' : 'var(--text-secondary)',
                   border: 'none',
-                  boxShadow: viewMode === 'GRID' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  boxShadow: effectiveViewMode === 'GRID' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                   cursor: 'pointer',
                 }}
               >
                 <LayoutGrid size={14} />
-                <span>⊞ Cards View</span>
+                <span>⊞ Cards {isMobile ? '(Mobile)' : 'View'}</span>
               </button>
             </div>
           </div>
 
-          {/* 1. LIST VIEW (Default for fast POS entry & mobile) */}
-          {viewMode === 'LIST' ? (
+          {/* 1. LIST VIEW (Desktop default with fast local food/drink thumbnails) */}
+          {effectiveViewMode === 'LIST' ? (
             <div className="ent-card" style={{ padding: 0, overflow: 'hidden', backgroundColor: '#FFFFFF', border: '1px solid var(--border-color)' }}>
               <div style={{ overflowX: 'auto' }}>
                 <table className="ent-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}>
-                      <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Item Name</th>
+                      <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Item & Photo</th>
                       <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Category</th>
                       <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Price</th>
                       <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', width: '130px' }}>Actions</th>
@@ -1125,6 +1207,10 @@ export default function POSView({
                     {filteredMenuItems.map((item) => {
                       const isBar = item.category === 'Bar';
                       const activePrice = item.dailyPriceSnapshot || item.suggestedPrice || 0;
+                      const cartEntry = cart.find((c) => c.id === item.id);
+                      const inCartQty = cartEntry ? cartEntry.quantity : 0;
+                      const imgSrc = item.imageUrl || getItemImageUrl(item.id, item.name, item.category);
+
                       return (
                         <tr
                           key={item.id}
@@ -1133,19 +1219,47 @@ export default function POSView({
                             borderBottom: '1px solid var(--border-subtle)',
                             cursor: 'pointer',
                             transition: 'background-color 0.15s ease',
+                            backgroundColor: inCartQty > 0 ? 'rgba(37, 99, 235, 0.03)' : 'transparent',
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.03)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.05)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = inCartQty > 0 ? 'rgba(37, 99, 235, 0.03)' : 'transparent')}
                         >
-                          <td style={{ padding: '10px 16px', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.875rem' }}>
-                            {item.name}
+                          <td style={{ padding: '8px 16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <img
+                                src={imgSrc}
+                                alt={item.name}
+                                loading="lazy"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).src = '/menu/jollof_rice.jpg';
+                                }}
+                                style={{
+                                  width: '42px',
+                                  height: '42px',
+                                  borderRadius: '8px',
+                                  objectFit: 'cover',
+                                  flexShrink: 0,
+                                  border: '1px solid var(--border-color)',
+                                }}
+                              />
+                              <div>
+                                <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.875rem' }}>
+                                  {item.name}
+                                </div>
+                                {inCartQty > 0 && (
+                                  <div style={{ fontSize: '0.7rem', color: 'var(--brand-primary)', fontWeight: 600 }}>
+                                    ✓ {inCartQty} in active order
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </td>
-                          <td style={{ padding: '10px 16px' }}>
+                          <td style={{ padding: '8px 16px' }}>
                             <span className={item.category === 'Swallow' ? 'badge badge-brand' : item.category === 'Soups' ? 'badge badge-amber' : item.category === 'Rice Meals' ? 'badge badge-clean' : item.category === 'Proteins' ? 'badge badge-dirty' : 'badge badge-purple'}>
                               {item.category}
                             </span>
                           </td>
-                          <td style={{ padding: '10px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '0.9rem' }}>
+                          <td style={{ padding: '8px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '0.9rem' }}>
                             {isBar && activePrice > 0 ? (
                               <span style={{ color: 'var(--text-primary)' }}>{formatNaira(activePrice)}</span>
                             ) : (
@@ -1154,11 +1268,11 @@ export default function POSView({
                               </span>
                             )}
                           </td>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                          <td style={{ padding: '8px 16px', textAlign: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                               <button
-                                className="btn-secondary"
-                                style={{ padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700 }}
+                                className="btn-primary"
+                                style={{ padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700, borderRadius: '6px' }}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   addToCart(item);
@@ -1169,7 +1283,7 @@ export default function POSView({
                               {isSuperAdmin && (
                                 <button
                                   className="btn-danger"
-                                  style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                                  style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '6px' }}
                                   title="Permanently purge item (Superadmin)"
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -1189,86 +1303,187 @@ export default function POSView({
               </div>
             </div>
           ) : (
-            /* 2. CARDS VIEW (Optional view without descriptions) */
+            /* 2. CHOWDECK & GLOVO CARDS VIEW (Mobile Default with Authentic Photos) */
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-              gap: '14px',
+              gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(150px, 1fr))' : 'repeat(auto-fill, minmax(220px, 1fr))',
+              gap: isMobile ? '12px' : '16px',
             }}>
               {filteredMenuItems.map((item) => {
                 const isBar = item.category === 'Bar';
                 const activePrice = item.dailyPriceSnapshot || item.suggestedPrice || 0;
+                const cartEntry = cart.find((c) => c.id === item.id);
+                const inCartQty = cartEntry ? cartEntry.quantity : 0;
+                const imgSrc = item.imageUrl || getItemImageUrl(item.id, item.name, item.category);
+
                 return (
                   <div
                     key={item.id}
                     onClick={() => addToCart(item)}
                     className="ent-card-interactive"
                     style={{
-                      padding: '16px',
+                      padding: 0,
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
-                      justifyContent: 'space-between',
                       backgroundColor: '#FFFFFF',
-                      border: '1px solid var(--border-color)',
+                      border: inCartQty > 0 ? '2px solid var(--brand-primary)' : '1px solid var(--border-color)',
+                      borderRadius: '14px',
+                      overflow: 'hidden',
+                      transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                      boxShadow: inCartQty > 0 ? '0 4px 14px rgba(37, 99, 235, 0.15)' : '0 1px 3px rgba(0,0,0,0.04)',
                     }}
                   >
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span className={item.category === 'Swallow' ? 'badge badge-brand' : item.category === 'Soups' ? 'badge badge-amber' : item.category === 'Rice Meals' ? 'badge badge-clean' : item.category === 'Proteins' ? 'badge badge-dirty' : 'badge badge-purple'}>
-                          {item.category}
-                        </span>
-                        <span style={{
-                          fontSize: '0.65rem',
-                          fontWeight: 700,
-                          color: isBar ? 'var(--emerald-primary)' : 'var(--brand-primary)',
-                        }}>
-                          {isBar ? '🍹 Bar Fixed' : '🐟 Price on Order'}
-                        </span>
+                    {/* Card Photo Container (Authentic Nigerian Dishes & Real Drink Bottles) */}
+                    <div style={{
+                      position: 'relative',
+                      width: '100%',
+                      height: isMobile ? '120px' : '140px',
+                      backgroundColor: 'var(--bg-secondary)',
+                      overflow: 'hidden',
+                    }}>
+                      <img
+                        src={imgSrc}
+                        alt={item.name}
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = '/menu/jollof_rice.jpg';
+                        }}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          transition: 'transform 0.3s ease',
+                        }}
+                      />
+
+                      {/* Floating Category Pill on top-left of image */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        left: '8px',
+                        backgroundColor: 'rgba(15, 23, 42, 0.72)',
+                        backdropFilter: 'blur(6px)',
+                        color: '#FFFFFF',
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        letterSpacing: '0.3px',
+                      }}>
+                        {item.category}
                       </div>
 
-                      <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>
-                        {item.name}
-                      </h4>
+                      {/* Active Ticket Counter Badge on top-right */}
+                      {inCartQty > 0 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '8px',
+                          right: '8px',
+                          backgroundColor: 'var(--brand-primary)',
+                          color: '#FFFFFF',
+                          fontSize: '0.7rem',
+                          fontWeight: 800,
+                          padding: '3px 9px',
+                          borderRadius: '12px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                        }}>
+                          {inCartQty} in ticket
+                        </div>
+                      )}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px' }}>
+                    {/* Card Body */}
+                    <div style={{
+                      padding: '12px 14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      flex: 1,
+                      justifyContent: 'space-between',
+                    }}>
                       <div>
-                        {isBar && activePrice > 0 ? (
-                          <span style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
-                            {formatNaira(activePrice)}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--brand-primary)' }}>
-                            Price on Order
-                          </span>
-                        )}
+                        <h4 style={{
+                          fontSize: isMobile ? '0.825rem' : '0.9rem',
+                          fontWeight: 700,
+                          color: 'var(--text-primary)',
+                          margin: '0 0 6px',
+                          lineHeight: 1.25,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          minHeight: '2.5em',
+                        }}>
+                          {item.name}
+                        </h4>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <button
-                          className="btn-secondary"
-                          style={{ padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            addToCart(item);
-                          }}
-                        >
-                          <Plus size={14} /> Add
-                        </button>
-                        {isSuperAdmin && (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginTop: '8px',
+                        paddingTop: '8px',
+                        borderTop: '1px solid var(--border-subtle)',
+                      }}>
+                        <div>
+                          {isBar && activePrice > 0 ? (
+                            <span style={{
+                              fontSize: isMobile ? '0.95rem' : '1.05rem',
+                              fontWeight: 800,
+                              fontFamily: 'var(--font-mono)',
+                              color: 'var(--text-primary)',
+                            }}>
+                              {formatNaira(activePrice)}
+                            </span>
+                          ) : (
+                            <span style={{
+                              fontSize: '0.725rem',
+                              fontWeight: 700,
+                              color: 'var(--brand-primary)',
+                              backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                            }}>
+                              Price on Order
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <button
-                            className="btn-danger"
-                            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                            title="Purge item (Superadmin)"
+                            type="button"
+                            className="btn-primary"
+                            style={{
+                              padding: isMobile ? '4px 10px' : '5px 12px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              borderRadius: '20px',
+                              boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)',
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeleteMenuItem(item.id, item.name);
+                              addToCart(item);
                             }}
                           >
-                            <Trash2 size={13} />
+                            <Plus size={13} /> Add
                           </button>
-                        )}
+
+                          {isSuperAdmin && (
+                            <button
+                              type="button"
+                              className="btn-danger"
+                              style={{ padding: '4px 7px', fontSize: '0.725rem', borderRadius: '6px' }}
+                              title="Permanently purge item (Superadmin)"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteMenuItem(item.id, item.name);
+                              }}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1329,7 +1544,7 @@ export default function POSView({
       </div>
 
       {/* Right: Active Ticket / Cart Drawer with Editable Unit Prices */}
-      <div className="ent-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: 'fit-content', backgroundColor: '#FFFFFF' }}>
+      <div id="pos-order-ticket" className="ent-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: 'fit-content', backgroundColor: '#FFFFFF' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
             <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
@@ -1572,6 +1787,51 @@ export default function POSView({
         </div>
 
       </div>
+
+      {/* Chowdeck & Glovo Mobile Sticky Order Bar */}
+      {isMobile && cart.length > 0 && (
+        <div
+          onClick={() => {
+            const ticketElem = document.getElementById('pos-order-ticket');
+            if (ticketElem) {
+              ticketElem.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            left: '16px',
+            right: '16px',
+            zIndex: 100,
+            backgroundColor: 'var(--brand-primary)',
+            color: '#FFFFFF',
+            borderRadius: '16px',
+            padding: '14px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 8px 24px rgba(37, 99, 235, 0.45)',
+            cursor: 'pointer',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{
+              backgroundColor: 'rgba(255,255,255,0.22)',
+              padding: '4px 10px',
+              borderRadius: '20px',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+            }}>
+              {cart.reduce((sum, item) => sum + item.quantity, 0)} items
+            </span>
+            <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>Review Active Order</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-mono)' }}>
+            <span>{formatNaira(total)}</span>
+            <ArrowRight size={18} />
+          </div>
+        </div>
+      )}
 
     </div>
   );

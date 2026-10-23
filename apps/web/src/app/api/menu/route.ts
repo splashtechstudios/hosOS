@@ -5,6 +5,7 @@ import { AuditLog } from '@/models/AuditLog';
 export const dynamic = 'force-dynamic';
 
 import { DynamicMenuItem, IDynamicMenuItem } from '@/models/DynamicMenuItem';
+import { getItemImageUrl } from '@/lib/menuImages';
 
 // Initial dynamic menu items for Osieka Resort (market pricing & daily specials)
 // Authentic Osieka Resort dynamic menu catalog (No fixed prices - market catch, daily specials & benchmarks)
@@ -784,13 +785,22 @@ export async function GET() {
         priceFloor: it.category === 'Bar' ? it.priceFloor : 0,
         dailyPriceSnapshot: it.category === 'Bar' ? it.dailyPriceSnapshot : 0,
         description: '',
+        imageUrl: it.imageUrl || getItemImageUrl(it.itemId, it.name, it.category),
         addedBy: it.addedBy,
         isAvailable: it.isAvailable,
       })),
     });
   } catch (err: any) {
     console.error('Error fetching menu items:', err);
-    return NextResponse.json({ success: false, items: INITIAL_DYNAMIC_MENU, error: err.message }, { status: 500 });
+    return NextResponse.json({
+      success: false,
+      items: INITIAL_DYNAMIC_MENU.map((it) => ({
+        ...it,
+        id: it.itemId,
+        imageUrl: it.imageUrl || getItemImageUrl(it.itemId, it.name, it.category),
+      })),
+      error: err.message,
+    }, { status: 500 });
   }
 }
 
