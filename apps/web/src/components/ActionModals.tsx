@@ -138,9 +138,9 @@ export function AddOrderModal({
   const menuPresets = [
     { name: 'Spicy Goat Meat Pepper Soup', cat: 'KITCHEN_FOOD', price: 7500 },
     { name: 'Grilled Croaker Fish & Yam Chips', cat: 'KITCHEN_FOOD', price: 14500 },
-    { name: 'Oseika Jollof Rice Special Platter', cat: 'KITCHEN_FOOD', price: 9500 },
+    { name: 'Osieka Jollof Rice Special Platter', cat: 'KITCHEN_FOOD', price: 9500 },
     { name: 'Heineken Draught (Cold)', cat: 'BAR_BEVERAGE', price: 2500 },
-    { name: 'Oseika Chapman Cocktail', cat: 'BAR_BEVERAGE', price: 3800 },
+    { name: 'Osieka Chapman Cocktail', cat: 'BAR_BEVERAGE', price: 3800 },
     { name: 'Hennessy VSOP (50ml Tot)', cat: 'BAR_BEVERAGE', price: 6500 },
   ];
 

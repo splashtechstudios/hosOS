@@ -191,7 +191,7 @@ export default function CommandCenterHeader({
             >
               <Building2 size={15} color="var(--brand-primary)" />
               <span>
-                {selectedProperty === 'main' ? 'Oseika Resort (Main Complex)' : 'Phase 2 Beachfront Annex'}
+                {selectedProperty === 'main' ? 'Osieka Resort (Main Complex)' : 'Phase 2 Beachfront Annex'}
               </span>
               <ChevronDown size={14} color="var(--text-muted)" />
             </button>
@@ -229,7 +229,7 @@ export default function CommandCenterHeader({
                   }}
                 >
                   <div>
-                    <div>Oseika Luxury Resort & Convention</div>
+                    <div>Osieka Luxury Resort & Convention</div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>60 Rooms · 3 Convention Halls · 4 Outlets</div>
                   </div>
                   {selectedProperty === 'main' && <Check size={14} color="var(--brand-primary)" />}
@@ -251,7 +251,7 @@ export default function CommandCenterHeader({
                   }}
                 >
                   <div>
-                    <div>Oseika Beachfront Annex & Marina</div>
+                    <div>Osieka Beachfront Annex & Marina</div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>24 Luxury Chalets · Waterfront Deck</div>
                   </div>
                   {selectedProperty === 'beachfront' && <Check size={14} color="var(--brand-primary)" />}
@@ -265,7 +265,7 @@ export default function CommandCenterHeader({
 
           {/* Breadcrumb Path */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8125rem' }}>
-            <span style={{ color: 'var(--text-muted)' }}>Oseika HosOS</span>
+            <span style={{ color: 'var(--text-muted)' }}>Osieka HosOS</span>
             <span style={{ color: 'var(--text-muted)' }}>/</span>
             <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{getBreadcrumbTitle()}</span>
           </div>
@@ -339,6 +339,24 @@ export default function CommandCenterHeader({
 
           {/* Quick Action Buttons */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {currentUser?.role === 'ACCOUNTANT' && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-xs)',
+                fontSize: '0.725rem',
+                color: 'var(--emerald-primary)',
+                fontWeight: 700,
+              }}>
+                <ShieldCheck size={14} />
+                <span>Audit Mode (Mutations Blocked)</span>
+              </div>
+            )}
+
             {hasPermission(currentUser?.role, 'users.onboard') && (
               <button
                 onClick={onOpenAddStaff}

@@ -174,7 +174,7 @@ export default function AddStaffModal({
               </label>
               <input
                 type="email"
-                placeholder="staff@oseikaresort.ng"
+                placeholder="staff@osiekaresort.ng"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

@@ -29,14 +29,14 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   const [mode, setMode] = useState<'LOGIN' | 'CREATE_ADMIN'>('LOGIN');
 
   // Login form state
-  const [email, setEmail] = useState('admin@oseikaresort.ng');
+  const [email, setEmail] = useState('admin@osiekaresort.ng');
   const [password, setPassword] = useState('Admin123!');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Create Admin form state
   const [adminName, setAdminName] = useState('Alhaji Ibrahim Danjuma');
-  const [adminEmail, setAdminEmail] = useState('owner@oseikaresort.ng');
+  const [adminEmail, setAdminEmail] = useState('owner@osiekaresort.ng');
   const [adminPassword, setAdminPassword] = useState('OwnerSecure2026!');
   const [adminPin, setAdminPin] = useState('1001');
 
@@ -302,7 +302,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="e.g. admin@oseikaresort.ng"
+                        placeholder="e.g. admin@osiekaresort.ng"
                         required
                         style={{ width: '100%', paddingLeft: '34px' }}
                       />

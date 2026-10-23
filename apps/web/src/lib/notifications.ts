@@ -1,5 +1,5 @@
 /**
- * Enterprise Hospitality Notification Engine (Oseika Resort)
+ * Enterprise Hospitality Notification Engine (Osieka Resort)
  * Handles automated SMS and WhatsApp dispatch for guest check-ins and executive night audit flash briefings.
  */
 
@@ -25,7 +25,7 @@ export interface OwnerNightAuditMessage {
 }
 
 export async function sendGuestWelcomeSms(payload: GuestWelcomeMessage): Promise<{ success: boolean; messageId: string }> {
-  const messageBody = `Welcome to Oseika Resort, ${payload.guestName}! Your Room #${payload.roomNumber} is ready. Complimentary High-Speed Wi-Fi Code: "${payload.wifiCode || 'OseikaVIP2026'}". Dial '0' on your room phone for 24/7 Concierge and Room Service. Check-out date: ${payload.checkOutDate}. Enjoy your stay!`;
+  const messageBody = `Welcome to Osieka Resort, ${payload.guestName}! Your Room #${payload.roomNumber} is ready. Complimentary High-Speed Wi-Fi Code: "${payload.wifiCode || 'OsiekaVIP2026'}". Dial '0' on your room phone for 24/7 Concierge and Room Service. Check-out date: ${payload.checkOutDate}. Enjoy your stay!`;
 
   console.log(`[SMS Gateway / Termii Dispatch] To: ${payload.phone} | Body: ${messageBody}`);
   // In production with Termii/Twilio credentials:
@@ -38,7 +38,7 @@ export async function sendGuestWelcomeSms(payload: GuestWelcomeMessage): Promise
 }
 
 export async function sendOwnerNightAuditWhatsapp(payload: OwnerNightAuditMessage): Promise<{ success: boolean; messageId: string }> {
-  const whatsappBody = `🌙 *OSEIKA RESORT - EXECUTIVE NIGHT AUDIT BRIEFING*
+  const whatsappBody = `🌙 *OSIEKA RESORT - EXECUTIVE NIGHT AUDIT BRIEFING*
 📅 Business Operating Date: ${payload.businessDate} → ${payload.nextBusinessDate}
 🏨 Occupancy: ${payload.totalRoomsOccupied} Rooms Occupied (${payload.occupancyRate})
 

@@ -14,6 +14,8 @@ import POSView from '@/components/POSView';
 import InventoryView from '@/components/InventoryView';
 import RecipeBOMView from '@/components/RecipeBOMView';
 import FacilitiesView from '@/components/FacilitiesView';
+import DailyOperationsView from '@/components/DailyOperationsView';
+import AccountantAuditDeskView from '@/components/AccountantAuditDeskView';
 import StaffOnboardingView from '@/components/StaffOnboardingView';
 import RBACView from '@/components/RBACView';
 import AddStaffModal from '@/components/AddStaffModal';
@@ -619,6 +621,15 @@ function HosOSAppInner() {
             </div>
           ) : (
             <>
+              {/* Downsized Core Operations */}
+              {currentView === 'daily-operations' && (
+                <DailyOperationsView activeStaff={currentUser} />
+              )}
+
+              {currentView === 'accountant-audit' && (
+                <AccountantAuditDeskView activeStaff={currentUser} />
+              )}
+
               {/* Executive & Reporting */}
               {currentView === 'dashboard' && (
                 <DashboardView activeStaff={currentUser} />

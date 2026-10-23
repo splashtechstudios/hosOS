@@ -3,7 +3,9 @@
 // ==========================================
 
 export type UserRole =
+  | 'SUPERADMIN'
   | 'OWNER'
+  | 'MANAGER'
   | 'GENERAL_MANAGER'
   | 'FRONT_DESK'
   | 'CASHIER'
@@ -485,3 +487,80 @@ export interface RoleRBACDefinition {
   description: string;
   permissions: AppPermission[];
 }
+
+// ------------------------------------------
+// Downsized Operations: Daily Operational Sheet
+// ------------------------------------------
+export interface DailyRoomOccupancyLog {
+  occupiedCount: number;
+  vacantCleanCount: number;
+  vacantDirtyCount: number;
+  outOfOrderCount: number;
+  totalRooms: number;
+  roomRevenueCash: number;
+  roomRevenuePOS: number;
+  roomRevenueTransfer: number;
+  roomRevenueTotal: number;
+}
+
+export interface DailyFBSalesLog {
+  foodSalesAmount: number;
+  drinksSalesAmount: number;
+  totalSalesAmount: number;
+  cashReceived: number;
+  posTerminalReceived: number;
+  bankTransferReceived: number;
+}
+
+export interface DailyPettyExpense {
+  id: string;
+  title: string;
+  amount: number;
+  paidVia: 'CASH' | 'TRANSFER';
+  receiptAttached?: boolean;
+}
+
+export interface DailyEnergyExpensesLog {
+  generatorRunHours: number;
+  dieselLitresPurchased: number;
+  dieselPricePerLitre: number;
+  totalDieselCost: number;
+  otherPettyExpenses: DailyPettyExpense[];
+  totalExpenses: number;
+}
+
+export interface DailyReconciliationLog {
+  totalPhysicalCashHandover: number;
+  expectedCashOnHand: number;
+  cashDiscrepancy: number; // physical - expected
+  receiptPhotoUrls?: string[];
+  bankAlertNotes?: string;
+  managerNotes?: string;
+}
+
+export interface DailyAuditStatus {
+  status: 'DRAFT' | 'SUBMITTED' | 'AUDITED_VERIFIED' | 'AUDIT_FLAGGED';
+  auditedBy?: string;
+  auditedAt?: string;
+  auditNotes?: string;
+  varianceAmount?: number;
+  discrepanciesFound?: string[];
+}
+
+export interface DailyOperationalSheet {
+  id: string;
+  sheetId: string;
+  date: string; // YYYY-MM-DD
+  resortProperty: string; // "Osieka Luxury Resort"
+  managerId: string;
+  managerName: string;
+  rooms: DailyRoomOccupancyLog;
+  fbSales: DailyFBSalesLog;
+  energyExpenses: DailyEnergyExpensesLog;
+  reconciliation: DailyReconciliationLog;
+  audit: DailyAuditStatus;
+  submittedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+

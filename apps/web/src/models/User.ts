@@ -26,7 +26,9 @@ const UserSchema = new Schema<IUser>({
     type: String, 
     required: true,
     enum: [
+      'SUPERADMIN',
       'OWNER',
+      'MANAGER',
       'GENERAL_MANAGER',
       'FRONT_DESK',
       'CASHIER',

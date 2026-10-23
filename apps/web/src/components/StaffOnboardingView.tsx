@@ -75,7 +75,7 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
     e.preventDefault();
     if (!fullName) return;
 
-    const finalEmail = email || `${fullName.toLowerCase().replace(/\s+/g, '.')}@oseikaresort.ng`;
+    const finalEmail = email || `${fullName.toLowerCase().replace(/\s+/g, '.')}@osiekaresort.ng`;
     const newRecord: StaffOnboardingRecord = {
       id: `onb-${Date.now()}`,
       staffId: `staff-0${onboardingList.length + 4}`,
@@ -345,7 +345,7 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
                   </label>
                   <input
                     type="email"
-                    placeholder="name@oseikaresort.ng"
+                    placeholder="name@osiekaresort.ng"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     style={{ width: '100%' }}

@@ -328,9 +328,9 @@ export default function CheckOutModal({
               }}
             >
               <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-                <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>OSEIKA RESORT & SUITES</div>
+                <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>OSIEKA RESORT & SUITES</div>
                 <div style={{ fontSize: '0.7rem' }}>KM 14, Lekki-Epe Expressway, Lagos</div>
-                <div style={{ fontSize: '0.7rem' }}>Tel: +234 1 294 8100 | reservations@oseikaresort.ng</div>
+                <div style={{ fontSize: '0.7rem' }}>Tel: +234 1 294 8100 | reservations@osiekaresort.ng</div>
                 <div style={{ fontSize: '0.7rem', fontWeight: 700 }}>FIRS VAT TIN: 23984192-0001</div>
                 <div>========================================</div>
                 <div style={{ fontWeight: 700, margin: '4px 0' }}>OFFICIAL GUEST FOLIO & TAX INVOICE</div>
@@ -408,7 +408,7 @@ export default function CheckOutModal({
 
               <div style={{ textAlign: 'center', marginTop: '14px', fontSize: '0.7rem' }}>
                 <div style={{ fontWeight: 800 }}>*** PAID IN FULL / RECONCILED ***</div>
-                <div>Thank you for choosing Oseika Resort.</div>
+                <div>Thank you for choosing Osieka Resort.</div>
                 <div>We look forward to welcoming you again!</div>
                 <div style={{ marginTop: '8px', fontSize: '0.65rem', color: '#64748B' }}>
                   Powered by HosOS Hospitality ERP Engine

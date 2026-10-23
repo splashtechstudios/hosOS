@@ -2,7 +2,7 @@
   "name": "hosos-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "HosOS - Complete Hospitality Operating System for Oseika Resort",
+  "description": "HosOS - Complete Hospitality Operating System for Osieka Resort",
   "workspaces": [
     "apps/*",
     "packages/*"

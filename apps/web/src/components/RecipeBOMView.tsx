@@ -37,7 +37,7 @@ export default function RecipeBOMView({ activeStaff }: RecipeBOMViewProps) {
   const recipes = [
     {
       id: 'BOM-01',
-      name: 'Oseika Seafood Okro with Semo/Eba',
+      name: 'Osieka Seafood Okro with Semo/Eba',
       category: 'MAINS',
       sellingPrice: 28000,
       cogsCost: 8900,
@@ -92,7 +92,7 @@ export default function RecipeBOMView({ activeStaff }: RecipeBOMViewProps) {
     },
     {
       id: 'BOM-04',
-      name: 'Oseika Signature Smoked Old Fashioned',
+      name: 'Osieka Signature Smoked Old Fashioned',
       category: 'BAR',
       sellingPrice: 14000,
       cogsCost: 3200,

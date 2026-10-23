@@ -21,7 +21,7 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
   const handleRunAudit = () => {
     showConfirm(
       'Execute End-of-Day Night Audit Close?',
-      'This will close the active business day for Oseika Resort in MongoDB Atlas, reconcile all trial balance folios, post nightly room rack rates + FIRS VAT (7.5%) + Consumption Tax (5%), lock registers, and roll to the next operating date.',
+      'This will close the active business day for Osieka Resort in MongoDB Atlas, reconcile all trial balance folios, post nightly room rack rates + FIRS VAT (7.5%) + Consumption Tax (5%), lock registers, and roll to the next operating date.',
       async () => {
         setAuditRunning(true);
         try {
@@ -172,7 +172,7 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
           color: 'var(--text-primary)',
           whiteSpace: 'pre-line',
         }}>
-          {`🏨 *OSEIKA RESORT & SUITES — DAILY FLASH REPORT*
+          {`🏨 *OSIEKA RESORT & SUITES — DAILY FLASH REPORT*
 📅 *Date:* Thursday, 15 Oct 2026 | *Close Time:* 02:00 WAT
 👤 *Audited By:* ${activeStaff.name} (${activeStaff.role})
 

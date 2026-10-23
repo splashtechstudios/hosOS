@@ -7,46 +7,64 @@ export type ExtendedRole = UserRole | 'ADMIN';
  * Enterprise view identifiers mapped to authorized roles
  */
 export const ROLE_VIEW_ACCESS: Record<ExtendedRole, string[]> = {
-  OWNER: [
+  SUPERADMIN: [
     'dashboard',
-    'night-audit',
-    'loss-prevention',
-    'crm-guests',
-    'crm-deals',
+    'daily-operations',
+    'accountant-audit',
     'room-audit',
     'front-desk',
     'pos',
-    'inventory-tots',
-    'inventory-bom',
-    'facilities-generators',
+    'night-audit',
+    'loss-prevention',
     'onboarding-directory',
     'rbac-matrix',
+  ],
+  OWNER: [
+    'dashboard',
+    'daily-operations',
+    'accountant-audit',
+    'room-audit',
+    'front-desk',
+    'pos',
+    'night-audit',
+    'loss-prevention',
+    'onboarding-directory',
+    'rbac-matrix',
+  ],
+  MANAGER: [
+    'daily-operations',
+    'front-desk',
+    'room-audit',
   ],
   GENERAL_MANAGER: [
     'dashboard',
-    'night-audit',
-    'loss-prevention',
-    'crm-guests',
-    'crm-deals',
+    'daily-operations',
+    'accountant-audit',
     'room-audit',
     'front-desk',
     'pos',
-    'inventory-tots',
-    'inventory-bom',
-    'facilities-generators',
+    'night-audit',
+    'loss-prevention',
     'onboarding-directory',
     'rbac-matrix',
   ],
+  ACCOUNTANT: [
+    'accountant-audit',
+    'dashboard',
+    'night-audit',
+    'loss-prevention',
+    'room-audit',
+  ],
   FRONT_DESK: [
+    'daily-operations',
     'front-desk',
     'room-audit',
-    'crm-guests',
     'pos',
   ],
   CASHIER: [
+    'daily-operations',
     'pos',
     'room-audit',
-    'night-audit',
     'dashboard',
   ],
   WAITER: [
@@ -54,11 +72,9 @@ export const ROLE_VIEW_ACCESS: Record<ExtendedRole, string[]> = {
   ],
   BARTENDER: [
     'pos',
-    'inventory-tots',
   ],
   CHEF: [
     'pos',
-    'inventory-bom',
   ],
   HOUSEKEEPING: [
     'front-desk',
@@ -68,30 +84,19 @@ export const ROLE_VIEW_ACCESS: Record<ExtendedRole, string[]> = {
     'facilities-generators',
     'room-audit',
   ],
-  ACCOUNTANT: [
-    'dashboard',
-    'night-audit',
-    'loss-prevention',
-    'room-audit',
-    'crm-deals',
-  ],
   STOREKEEPER: [
     'inventory-tots',
     'inventory-bom',
-    'facilities-generators',
   ],
   ADMIN: [
     'dashboard',
-    'night-audit',
-    'loss-prevention',
-    'crm-guests',
-    'crm-deals',
+    'daily-operations',
+    'accountant-audit',
     'room-audit',
     'front-desk',
     'pos',
-    'inventory-tots',
-    'inventory-bom',
-    'facilities-generators',
+    'night-audit',
+    'loss-prevention',
     'onboarding-directory',
     'rbac-matrix',
   ],
@@ -101,17 +106,19 @@ export const ROLE_VIEW_ACCESS: Record<ExtendedRole, string[]> = {
  * Default initial home view for each role
  */
 export const ROLE_DEFAULT_VIEW: Record<ExtendedRole, string> = {
+  SUPERADMIN: 'dashboard',
   OWNER: 'dashboard',
-  GENERAL_MANAGER: 'dashboard',
-  FRONT_DESK: 'front-desk',
-  CASHIER: 'pos',
+  MANAGER: 'daily-operations',
+  GENERAL_MANAGER: 'daily-operations',
+  ACCOUNTANT: 'accountant-audit',
+  FRONT_DESK: 'daily-operations',
+  CASHIER: 'daily-operations',
   WAITER: 'pos',
   BARTENDER: 'pos',
   CHEF: 'pos',
   HOUSEKEEPING: 'front-desk',
-  MAINTENANCE: 'facilities-generators',
-  ACCOUNTANT: 'dashboard',
-  STOREKEEPER: 'inventory-tots',
+  MAINTENANCE: 'room-audit',
+  STOREKEEPER: 'daily-operations',
   ADMIN: 'dashboard',
 };
 
@@ -119,7 +126,9 @@ export const ROLE_DEFAULT_VIEW: Record<ExtendedRole, string> = {
  * Human readable view titles
  */
 export const VIEW_TITLES: Record<string, string> = {
-  dashboard: 'Executive Overview',
+  'daily-operations': 'Daily Operations Board',
+  'accountant-audit': 'Audit & Reconciliation Desk',
+  dashboard: 'Executive P&L Overview',
   'night-audit': 'Night Audit & Flash Rollover',
   'loss-prevention': 'Loss Prevention & Audit Trail',
   'crm-guests': 'VIP Guest Profiles',
@@ -133,6 +142,15 @@ export const VIEW_TITLES: Record<string, string> = {
   'onboarding-directory': 'Staff Directory & Access',
   'rbac-matrix': 'Multi-Role RBAC Matrix',
 };
+
+/**
+ * Checks whether an account is strictly a Read-Only Auditor (Accountant)
+ * The accountant has full visibility but zero mutation permissions across board.
+ */
+export function isReadOnlyAuditor(role: string | undefined | null): boolean {
+  if (!role) return false;
+  return role.toUpperCase() === 'ACCOUNTANT';
+}
 
 /**
  * Checks whether a given role has authorization to access a specific view.

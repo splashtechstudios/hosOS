@@ -48,9 +48,9 @@ export default function POSView({
   const menuItems = [
     { id: 'm-1', name: 'Spicy Goat Meat Pepper Soup', cat: 'Kitchen', price: 7500 },
     { id: 'm-2', name: 'Grilled Croaker Fish & Yam Chips', cat: 'Kitchen', price: 14500 },
-    { id: 'm-3', name: 'Oseika Jollof Rice Special Platter', cat: 'Kitchen', price: 9500 },
+    { id: 'm-3', name: 'Osieka Jollof Rice Special Platter', cat: 'Kitchen', price: 9500 },
     { id: 'm-4', name: 'Heineken Draught (Cold)', cat: 'Bar', price: 2500 },
-    { id: 'm-5', name: 'Oseika Chapman Cocktail', cat: 'Bar', price: 3800 },
+    { id: 'm-5', name: 'Osieka Chapman Cocktail', cat: 'Bar', price: 3800 },
     { id: 'm-6', name: 'Hennessy VSOP (50ml Tot)', cat: 'Bar', price: 6500 },
     { id: 'm-7', name: 'Club Sandwich & French Fries', cat: 'Kitchen', price: 6000 },
     { id: 'm-8', name: 'Fresh Tropical Coconut Water', cat: 'Bar', price: 2000 },

@@ -199,7 +199,7 @@ export default function InventoryView({ activeStaff }: { activeStaff: StaffUser 
 
           <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h4 style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Oseika Chapman Signature Cocktail</h4>
+              <h4 style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Osieka Chapman Signature Cocktail</h4>
               <span className="badge badge-purple">Bar Cocktail</span>
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '10px' }}>

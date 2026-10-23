@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         status: 200,
         headers: {
           'Content-Type': 'text/csv; charset=utf-8',
-          'Content-Disposition': 'attachment; filename="Oseika_Resort_FIRS_Tax_Schedule_2026_10.csv"',
+          'Content-Disposition': 'attachment; filename="Osieka_Resort_FIRS_Tax_Schedule_2026_10.csv"',
         },
       });
     }
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
         status: 200,
         headers: {
           'Content-Type': 'text/csv; charset=utf-8',
-          'Content-Disposition': 'attachment; filename="Oseika_Resort_Night_Audit_Trial_Balance_2026_10_15.csv"',
+          'Content-Disposition': 'attachment; filename="Osieka_Resort_Night_Audit_Trial_Balance_2026_10_15.csv"',
         },
       });
     }
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="Oseika_Resort_Room_Audit_Ledger.csv"',
+        'Content-Disposition': 'attachment; filename="Osieka_Resort_Room_Audit_Ledger.csv"',
       },
     });
   } catch (error: any) {

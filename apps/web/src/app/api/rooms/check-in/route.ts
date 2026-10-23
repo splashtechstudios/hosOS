@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
       guestName,
       phone: guestPhone,
       roomNumber,
-      wifiCode: 'OseikaVIP2026',
+      wifiCode: 'OsiekaVIP2026',
       checkOutDate: checkOutDate.split('T')[0],
     });
 

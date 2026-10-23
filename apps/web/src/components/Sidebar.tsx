@@ -83,70 +83,39 @@ export default function Sidebar({
     setCollapsedDepts(prev => ({ ...prev, [deptKey]: !prev[deptKey] }));
   };
 
-  // Structured Department Sections with Action Submenus
+  // Downsized Department Sections with Action Submenus
   const departmentSections: DepartmentSection[] = [
     {
-      key: 'executive',
-      name: 'Executive & Reporting',
-      icon: LayoutDashboard,
-      submenus: [
-        { id: 'dashboard', label: 'Executive Overview', icon: LayoutDashboard, tag: 'KPIs' },
-        { id: 'night-audit', label: 'Night Audit & Flash', icon: FileText, tag: 'Rollover' },
-        { id: 'loss-prevention', label: 'Loss Prevention Watchlist', icon: ShieldAlert, tag: 'Audit' },
-      ],
-    },
-    {
-      key: 'crm',
-      name: 'Guest & Corporate CRM',
-      icon: Briefcase,
-      badge: 'CRM',
-      submenus: [
-        { id: 'crm-guests', label: 'VIP Guest Profiles', icon: Users, tag: '42 VIPs' },
-        { id: 'crm-deals', label: 'Corporate Event Deals', icon: Briefcase, tag: 'Pipeline' },
-      ],
-    },
-    {
-      key: 'rooms',
-      name: 'Rooms Division',
+      key: 'operations',
+      name: 'Resort Operations',
       icon: Hotel,
-      badge: 'Rooms',
+      badge: 'Daily',
       submenus: [
-        { id: 'room-audit', label: 'Room 360° Internal Audit', icon: ShieldCheck, highlight: true, tag: 'Live Ledger' },
+        { id: 'daily-operations', label: 'Daily Operations Board', icon: LayoutDashboard, highlight: true, tag: 'Manager' },
         { id: 'front-desk', label: 'Tape Chart & Room Grid', icon: Hotel, tag: '60 Rooms' },
-      ],
-    },
-    {
-      key: 'fb',
-      name: 'Food & Beverage',
-      icon: UtensilsCrossed,
-      submenus: [
+        { id: 'room-audit', label: 'Room 360° Internal Audit', icon: ShieldCheck, tag: 'Live Folio' },
         { id: 'pos', label: 'Restaurant & Bar POS', icon: UtensilsCrossed, tag: 'Terminal' },
       ],
     },
     {
-      key: 'inventory',
-      name: 'Stores & Inventory',
-      icon: Package,
+      key: 'finance',
+      name: 'Finance & Audit Desk',
+      icon: FileText,
+      badge: 'Sage',
       submenus: [
-        { id: 'inventory-tots', label: 'Bar Tot Dipstick Audit', icon: GlassWater, tag: 'Spirits' },
-        { id: 'inventory-bom', label: 'Recipe Bill of Materials', icon: Layers, tag: 'Costing' },
+        { id: 'accountant-audit', label: 'Audit & Reconciliation Desk', icon: FileText, highlight: true, tag: 'Sage Core' },
+        { id: 'night-audit', label: 'Night Audit & Flash', icon: DollarSign, tag: 'Rollover' },
+        { id: 'loss-prevention', label: 'Loss Prevention Watchlist', icon: ShieldAlert, tag: 'Audit' },
       ],
     },
     {
-      key: 'facilities',
-      name: 'Facilities & Energy',
-      icon: Fuel,
+      key: 'executive',
+      name: 'Governance & Staff',
+      icon: Building2,
       submenus: [
-        { id: 'facilities-generators', label: 'Diesel & Generator Logs', icon: Fuel, tag: 'Gen 1 & 2' },
-      ],
-    },
-    {
-      key: 'hr',
-      name: 'HR & Access Control',
-      icon: Users,
-      submenus: [
-        { id: 'onboarding-directory', label: 'Staff Directory', icon: Users, tag: 'Atlas' },
-        { id: 'rbac-matrix', label: 'Multi-Role RBAC Matrix', icon: Lock, tag: '11 Roles' },
+        { id: 'dashboard', label: 'Executive P&L Overview', icon: LayoutDashboard, tag: 'KPIs' },
+        { id: 'onboarding-directory', label: 'Staff & Role Directory', icon: Users, tag: 'Atlas' },
+        { id: 'rbac-matrix', label: 'Multi-Role RBAC Matrix', icon: Lock, tag: 'Governance' },
       ],
     },
   ];
@@ -212,7 +181,7 @@ export default function Sidebar({
             overflow: 'hidden',
             textOverflow: 'ellipsis',
           }}>
-            Oseika Luxury Resort
+            Osieka Luxury Resort
           </div>
         </div>
       </div>
