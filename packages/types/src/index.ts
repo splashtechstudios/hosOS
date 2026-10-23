@@ -468,24 +468,69 @@ export interface StaffOnboardingRecord {
 export type AppPermission =
   | 'rooms.audit.view'
   | 'rooms.status.override'
+  | 'rooms.checkin'
+  | 'rooms.checkout'
   | 'orders.create'
   | 'orders.increment'
+  | 'prices.override'
   | 'discounts.approve'
   | 'voids.execute'
+  | 'menu.manage'
   | 'cash.receive'
   | 'maintenance.raise'
   | 'maintenance.signoff'
   | 'reports.export'
   | 'users.onboard'
   | 'crm.manage'
-  | 'diesel.log';
+  | 'solar.log'
+  | 'solar.powersaver_toggle'
+  | 'diesel.log'
+  | 'audit.stamp'
+  | 'daily.submit'
+  | 'daily.audit_update'
+  | 'rbac.manage';
 
 export interface RoleRBACDefinition {
   role: UserRole;
   displayName: string;
   department: DepartmentType;
   description: string;
-  permissions: AppPermission[];
+  isEnabled: boolean; // Superadmin master toggle ON/OFF
+  allowedViews: string[]; // Sub-page view clearance
+  permissions: AppPermission[]; // Action-level clearance
+  dataScope: 'ALL_RESORT_DATA' | 'RESTRICTED_SHIFT_DATA';
+}
+
+// ------------------------------------------
+// Pure Solar Off-Grid Microgrid Telemetry
+// ------------------------------------------
+export interface SolarTelemetryDay {
+  date: string;
+  solarHarvestedKwh: number;
+  batteryStateOfCharge: number; // 0 to 100%
+  resortConsumptionKwh: number;
+  peakSolarPowerKw: number;
+  equivalentDieselSavedLitres: number;
+  moneySavedNaira: number;
+  co2OffsetKg: number;
+  generatorBackupHours: number;
+  powerSaverActive: boolean;
+}
+
+// ------------------------------------------
+// Dynamic Resort Menu (No Fixed Prices)
+// ------------------------------------------
+export interface DynamicMenuItem {
+  id: string;
+  name: string;
+  category: 'Kitchen' | 'Bar' | 'Grill' | 'Events' | string;
+  pricingType: 'OPEN_MARKET_PRICE' | 'DAILY_SPECIAL' | 'SUGGESTED_BENCHMARK';
+  suggestedPrice: number;
+  priceFloor: number; // Minimum price threshold set by Superadmin/Accountant
+  description?: string;
+  addedBy: string;
+  isAvailable: boolean;
+  dailyPriceSnapshot?: number; // Today's active price entered by manager
 }
 
 // ------------------------------------------

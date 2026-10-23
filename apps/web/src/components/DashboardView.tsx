@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -17,7 +17,8 @@ import {
   UserCheck,
   CheckCircle2,
   Building2,
-  ChevronRight
+  ChevronRight,
+  FileCheck
 } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
 import { useFeedback } from '@/context/FeedbackContext';
@@ -26,6 +27,22 @@ import { ENTERPRISE_ORG } from '@/lib/mockData';
 export default function DashboardView({ activeStaff }: { activeStaff: StaffUser }) {
   const { showSuccess } = useFeedback();
   const [dateRange, setDateRange] = useState<'TODAY' | 'WEEK' | 'MTD' | 'QTD'>('MTD');
+  const [managerSheets, setManagerSheets] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchSheets() {
+      try {
+        const res = await fetch('/api/operations');
+        const data = await res.json();
+        if (data.success && data.sheets) {
+          setManagerSheets(data.sheets);
+        }
+      } catch (err) {
+        console.warn('Could not load manager sheets in dashboard:', err);
+      }
+    }
+    fetchSheets();
+  }, []);
 
   const formatNaira = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -295,6 +312,82 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
           </div>
         </div>
 
+      </div>
+
+      {/* 4. Manager Daily Operational Submissions Feed (Admin Full Oversight) */}
+      <div className="ent-card" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FileCheck size={20} color="var(--brand-primary)" />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                Live Operational Logs & Daily Closures Submitted by Manager
+              </h3>
+            </div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
+              Immutable record stream. All entries submitted by manager Babajide Ogundimu with cash tallies and audit stamps.
+            </p>
+          </div>
+          <span className="badge badge-brand">
+            {managerSheets.length} Submitted Reports
+          </span>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table className="ent-table" style={{ width: '100%', fontSize: '0.825rem' }}>
+            <thead>
+              <tr style={{ backgroundColor: 'var(--bg-secondary)', textAlign: 'left' }}>
+                <th style={{ padding: '10px 14px' }}>Operational Date</th>
+                <th style={{ padding: '10px 14px' }}>Manager Attribution</th>
+                <th style={{ padding: '10px 14px' }}>Rooms Occupied</th>
+                <th style={{ padding: '10px 14px' }}>Gross Revenue Inflow</th>
+                <th style={{ padding: '10px 14px' }}>Cash Handover (Safe)</th>
+                <th style={{ padding: '10px 14px' }}>Audit Status</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Audited By</th>
+              </tr>
+            </thead>
+            <tbody>
+              {managerSheets.length > 0 ? (
+                managerSheets.map((sheet) => {
+                  const totalInflow = (sheet.rooms?.roomRevenueTotal || 0) + (sheet.fbSales?.totalSalesAmount || 0);
+                  return (
+                    <tr key={sheet.sheetId} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                      <td style={{ padding: '10px 14px', fontWeight: 800 }}>{sheet.date}</td>
+                      <td style={{ padding: '10px 14px' }}>{sheet.managerName}</td>
+                      <td style={{ padding: '10px 14px' }}>{sheet.rooms?.occupiedCount || 0} / 60 Rooms</td>
+                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--emerald-primary)' }}>
+                        ₦{totalInflow.toLocaleString()}
+                      </td>
+                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)' }}>
+                        ₦{(sheet.reconciliation?.totalPhysicalCashHandover || 0).toLocaleString()}
+                      </td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <span className={`badge ${
+                          sheet.audit?.status === 'AUDITED_VERIFIED'
+                            ? 'badge-emerald'
+                            : sheet.audit?.status === 'AUDIT_FLAGGED'
+                            ? 'badge-rose'
+                            : 'badge-amber'
+                        }`} style={{ fontSize: '0.65rem' }}>
+                          {sheet.audit?.status?.replace(/_/g, ' ') || 'SUBMITTED'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--text-muted)' }}>
+                        {sheet.audit?.auditedBy || 'Awaiting Audit'}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                    No manager operational sheets loaded yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </div>

@@ -327,3 +327,70 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+
+// Superadmin / Accountant Authorized Administrative Update
+// Enforces that records submitted by manager are immutable by manager
+export async function PUT(req: NextRequest) {
+  try {
+    await connectToDatabase();
+    const body = await req.json();
+    const { sheetId, modifierRole, modifierName, adjustmentReason, updates } = body;
+
+    const normalizedRole = (modifierRole || '').toUpperCase();
+    if (normalizedRole !== 'SUPERADMIN' && normalizedRole !== 'OWNER' && normalizedRole !== 'ACCOUNTANT') {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Security Restriction: Records submitted by manager are immutable by manager. Only Super Admin or Accountant have authority to update submitted operations logs.',
+        },
+        { status: 403 }
+      );
+    }
+
+    if (!sheetId) {
+      return NextResponse.json({ success: false, error: 'Sheet ID is required.' }, { status: 400 });
+    }
+
+    const sheet = await DailyOperationSheet.findOne({ sheetId });
+    if (!sheet) {
+      return NextResponse.json({ success: false, error: 'Operational sheet not found.' }, { status: 404 });
+    }
+
+    const previousInflow = (sheet.rooms?.roomRevenueTotal || 0) + (sheet.fbSales?.totalSalesAmount || 0);
+
+    // Apply authorized adjustments
+    if (updates?.rooms) sheet.rooms = { ...sheet.rooms, ...updates.rooms };
+    if (updates?.fbSales) sheet.fbSales = { ...sheet.fbSales, ...updates.fbSales };
+    if (updates?.energyExpenses) sheet.energyExpenses = { ...sheet.energyExpenses, ...updates.energyExpenses };
+    if (updates?.reconciliation) sheet.reconciliation = { ...sheet.reconciliation, ...updates.reconciliation };
+
+    await sheet.save();
+
+    // Immutable audit log
+    await AuditLog.create({
+      roomNumber: 'OPERATIONS-OVERRIDE',
+      category: 'SYSTEM',
+      headline: `Administrative Adjustment to Sheet #${sheetId} by ${modifierName} (${modifierRole})`,
+      details: `Justification: "${adjustmentReason || 'Audit correction'}". Previous Inflow: ₦${previousInflow.toLocaleString()} -> Adjusted Inflow: ₦${(
+        (sheet.rooms?.roomRevenueTotal || 0) + (sheet.fbSales?.totalSalesAmount || 0)
+      ).toLocaleString()}`,
+      actor: {
+        staffId: 'staff-admin',
+        staffName: modifierName || 'Super Admin',
+        role: modifierRole || 'SUPERADMIN',
+      },
+      timestamp: new Date().toISOString(),
+    });
+
+    return NextResponse.json({
+      success: true,
+      sheet,
+      message: `Operational sheet #${sheetId} updated by authorized ${modifierRole}. Adjustment recorded to immutable audit log.`,
+    });
+  } catch (err: any) {
+    console.error('Error modifying operational sheet:', err);
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
