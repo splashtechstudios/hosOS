@@ -9,16 +9,16 @@ import { DynamicMenuItem, IDynamicMenuItem } from '@/models/DynamicMenuItem';
 // Initial dynamic menu items for Osieka Resort (market pricing & daily specials)
 // Authentic Osieka Resort dynamic menu catalog (No fixed prices - market catch, daily specials & benchmarks)
 const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
-  // 1. Swallow
+  // 1. Swallow (No fixed prices - market price / zero suggested, no description)
   {
     itemId: 'swallow-1',
     name: 'Eba (Garri portion)',
     category: 'Swallow',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 1200,
-    priceFloor: 800,
-    dailyPriceSnapshot: 1200,
-    description: 'Fresh steaming hot garri swallow portion made to order.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -26,11 +26,11 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'swallow-2',
     name: 'Semovita',
     category: 'Swallow',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 1500,
-    priceFloor: 1000,
-    dailyPriceSnapshot: 1500,
-    description: 'Smooth, finely milled wheat semolina swallow portion.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -38,11 +38,11 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'swallow-3',
     name: 'Fufu',
     category: 'Swallow',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 1200,
-    priceFloor: 800,
-    dailyPriceSnapshot: 1200,
-    description: 'Traditional fermented cassava fufu wrap portion.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -50,25 +50,25 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'swallow-4',
     name: 'Pounded Yam',
     category: 'Swallow',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 2000,
-    priceFloor: 1200,
-    dailyPriceSnapshot: 2000,
-    description: 'Freshly pounded yam portion, smooth and elastic texture.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
 
-  // 2. Soups
+  // 2. Soups (No fixed prices - market rate, no description)
   {
     itemId: 'soup-1',
     name: 'Egusi Soup',
     category: 'Soups',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 3500,
-    priceFloor: 2500,
-    dailyPriceSnapshot: 3500,
-    description: 'Ground melon seeds simmered with stockfish, dried fish, and garden greens.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -76,11 +76,11 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'soup-2',
     name: 'Ogbono Soup',
     category: 'Soups',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 3500,
-    priceFloor: 2500,
-    dailyPriceSnapshot: 3500,
-    description: 'Traditional wild mango seed draw soup slow cooked with crayfish and spices.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -88,11 +88,11 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'soup-3',
     name: 'Vegetable Soup (Efo Riro - on special order)',
     category: 'Soups',
-    pricingType: 'DAILY_SPECIAL',
-    suggestedPrice: 4500,
-    priceFloor: 3200,
-    dailyPriceSnapshot: 4500,
-    description: 'Rich spinach vegetable pot simmered with locust beans (iru) on special chef order.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -100,11 +100,11 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'soup-4',
     name: 'Beans Soup (Gbegiri - on special order)',
     category: 'Soups',
-    pricingType: 'DAILY_SPECIAL',
-    suggestedPrice: 4000,
-    priceFloor: 2800,
-    dailyPriceSnapshot: 4000,
-    description: 'Silky peeled black-eyed beans soup slow simmered on special order.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -112,25 +112,25 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'soup-5',
     name: 'Groundnut Soup (on special order)',
     category: 'Soups',
-    pricingType: 'DAILY_SPECIAL',
-    suggestedPrice: 4500,
-    priceFloor: 3200,
-    dailyPriceSnapshot: 4500,
-    description: 'Savory roasted peanut stew infused with local herbs and spices on special order.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
 
-  // 3. Rice Meals
+  // 3. Rice Meals (No fixed prices, no description)
   {
     itemId: 'rice-1',
     name: 'White Rice & Stew or Vegetable',
     category: 'Rice Meals',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 3500,
-    priceFloor: 2500,
-    dailyPriceSnapshot: 3500,
-    description: 'Steamed fragrant white rice served with savory red tomato stew or vegetable sauce.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -138,11 +138,11 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'rice-2',
     name: 'Jollof Rice (Party Style)',
     category: 'Rice Meals',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 4000,
-    priceFloor: 2800,
-    dailyPriceSnapshot: 4000,
-    description: 'Smoky firewood-aroma Nigerian jollof rice in rich bell pepper tomato reduction.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -150,25 +150,25 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'rice-3',
     name: 'Asun Rice (on special order)',
     category: 'Rice Meals',
-    pricingType: 'DAILY_SPECIAL',
-    suggestedPrice: 6500,
-    priceFloor: 4800,
-    dailyPriceSnapshot: 6500,
-    description: 'Spicy wok-tossed jollof rice infused with tender roasted peppered goat meat on special order.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
 
-  // 4. Proteins
+  // 4. Proteins (No fixed prices, no description)
   {
     itemId: 'protein-1',
     name: 'Beef (Braised & Stewed Portion)',
     category: 'Proteins',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 2500,
-    priceFloor: 1800,
-    dailyPriceSnapshot: 2500,
-    description: 'Tender braised beef portion simmered in seasoned pepper reduction.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -176,11 +176,11 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'protein-2',
     name: 'Goat Meat (Peppered / Stewed Cut)',
     category: 'Proteins',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 3500,
-    priceFloor: 2500,
-    dailyPriceSnapshot: 3500,
-    description: 'Succulent goat meat cut slow-cooked in aromatic local herbs.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -188,11 +188,11 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'protein-3',
     name: 'Chicken (Crispy Fried / Stewed Quarter)',
     category: 'Proteins',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 3500,
-    priceFloor: 2500,
-    dailyPriceSnapshot: 3500,
-    description: 'Quarter chicken portion seasoned and fried golden or stewed.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -201,24 +201,24 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     name: 'Fish (Fresh Catch / Grilled or Stewed Portion)',
     category: 'Proteins',
     pricingType: 'OPEN_MARKET_PRICE',
-    suggestedPrice: 5500,
-    priceFloor: 3800,
-    dailyPriceSnapshot: 5500,
-    description: 'Fresh local fish portion priced by weight and daily morning catch.',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
 
-  // 5. Pasta Menu
+  // 5. Pasta Menu (No fixed prices, no description)
   {
     itemId: 'pasta-1',
     name: 'White Spaghetti & Savory Stew',
     category: 'Pasta Menu',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 3500,
-    priceFloor: 2500,
-    dailyPriceSnapshot: 3500,
-    description: 'Al dente spaghetti accompanied by seasoned red pepper tomato sauce.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -226,11 +226,11 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'pasta-2',
     name: 'Veggies Jollof Spaghetti',
     category: 'Pasta Menu',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 4000,
-    priceFloor: 2800,
-    dailyPriceSnapshot: 4000,
-    description: 'Spaghetti simmered in jollof sauce tossed with sweet corn, carrots, and peas.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -238,11 +238,11 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'pasta-3',
     name: 'White Macaroni & Savory Stew',
     category: 'Pasta Menu',
-    pricingType: 'SUGGESTED_BENCHMARK',
-    suggestedPrice: 3500,
-    priceFloor: 2500,
-    dailyPriceSnapshot: 3500,
-    description: 'Elbow macaroni served with rich pepper stew sauce.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -250,25 +250,25 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     itemId: 'pasta-4',
     name: 'Eggs / Veggies Jollof Macaroni (on special order)',
     category: 'Pasta Menu',
-    pricingType: 'DAILY_SPECIAL',
-    suggestedPrice: 4500,
-    priceFloor: 3200,
-    dailyPriceSnapshot: 4500,
-    description: 'Jollof macaroni stir-fried with farm fresh eggs and crisp veggies on special order.',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
 
-  // 6. Coastal & Special Platters
+  // 6. Coastal & Special Platters (No fixed prices, no description)
   {
     itemId: 'dyn-1',
     name: 'Catch of the Day: Whole Grilled Croaker (by size/kg)',
     category: 'Kitchen',
     pricingType: 'OPEN_MARKET_PRICE',
-    suggestedPrice: 16500,
-    priceFloor: 12000,
-    dailyPriceSnapshot: 16500,
-    description: 'Fresh Atlantic catch seasoned with Osieka spice blend and grilled plantain chips.',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -277,10 +277,10 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     name: 'Live Catfish Pepper Soup Pot (Point & Kill)',
     category: 'Soups',
     pricingType: 'OPEN_MARKET_PRICE',
-    suggestedPrice: 9500,
-    priceFloor: 7500,
-    dailyPriceSnapshot: 9500,
-    description: 'Selected live from resort pond, simmered with aromatic scent leaves.',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
     addedBy: 'Babajide Ogundimu (Manager)',
     isAvailable: true,
   },
@@ -748,12 +748,27 @@ export async function GET() {
   try {
     await connectToDatabase();
     
-    // Auto-upsert any missing items from INITIAL_DYNAMIC_MENU
-    for (const item of INITIAL_DYNAMIC_MENU) {
-      const exists = await DynamicMenuItem.findOne({ itemId: item.itemId });
-      if (!exists) {
+    const count = await DynamicMenuItem.countDocuments();
+    if (count === 0) {
+      for (const item of INITIAL_DYNAMIC_MENU) {
         await DynamicMenuItem.create(item);
       }
+    } else {
+      // Synchronize database: Food items (Swallow, Soups, Rice, Proteins, Pasta) have NO fixed prices (0)
+      await DynamicMenuItem.updateMany(
+        { category: { $ne: 'Bar' } },
+        {
+          $set: {
+            suggestedPrice: 0,
+            priceFloor: 0,
+            dailyPriceSnapshot: 0,
+            pricingType: 'OPEN_MARKET_PRICE',
+            description: '',
+          },
+        }
+      );
+      // Remove descriptions from all items as requested
+      await DynamicMenuItem.updateMany({}, { $set: { description: '' } });
     }
 
     const items = await DynamicMenuItem.find().sort({ category: 1, name: 1 });
@@ -765,10 +780,10 @@ export async function GET() {
         name: it.name,
         category: it.category,
         pricingType: it.pricingType,
-        suggestedPrice: it.suggestedPrice,
-        priceFloor: it.priceFloor,
-        dailyPriceSnapshot: it.dailyPriceSnapshot,
-        description: it.description,
+        suggestedPrice: it.category === 'Bar' ? it.suggestedPrice : 0,
+        priceFloor: it.category === 'Bar' ? it.priceFloor : 0,
+        dailyPriceSnapshot: it.category === 'Bar' ? it.dailyPriceSnapshot : 0,
+        description: '',
         addedBy: it.addedBy,
         isAvailable: it.isAvailable,
       })),
@@ -791,16 +806,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Item name is required' }, { status: 400 });
     }
 
+    const isFood = (category || '').toLowerCase() !== 'bar';
     const itemId = `dyn-${Date.now()}`;
     const newItem = await DynamicMenuItem.create({
       itemId,
       name,
       category: category || 'Kitchen',
-      pricingType: pricingType || 'OPEN_MARKET_PRICE',
-      suggestedPrice: Number(suggestedPrice || 0),
-      priceFloor: Number(priceFloor || 0),
-      dailyPriceSnapshot: Number(suggestedPrice || 0),
-      description: description || '',
+      pricingType: isFood ? 'OPEN_MARKET_PRICE' : (pricingType || 'OPEN_MARKET_PRICE'),
+      suggestedPrice: isFood ? 0 : Number(suggestedPrice || 0),
+      priceFloor: isFood ? 0 : Number(priceFloor || 0),
+      dailyPriceSnapshot: isFood ? 0 : Number(suggestedPrice || 0),
+      description: '',
       addedBy: addedBy || 'Resort Manager',
       isAvailable: true,
     });
@@ -809,8 +825,8 @@ export async function POST(req: NextRequest) {
     await AuditLog.create({
       roomNumber: 'KITCHEN-BAR',
       category: 'ORDER',
-      headline: `New Dynamic Menu Item Added: ${name}`,
-      details: `${addedBy || 'Manager'} added dynamic dish "${name}" (${pricingType || 'OPEN_MARKET_PRICE'}). Benchmark: ₦${Number(suggestedPrice || 0).toLocaleString()}, Floor: ₦${Number(priceFloor || 0).toLocaleString()}`,
+      headline: `New Menu Item Added: ${name}`,
+      details: `${addedBy || 'Manager'} added dish "${name}" (${category || 'Kitchen'}). Fixed price: ${isFood ? 'None (Market Price on Order)' : `₦${Number(suggestedPrice || 0).toLocaleString()}`}`,
       actor: {
         staffId: 'staff-manager',
         staffName: addedBy || 'Manager',
@@ -870,6 +886,61 @@ export async function PATCH(req: NextRequest) {
     });
   } catch (err: any) {
     console.error('Error updating menu item:', err);
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
+// Superadmin Permanent Menu Item Deletion
+export async function DELETE(req: NextRequest) {
+  try {
+    await connectToDatabase();
+    const { searchParams } = new URL(req.url);
+    const itemId = searchParams.get('itemId');
+    const role = (searchParams.get('role') || '').toUpperCase();
+    const actorName = searchParams.get('actorName') || 'Super Admin';
+
+    if (role !== 'SUPERADMIN' && role !== 'OWNER' && role !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Only Superadmin has authority to permanently delete menu data items.' },
+        { status: 403 }
+      );
+    }
+
+    if (!itemId) {
+      return NextResponse.json({ success: false, error: 'Item ID is required.' }, { status: 400 });
+    }
+
+    let deleted = await DynamicMenuItem.findOneAndDelete({ itemId });
+    if (!deleted) {
+      try {
+        deleted = await DynamicMenuItem.findByIdAndDelete(itemId);
+      } catch (_) {}
+    }
+
+    if (!deleted) {
+      return NextResponse.json({ success: false, error: `Menu item "${itemId}" not found.` }, { status: 404 });
+    }
+
+    // Immutable audit log
+    await AuditLog.create({
+      roomNumber: 'KITCHEN-BAR',
+      category: 'SYSTEM',
+      headline: `Menu Item Purged by Superadmin: ${deleted.name}`,
+      details: `Superadmin ${actorName} permanently purged menu item "${deleted.name}" (${deleted.category}, ID: ${itemId}) from Osieka Resort database.`,
+      actor: {
+        staffId: 'staff-admin',
+        staffName: actorName,
+        role: 'SUPERADMIN',
+      },
+      timestamp: new Date().toISOString(),
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Menu item "${deleted.name}" completely deleted by Superadmin.`,
+    });
+  } catch (err: any) {
+    console.error('Error deleting menu item:', err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }

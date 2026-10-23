@@ -55,6 +55,11 @@ export default function DailyOperationsView({ activeStaff }: DailyOperationsView
     activeStaff.role === 'OWNER' ||
     (activeStaff.role as any) === 'ADMIN';
 
+  const isSuperAdminOnly =
+    activeStaff.role === 'SUPERADMIN' ||
+    activeStaff.role === 'OWNER' ||
+    (activeStaff.role as any) === 'ADMIN';
+
   const isManager = activeStaff.role === 'MANAGER' || !isSuperAdminOrAccountant;
 
   // 1. Rooms State
@@ -219,6 +224,74 @@ export default function DailyOperationsView({ activeStaff }: DailyOperationsView
     setAdjCashHandover(physicalCashHandover);
     setAdjustmentReason('');
     setIsAdminAdjustmentModalOpen(true);
+  };
+
+  // Superadmin Permanent Sheet Deletion
+  const handleDeleteSheet = () => {
+    if (!existingSheetForDate || !isSuperAdminOnly) return;
+    showConfirm(
+      'Purge Operational Closing Sheet Completely',
+      `Are you sure you want to permanently delete Daily Operational Closing Sheet #${existingSheetForDate.sheetId} for ${existingSheetForDate.date}? This data item will be completely wiped from MongoDB Atlas and cannot be recovered.`,
+      async () => {
+        setIsLoading(true);
+        try {
+          const res = await fetch(
+            `/api/operations?sheetId=${encodeURIComponent(existingSheetForDate.sheetId)}&role=${encodeURIComponent(activeStaff.role)}&actorName=${encodeURIComponent(activeStaff.name)}`,
+            { method: 'DELETE' }
+          );
+          const data = await res.json();
+          if (data.success) {
+            showSuccess(
+              'Sheet Deleted Successfully',
+              data.message || `Sheet #${existingSheetForDate.sheetId} was deleted by Superadmin.`,
+              `Acting Superadmin: ${activeStaff.name} (${activeStaff.role}). Purge recorded to immutable audit log.`
+            );
+            loadSheets();
+          } else {
+            showFailed('Delete Failed', data.error || 'Server error occurred.');
+          }
+        } catch (err: any) {
+          showFailed('Network Error', err.message || 'Unable to delete sheet.');
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      {
+        confirmText: 'Purge Sheet Permanently',
+        cancelText: 'Cancel',
+        variant: 'danger',
+      }
+    );
+  };
+
+  // Superadmin Permanent Menu Item Deletion from Operations View
+  const handleDeleteMenuItem = (itemId: string, itemName: string) => {
+    if (!isSuperAdminOnly) return;
+    showConfirm(
+      'Delete Menu Item Permanently',
+      `Are you sure you want to completely delete "${itemName}" from the Osieka Resort menu catalog? This data item will be completely removed from MongoDB Atlas and cannot be recovered.`,
+      async () => {
+        try {
+          const res = await fetch(`/api/menu?itemId=${encodeURIComponent(itemId)}&role=${encodeURIComponent(activeStaff.role)}&actorName=${encodeURIComponent(activeStaff.name)}`, {
+            method: 'DELETE',
+          });
+          const data = await res.json();
+          if (data.success) {
+            showSuccess('Menu Item Deleted', `"${itemName}" was permanently purged by Superadmin.`);
+            loadMenuItems();
+          } else {
+            showToast({ type: 'error', title: 'Delete Failed', message: data.error || 'Server error' });
+          }
+        } catch (err: any) {
+          showToast({ type: 'error', title: 'Network Error', message: err.message });
+        }
+      },
+      {
+        confirmText: 'Delete Item',
+        cancelText: 'Cancel',
+        variant: 'danger',
+      }
+    );
   };
 
   // Submit Administrative Adjustment Handler (calls PUT /api/operations)
@@ -718,14 +791,28 @@ export default function DailyOperationsView({ activeStaff }: DailyOperationsView
                   Submitted by {existingSheetForDate?.managerName}. As <strong>{activeStaff.name} ({activeStaff.role})</strong>, you have exclusive privilege to adjust figures if required.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={openAdjustmentModal}
-                className="btn-primary"
-                style={{ padding: '8px 18px', fontSize: '0.825rem', fontWeight: 800 }}
-              >
-                ⚡ Administrative Adjustment
-              </button>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={openAdjustmentModal}
+                  className="btn-primary"
+                  style={{ padding: '8px 18px', fontSize: '0.825rem', fontWeight: 800 }}
+                >
+                  ⚡ Administrative Adjustment
+                </button>
+                {isSuperAdminOnly && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteSheet}
+                    className="btn-danger"
+                    style={{ padding: '8px 16px', fontSize: '0.825rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}
+                    title="Permanently purge sheet (Superadmin)"
+                  >
+                    <Trash2 size={14} />
+                    <span>Delete Sheet Completely</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -1058,7 +1145,12 @@ export default function DailyOperationsView({ activeStaff }: DailyOperationsView
                 <button
                   type="button"
                   disabled={isImmutableForManager}
-                  onClick={() => setRanGenerator(false)}
+                  onClick={() => {
+                    setRanGenerator(false);
+                    setGenHours(0);
+                    setDieselLitres(0);
+                    setDieselPricePerLitre(0);
+                  }}
                   style={{
                     padding: '6px 16px',
                     borderRadius: '6px',
@@ -1074,7 +1166,10 @@ export default function DailyOperationsView({ activeStaff }: DailyOperationsView
                 <button
                   type="button"
                   disabled={isImmutableForManager}
-                  onClick={() => setRanGenerator(true)}
+                  onClick={() => {
+                    setRanGenerator(true);
+                    setDieselPricePerLitre(1250);
+                  }}
                   style={{
                     padding: '6px 16px',
                     borderRadius: '6px',
@@ -1089,6 +1184,30 @@ export default function DailyOperationsView({ activeStaff }: DailyOperationsView
                 </button>
               </div>
             </div>
+
+            {/* If 100% Off-Grid Solar (Zero Generator Accounting Active) */}
+            {!ranGenerator && (
+              <div style={{
+                padding: '14px 18px',
+                backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                borderRadius: '8px',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '20px',
+              }}>
+                <span style={{ fontSize: '1.4rem' }}>☀️</span>
+                <div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--emerald-primary)' }}>
+                    100% Pure Off-Grid Solar Microgrid Active (120 kWp Solar PV + 360 kWh BESS)
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    Resort operates totally off-grid. Backup generator is offline (0 Run Hours • ₦0 Fuel Outflow). System does not account for generator; only actual daily market petty cash is logged below.
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* If Generator Ran */}
             {ranGenerator && (
@@ -1234,16 +1353,16 @@ export default function DailyOperationsView({ activeStaff }: DailyOperationsView
             <div style={{
               marginTop: '14px',
               padding: '10px 14px',
-              backgroundColor: 'rgba(245, 158, 11, 0.08)',
+              backgroundColor: !ranGenerator ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
               borderRadius: '8px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
             }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--amber-primary)' }}>
-                Total Operational Expenses (Diesel + Petty):
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: !ranGenerator ? 'var(--emerald-primary)' : 'var(--amber-primary)' }}>
+                {!ranGenerator ? 'Total Daily Petty Expenses (100% Off-Grid Solar • ₦0 Diesel Burn):' : 'Total Operational Expenses (Diesel + Petty):'}
               </span>
-              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--amber-primary)' }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: !ranGenerator ? 'var(--emerald-primary)' : 'var(--amber-primary)' }}>
                 ₦{totalOperationalOutflow.toLocaleString()}
               </span>
             </div>
@@ -1453,19 +1572,40 @@ export default function DailyOperationsView({ activeStaff }: DailyOperationsView
                 <span>Submitted Sheet Locked — Immutable to Manager</span>
               </div>
             ) : isSubmitted && isSuperAdminOrAccountant ? (
-              <button
-                type="button"
-                onClick={openAdjustmentModal}
-                className="btn-primary"
-                style={{
-                  padding: '12px 24px',
-                  fontSize: '0.9rem',
-                  fontWeight: 800,
-                  backgroundColor: 'var(--brand-primary)',
-                }}
-              >
-                ⚡ Administrative Adjustment
-              </button>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={openAdjustmentModal}
+                  className="btn-primary"
+                  style={{
+                    padding: '12px 24px',
+                    fontSize: '0.9rem',
+                    fontWeight: 800,
+                    backgroundColor: 'var(--brand-primary)',
+                  }}
+                >
+                  ⚡ Administrative Adjustment
+                </button>
+                {isSuperAdminOnly && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteSheet}
+                    className="btn-danger"
+                    style={{
+                      padding: '12px 24px',
+                      fontSize: '0.9rem',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                    title="Permanently purge sheet (Superadmin)"
+                  >
+                    <Trash2 size={16} />
+                    <span>Delete Sheet Completely</span>
+                  </button>
+                )}
+              </div>
             ) : (
               <button
                 type="button"
@@ -1583,20 +1723,21 @@ export default function DailyOperationsView({ activeStaff }: DailyOperationsView
                     </span>
                   </div>
 
-                  <h3 style={{ fontSize: '0.975rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+                  <h3 style={{ fontSize: '0.975rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 10px' }}>
                     {item.name}
                   </h3>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 14px' }}>
-                    {item.description || 'Prepared fresh with resort coastal spices.'}
-                  </p>
                 </div>
 
                 <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <div>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Today's Rate / Unit:</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Rate / Unit:</span>
                       <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                        ₦{(item.dailyPriceSnapshot || item.suggestedPrice).toLocaleString()}
+                        {item.category === 'Bar' && (item.dailyPriceSnapshot || item.suggestedPrice) > 0 ? (
+                          `₦${(item.dailyPriceSnapshot || item.suggestedPrice).toLocaleString()}`
+                        ) : (
+                          <span style={{ fontSize: '0.85rem', color: 'var(--brand-primary)' }}>Price on Order</span>
+                        )}
                       </span>
                     </div>
 
@@ -1630,7 +1771,7 @@ export default function DailyOperationsView({ activeStaff }: DailyOperationsView
                       className="btn-secondary"
                       style={{ flex: 1, fontSize: '0.75rem', padding: '6px' }}
                     >
-                      <Tag size={12} /> Set Today's Price
+                      <Tag size={12} /> Set Rate
                     </button>
 
                     {isSuperAdminOrAccountant && (
@@ -1667,6 +1808,18 @@ export default function DailyOperationsView({ activeStaff }: DailyOperationsView
                         title="Configure Price Floor (Admin / Accountant Only)"
                       >
                         <Lock size={12} /> Floor
+                      </button>
+                    )}
+
+                    {isSuperAdminOnly && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteMenuItem(item.id || (item as any).itemId, item.name)}
+                        className="btn-danger"
+                        style={{ fontSize: '0.75rem', padding: '6px 10px' }}
+                        title="Permanently purge item from catalog (Superadmin)"
+                      >
+                        <Trash2 size={12} />
                       </button>
                     )}
                   </div>
@@ -1727,24 +1880,62 @@ export default function DailyOperationsView({ activeStaff }: DailyOperationsView
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     Cash in Hand: ₦{(s.reconciliation?.totalPhysicalCashHandover || 0).toLocaleString()}
                   </div>
-                  <button
-                    onClick={() => {
-                      setSelectedDate(s.date);
-                      setActiveTab('TODAY');
-                    }}
-                    style={{
-                      marginTop: '6px',
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--brand-primary)',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      textDecoration: 'underline',
-                    }}
-                  >
-                    View / Audit Full Sheet →
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+                    <button
+                      onClick={() => {
+                        setSelectedDate(s.date);
+                        setActiveTab('TODAY');
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--brand-primary)',
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                      }}
+                    >
+                      View / Audit Full Sheet →
+                    </button>
+                    {isSuperAdminOnly && (
+                      <button
+                        onClick={() => {
+                          showConfirm(
+                            'Delete Historical Sheet Permanently',
+                            `Are you sure you want to completely purge Daily Operational Sheet #${s.sheetId} for ${s.date}? This data item will be removed from MongoDB Atlas and cannot be recovered.`,
+                            async () => {
+                              try {
+                                const res = await fetch(`/api/operations?sheetId=${encodeURIComponent(s.sheetId)}&role=${encodeURIComponent(activeStaff.role)}&actorName=${encodeURIComponent(activeStaff.name)}`, {
+                                  method: 'DELETE',
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  showSuccess('Sheet Purged', data.message || `Sheet #${s.sheetId} was deleted.`);
+                                  loadSheets();
+                                } else {
+                                  showToast({ type: 'error', title: 'Delete Failed', message: data.error || 'Server error' });
+                                }
+                              } catch (e: any) {
+                                showToast({ type: 'error', title: 'Network Error', message: e.message });
+                              }
+                            },
+                            { confirmText: 'Purge Sheet', variant: 'danger' }
+                          );
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--rose-primary)',
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Purge ×
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

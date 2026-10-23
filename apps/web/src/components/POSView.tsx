@@ -18,7 +18,9 @@ import {
   Lock,
   Sparkles,
   Flame,
-  Soup
+  Soup,
+  List,
+  LayoutGrid
 } from 'lucide-react';
 
 interface POSViewProps {
@@ -54,18 +56,18 @@ export default function POSView({
   const [selectedRoomNumber, setSelectedRoomNumber] = useState('204');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   
-  // Authentic Osieka Resort Initial Menu Items
+  // Authentic Osieka Resort Initial Menu Items (No fixed prices on food; drinks have printed menu prices)
   const DEFAULT_MENU_ITEMS: DynamicMenuItem[] = [
-    // 1. Swallow
+    // 1. Swallow (No price, no description)
     {
       id: 'swallow-1',
       name: 'Eba (Garri portion)',
       category: 'Swallow',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 1200,
-      priceFloor: 800,
-      dailyPriceSnapshot: 1200,
-      description: 'Fresh steaming hot garri swallow portion made to order.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -73,11 +75,11 @@ export default function POSView({
       id: 'swallow-2',
       name: 'Semovita',
       category: 'Swallow',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 1500,
-      priceFloor: 1000,
-      dailyPriceSnapshot: 1500,
-      description: 'Smooth, finely milled wheat semolina swallow portion.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -85,11 +87,11 @@ export default function POSView({
       id: 'swallow-3',
       name: 'Fufu',
       category: 'Swallow',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 1200,
-      priceFloor: 800,
-      dailyPriceSnapshot: 1200,
-      description: 'Traditional fermented cassava fufu wrap portion.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -97,25 +99,25 @@ export default function POSView({
       id: 'swallow-4',
       name: 'Pounded Yam',
       category: 'Swallow',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 2000,
-      priceFloor: 1200,
-      dailyPriceSnapshot: 2000,
-      description: 'Freshly pounded yam portion, smooth and elastic texture.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
 
-    // 2. Soups
+    // 2. Soups (No price, no description)
     {
       id: 'soup-1',
       name: 'Egusi Soup',
       category: 'Soups',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 3500,
-      priceFloor: 2500,
-      dailyPriceSnapshot: 3500,
-      description: 'Ground melon seeds simmered with stockfish, dried fish, and garden greens.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -123,11 +125,11 @@ export default function POSView({
       id: 'soup-2',
       name: 'Ogbono Soup',
       category: 'Soups',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 3500,
-      priceFloor: 2500,
-      dailyPriceSnapshot: 3500,
-      description: 'Traditional wild mango seed draw soup slow cooked with crayfish and spices.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -135,11 +137,11 @@ export default function POSView({
       id: 'soup-3',
       name: 'Vegetable Soup (Efo Riro - on special order)',
       category: 'Soups',
-      pricingType: 'DAILY_SPECIAL',
-      suggestedPrice: 4500,
-      priceFloor: 3200,
-      dailyPriceSnapshot: 4500,
-      description: 'Rich spinach vegetable pot simmered with locust beans (iru) on special chef order.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -147,11 +149,11 @@ export default function POSView({
       id: 'soup-4',
       name: 'Beans Soup (Gbegiri - on special order)',
       category: 'Soups',
-      pricingType: 'DAILY_SPECIAL',
-      suggestedPrice: 4000,
-      priceFloor: 2800,
-      dailyPriceSnapshot: 4000,
-      description: 'Silky peeled black-eyed beans soup slow simmered on special order.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -159,25 +161,25 @@ export default function POSView({
       id: 'soup-5',
       name: 'Groundnut Soup (on special order)',
       category: 'Soups',
-      pricingType: 'DAILY_SPECIAL',
-      suggestedPrice: 4500,
-      priceFloor: 3200,
-      dailyPriceSnapshot: 4500,
-      description: 'Savory roasted peanut stew infused with local herbs and spices on special order.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
 
-    // 3. Rice Meals
+    // 3. Rice Meals (No price, no description)
     {
       id: 'rice-1',
       name: 'White Rice & Stew or Vegetable',
       category: 'Rice Meals',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 3500,
-      priceFloor: 2500,
-      dailyPriceSnapshot: 3500,
-      description: 'Steamed fragrant white rice served with savory red tomato stew or vegetable sauce.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -185,11 +187,11 @@ export default function POSView({
       id: 'rice-2',
       name: 'Jollof Rice (Party Style)',
       category: 'Rice Meals',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 4000,
-      priceFloor: 2800,
-      dailyPriceSnapshot: 4000,
-      description: 'Smoky firewood-aroma Nigerian jollof rice in rich bell pepper tomato reduction.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -197,25 +199,25 @@ export default function POSView({
       id: 'rice-3',
       name: 'Asun Rice (on special order)',
       category: 'Rice Meals',
-      pricingType: 'DAILY_SPECIAL',
-      suggestedPrice: 6500,
-      priceFloor: 4800,
-      dailyPriceSnapshot: 6500,
-      description: 'Spicy wok-tossed jollof rice infused with tender roasted peppered goat meat on special order.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
 
-    // 4. Proteins
+    // 4. Proteins (No price, no description)
     {
       id: 'protein-1',
       name: 'Beef (Braised & Stewed Portion)',
       category: 'Proteins',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 2500,
-      priceFloor: 1800,
-      dailyPriceSnapshot: 2500,
-      description: 'Tender braised beef portion simmered in seasoned pepper reduction.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -223,11 +225,11 @@ export default function POSView({
       id: 'protein-2',
       name: 'Goat Meat (Peppered / Stewed Cut)',
       category: 'Proteins',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 3500,
-      priceFloor: 2500,
-      dailyPriceSnapshot: 3500,
-      description: 'Succulent goat meat cut slow-cooked in aromatic local herbs.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -235,11 +237,11 @@ export default function POSView({
       id: 'protein-3',
       name: 'Chicken (Crispy Fried / Stewed Quarter)',
       category: 'Proteins',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 3500,
-      priceFloor: 2500,
-      dailyPriceSnapshot: 3500,
-      description: 'Quarter chicken portion seasoned and fried golden or stewed.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -248,24 +250,24 @@ export default function POSView({
       name: 'Fish (Fresh Catch / Grilled or Stewed Portion)',
       category: 'Proteins',
       pricingType: 'OPEN_MARKET_PRICE',
-      suggestedPrice: 5500,
-      priceFloor: 3800,
-      dailyPriceSnapshot: 5500,
-      description: 'Fresh local fish portion priced by weight and daily morning catch.',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
 
-    // 5. Pasta Menu
+    // 5. Pasta Menu (No price, no description)
     {
       id: 'pasta-1',
       name: 'White Spaghetti & Savory Stew',
       category: 'Pasta Menu',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 3500,
-      priceFloor: 2500,
-      dailyPriceSnapshot: 3500,
-      description: 'Al dente spaghetti accompanied by seasoned red pepper tomato sauce.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -273,11 +275,11 @@ export default function POSView({
       id: 'pasta-2',
       name: 'Veggies Jollof Spaghetti',
       category: 'Pasta Menu',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 4000,
-      priceFloor: 2800,
-      dailyPriceSnapshot: 4000,
-      description: 'Spaghetti simmered in jollof sauce tossed with sweet corn, carrots, and peas.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -285,11 +287,11 @@ export default function POSView({
       id: 'pasta-3',
       name: 'White Macaroni & Savory Stew',
       category: 'Pasta Menu',
-      pricingType: 'SUGGESTED_BENCHMARK',
-      suggestedPrice: 3500,
-      priceFloor: 2500,
-      dailyPriceSnapshot: 3500,
-      description: 'Elbow macaroni served with rich pepper stew sauce.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -297,25 +299,25 @@ export default function POSView({
       id: 'pasta-4',
       name: 'Eggs / Veggies Jollof Macaroni (on special order)',
       category: 'Pasta Menu',
-      pricingType: 'DAILY_SPECIAL',
-      suggestedPrice: 4500,
-      priceFloor: 3200,
-      dailyPriceSnapshot: 4500,
-      description: 'Jollof macaroni stir-fried with farm fresh eggs and crisp veggies on special order.',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
 
-    // 6. Coastal & Bar Specialties
+    // 6. Coastal & Bar Specialties (No price on food, no description)
     {
       id: 'dyn-1',
       name: 'Catch of the Day: Whole Grilled Croaker (by size/kg)',
       category: 'Kitchen',
       pricingType: 'OPEN_MARKET_PRICE',
-      suggestedPrice: 16500,
-      priceFloor: 12000,
-      dailyPriceSnapshot: 16500,
-      description: 'Fresh Atlantic catch seasoned with Osieka spice blend and grilled plantain chips.',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -324,10 +326,10 @@ export default function POSView({
       name: 'Live Catfish Pepper Soup Pot (Point & Kill)',
       category: 'Soups',
       pricingType: 'OPEN_MARKET_PRICE',
-      suggestedPrice: 9500,
-      priceFloor: 7500,
-      dailyPriceSnapshot: 9500,
-      description: 'Selected live from resort pond, simmered with aromatic scent leaves.',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
       addedBy: 'Babajide Ogundimu (Manager)',
       isAvailable: true,
     },
@@ -792,36 +794,17 @@ export default function POSView({
 
   const [menuItems, setMenuItems] = useState<DynamicMenuItem[]>(DEFAULT_MENU_ITEMS);
 
-  // Initial cart sample (Pounded Yam + Egusi Soup + Goat Meat combo)
-  const [cart, setCart] = useState<CartItem[]>([
-    {
-      id: 'swallow-4',
-      name: 'Pounded Yam',
-      price: 2000,
-      priceFloor: 1200,
-      quantity: 1,
-      category: 'Swallow',
-      pricingType: 'SUGGESTED_BENCHMARK',
-    },
-    {
-      id: 'soup-1',
-      name: 'Egusi Soup',
-      price: 3500,
-      priceFloor: 2500,
-      quantity: 1,
-      category: 'Soups',
-      pricingType: 'SUGGESTED_BENCHMARK',
-    },
-    {
-      id: 'protein-2',
-      name: 'Goat Meat (Peppered / Stewed Cut)',
-      price: 3500,
-      priceFloor: 2500,
-      quantity: 1,
-      category: 'Proteins',
-      pricingType: 'SUGGESTED_BENCHMARK',
-    },
-  ]);
+  // View Mode: Default to List View for faster checkout (can switch to Cards on Mobile / Desktop)
+  const [viewMode, setViewMode] = useState<'LIST' | 'GRID'>('LIST');
+
+  // Superadmin Authority check
+  const isSuperAdmin =
+    activeStaff.role === 'SUPERADMIN' ||
+    activeStaff.role === 'OWNER' ||
+    (activeStaff.role as any) === 'ADMIN';
+
+  // Initial cart: starts clean for order entry
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   const [transferPending, setTransferPending] = useState(false);
   const [transferVerified, setTransferVerified] = useState(false);
@@ -837,6 +820,37 @@ export default function POSView({
       })
       .catch((e) => console.warn('Could not fetch dynamic menu for POS:', e));
   }, []);
+
+  // Superadmin Permanent Menu Item Deletion
+  const handleDeleteMenuItem = (itemId: string, itemName: string) => {
+    if (!isSuperAdmin) return;
+    showConfirm(
+      'Delete Menu Item Permanently',
+      `Are you sure you want to completely delete "${itemName}" from the Osieka Resort menu catalog? This data item will be completely removed from MongoDB Atlas and cannot be recovered.`,
+      async () => {
+        try {
+          const res = await fetch(`/api/menu?itemId=${encodeURIComponent(itemId)}&role=${encodeURIComponent(activeStaff.role)}&actorName=${encodeURIComponent(activeStaff.name)}`, {
+            method: 'DELETE',
+          });
+          const data = await res.json();
+          if (data.success) {
+            showSuccess('Menu Item Deleted', `"${itemName}" was permanently purged from the catalog by Superadmin.`);
+            setMenuItems((prev) => prev.filter((m) => m.id !== itemId && (m as any).itemId !== itemId));
+            setCart((prev) => prev.filter((c) => c.id !== itemId));
+          } else {
+            showToast({ type: 'error', title: 'Delete Failed', message: data.error || 'Server error' });
+          }
+        } catch (err: any) {
+          showToast({ type: 'error', title: 'Network Error', message: err.message });
+        }
+      },
+      {
+        confirmText: 'Purge Item',
+        cancelText: 'Cancel',
+        variant: 'danger',
+      }
+    );
+  };
 
   const addToCart = (item: DynamicMenuItem) => {
     const activePrice = item.dailyPriceSnapshot || item.suggestedPrice || 0;
@@ -1027,85 +1041,241 @@ export default function POSView({
           ))}
         </div>
 
-        {/* Menu Cards */}
+        {/* Menu Items Container (Default: List View; Toggleable to Cards View) */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '14px',
+            flexWrap: 'wrap',
+            gap: '12px',
+          }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
               {selectedCategory === 'ALL' ? 'All Dishes & Drinks' : selectedCategory} ({filteredMenuItems.length} available)
             </h3>
+
+            {/* List vs Cards View Switcher */}
+            <div style={{
+              display: 'flex',
+              backgroundColor: 'var(--bg-secondary)',
+              padding: '3px',
+              borderRadius: '8px',
+              border: '1px solid var(--border-color)',
+            }}>
+              <button
+                type="button"
+                onClick={() => setViewMode('LIST')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  backgroundColor: viewMode === 'LIST' ? '#FFFFFF' : 'transparent',
+                  color: viewMode === 'LIST' ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                  border: 'none',
+                  boxShadow: viewMode === 'LIST' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <List size={14} />
+                <span>☰ List View (Default)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('GRID')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  backgroundColor: viewMode === 'GRID' ? '#FFFFFF' : 'transparent',
+                  color: viewMode === 'GRID' ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                  border: 'none',
+                  boxShadow: viewMode === 'GRID' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <LayoutGrid size={14} />
+                <span>⊞ Cards View</span>
+              </button>
+            </div>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-            gap: '14px',
-          }}>
-            {filteredMenuItems.map((item) => {
-              const activePrice = item.dailyPriceSnapshot || item.suggestedPrice || 0;
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => addToCart(item)}
-                  className="ent-card-interactive"
-                  style={{
-                    padding: '16px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid var(--border-color)',
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span className={item.category === 'Swallow' ? 'badge badge-brand' : item.category === 'Soups' ? 'badge badge-amber' : item.category === 'Rice Meals' ? 'badge badge-clean' : item.category === 'Proteins' ? 'badge badge-dirty' : 'badge badge-purple'}>
-                        {item.category}
-                      </span>
-                      <span style={{
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        color: item.pricingType === 'OPEN_MARKET_PRICE' ? 'var(--brand-primary)' : item.pricingType === 'DAILY_SPECIAL' ? 'var(--amber-primary)' : 'var(--emerald-primary)',
-                      }}>
-                        {item.pricingType === 'OPEN_MARKET_PRICE' ? '🐟 Market Catch' : item.pricingType === 'DAILY_SPECIAL' ? '⭐ Special Order' : '📊 Benchmark'}
-                      </span>
-                    </div>
-
-                    <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>
-                      {item.name}
-                    </h4>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.3 }}>
-                      {item.description || 'Authentic Osieka resort specialty.'}
-                    </p>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px' }}>
+          {/* 1. LIST VIEW (Default for fast POS entry & mobile) */}
+          {viewMode === 'LIST' ? (
+            <div className="ent-card" style={{ padding: 0, overflow: 'hidden', backgroundColor: '#FFFFFF', border: '1px solid var(--border-color)' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table className="ent-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}>
+                      <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Item Name</th>
+                      <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Category</th>
+                      <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Price</th>
+                      <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', width: '130px' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredMenuItems.map((item) => {
+                      const isBar = item.category === 'Bar';
+                      const activePrice = item.dailyPriceSnapshot || item.suggestedPrice || 0;
+                      return (
+                        <tr
+                          key={item.id}
+                          onClick={() => addToCart(item)}
+                          style={{
+                            borderBottom: '1px solid var(--border-subtle)',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.03)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <td style={{ padding: '10px 16px', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.875rem' }}>
+                            {item.name}
+                          </td>
+                          <td style={{ padding: '10px 16px' }}>
+                            <span className={item.category === 'Swallow' ? 'badge badge-brand' : item.category === 'Soups' ? 'badge badge-amber' : item.category === 'Rice Meals' ? 'badge badge-clean' : item.category === 'Proteins' ? 'badge badge-dirty' : 'badge badge-purple'}>
+                              {item.category}
+                            </span>
+                          </td>
+                          <td style={{ padding: '10px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '0.9rem' }}>
+                            {isBar && activePrice > 0 ? (
+                              <span style={{ color: 'var(--text-primary)' }}>{formatNaira(activePrice)}</span>
+                            ) : (
+                              <span style={{ fontSize: '0.75rem', color: 'var(--brand-primary)', fontWeight: 700 }}>
+                                Price on Order
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                              <button
+                                className="btn-secondary"
+                                style={{ padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700 }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  addToCart(item);
+                                }}
+                              >
+                                <Plus size={13} /> Add
+                              </button>
+                              {isSuperAdmin && (
+                                <button
+                                  className="btn-danger"
+                                  style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                                  title="Permanently purge item (Superadmin)"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteMenuItem(item.id, item.name);
+                                  }}
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* 2. CARDS VIEW (Optional view without descriptions) */
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+              gap: '14px',
+            }}>
+              {filteredMenuItems.map((item) => {
+                const isBar = item.category === 'Bar';
+                const activePrice = item.dailyPriceSnapshot || item.suggestedPrice || 0;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => addToCart(item)}
+                    className="ent-card-interactive"
+                    style={{
+                      padding: '16px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid var(--border-color)',
+                    }}
+                  >
                     <div>
-                      <span style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
-                        {formatNaira(activePrice)}
-                      </span>
-                      {item.priceFloor > 0 && (
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                          Floor: ₦{item.priceFloor.toLocaleString()}
-                        </div>
-                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <span className={item.category === 'Swallow' ? 'badge badge-brand' : item.category === 'Soups' ? 'badge badge-amber' : item.category === 'Rice Meals' ? 'badge badge-clean' : item.category === 'Proteins' ? 'badge badge-dirty' : 'badge badge-purple'}>
+                          {item.category}
+                        </span>
+                        <span style={{
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          color: isBar ? 'var(--emerald-primary)' : 'var(--brand-primary)',
+                        }}>
+                          {isBar ? '🍹 Bar Fixed' : '🐟 Price on Order'}
+                        </span>
+                      </div>
+
+                      <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+                        {item.name}
+                      </h4>
                     </div>
 
-                    <button
-                      className="btn-secondary"
-                      style={{ padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addToCart(item);
-                      }}
-                    >
-                      <Plus size={14} /> Add
-                    </button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '10px' }}>
+                      <div>
+                        {isBar && activePrice > 0 ? (
+                          <span style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
+                            {formatNaira(activePrice)}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--brand-primary)' }}>
+                            Price on Order
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <button
+                          className="btn-secondary"
+                          style={{ padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart(item);
+                          }}
+                        >
+                          <Plus size={14} /> Add
+                        </button>
+                        {isSuperAdmin && (
+                          <button
+                            className="btn-danger"
+                            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                            title="Purge item (Superadmin)"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteMenuItem(item.id, item.name);
+                            }}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Anti-Fraud Manual Bank Transfer Verification Queue */}

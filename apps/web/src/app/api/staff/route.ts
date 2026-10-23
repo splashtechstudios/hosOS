@@ -124,3 +124,58 @@ export async function POST(req: Request) {
     );
   }
 }
+
+// Superadmin Permanent User Account Deletion
+export async function DELETE(req: Request) {
+  try {
+    await connectToDatabase();
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('id');
+    const email = searchParams.get('email');
+    const callerRole = (searchParams.get('role') || '').toUpperCase();
+    const callerName = searchParams.get('callerName') || 'Super Admin';
+
+    if (callerRole !== 'SUPERADMIN' && callerRole !== 'OWNER' && callerRole !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Only Superadmin has permission to completely delete user accounts.' },
+        { status: 403 }
+      );
+    }
+
+    if (!userId && !email) {
+      return NextResponse.json(
+        { success: false, error: 'Staff User ID or Email is required.' },
+        { status: 400 }
+      );
+    }
+
+    let deleted = null;
+    if (userId) {
+      try {
+        deleted = await User.findByIdAndDelete(userId);
+      } catch (_) {}
+    }
+    if (!deleted && email) {
+      deleted = await User.findOneAndDelete({ email: email.toLowerCase().trim() });
+    }
+
+    if (!deleted) {
+      return NextResponse.json(
+        { success: false, error: 'User account not found in database.' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `User account "${deleted.name}" (${deleted.email}, Role: ${deleted.role}) has been permanently deleted by Superadmin.`,
+    });
+  } catch (error: any) {
+    console.error('Staff deletion API error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message || 'Server error' },
+      { status: 500 }
+    );
+  }
+}
+

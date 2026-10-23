@@ -13,16 +13,50 @@ import {
   FileText,
   BadgeCheck,
   Clock,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 import { StaffUser, StaffOnboardingRecord, DepartmentType, UserRole } from '@hosos/types';
 import { ENTERPRISE_ORG, INITIAL_STAFF_ONBOARDING, INITIAL_STAFF } from '@/lib/mockData';
 import { useFeedback } from '@/context/FeedbackContext';
 
 export default function StaffOnboardingView({ activeStaff }: { activeStaff: StaffUser }) {
-  const { showSuccess, showFailed } = useFeedback();
+  const { showSuccess, showFailed, showConfirm } = useFeedback();
   const [onboardingList, setOnboardingList] = useState<StaffOnboardingRecord[]>(INITIAL_STAFF_ONBOARDING);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+
+  const isSuperAdmin = activeStaff.role === 'SUPERADMIN' || activeStaff.role === 'OWNER' || (activeStaff.role as any) === 'ADMIN';
+
+  const handleDeleteUser = (userId: string, userEmail: string, userName: string) => {
+    showConfirm(
+      'Permanently Delete Staff User?',
+      `Are you sure you want to permanently delete "${userName}" (${userEmail})? This action cannot be undone and will purge their credentials from MongoDB Atlas and HosOS RBAC.`,
+      async () => {
+        try {
+          const res = await fetch(`/api/staff?id=${encodeURIComponent(userId)}&email=${encodeURIComponent(userEmail)}&role=${encodeURIComponent(activeStaff.role)}`, {
+            method: 'DELETE',
+          });
+          const data = await res.json();
+          if (data.success) {
+            setOnboardingList((prev) => prev.filter((emp) => emp.id !== userId && emp.email !== userEmail));
+            showSuccess(
+              'User Completely Purged',
+              `Staff member ${userName} (${userEmail}) has been permanently deleted from Osieka Resort systems.`
+            );
+          } else {
+            showFailed('Deletion Error', data.error || 'Failed to delete user.');
+          }
+        } catch (err: any) {
+          showFailed('Deletion Failed', err.message || 'Network error while deleting staff user.');
+        }
+      },
+      {
+        variant: 'danger',
+        confirmText: 'Yes, Delete Completely',
+        cancelText: 'Cancel',
+      }
+    );
+  };
 
   // Wizard form fields
   const [fullName, setFullName] = useState('');
@@ -231,6 +265,7 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
                 <th>POS Quick PIN</th>
                 <th>Payroll Account</th>
                 <th>Onboarded By</th>
+                {isSuperAdmin && <th style={{ textAlign: 'right' }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -265,6 +300,26 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
                   <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {emp.onboardedByStaffName}
                   </td>
+                  {isSuperAdmin && (
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        onClick={() => handleDeleteUser(emp.id, emp.email, emp.fullName)}
+                        className="btn-danger"
+                        style={{
+                          padding: '6px 10px',
+                          fontSize: '0.725rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          borderRadius: '6px',
+                        }}
+                        title="Delete staff member permanently from database"
+                      >
+                        <Trash2 size={12} />
+                        <span>Delete User</span>
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

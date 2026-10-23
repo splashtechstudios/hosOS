@@ -5,7 +5,7 @@ import { AuditLog } from '@/models/AuditLog';
 
 export const dynamic = 'force-dynamic';
 
-// Seed demo sheets if collection is empty
+// Seed demo sheets if collection is empty (Resort operates 100% off-grid solar: 0 generator hours & N0 diesel by default)
 const INITIAL_DEMO_SHEETS = [
   {
     sheetId: 'SHEET-2026-10-23',
@@ -33,24 +33,24 @@ const INITIAL_DEMO_SHEETS = [
       bankTransferReceived: 140000,
     },
     energyExpenses: {
-      generatorRunHours: 8.5,
-      dieselLitresPurchased: 120,
-      dieselPricePerLitre: 1250,
-      totalDieselCost: 150000,
+      generatorRunHours: 0,
+      dieselLitresPurchased: 0,
+      dieselPricePerLitre: 0,
+      totalDieselCost: 0,
       otherPettyExpenses: [
         { id: 'exp-1', title: 'Market Food Stuffs & Fresh Fish', amount: 45000, paidVia: 'CASH', receiptAttached: true },
         { id: 'exp-2', title: 'Cooking Gas Refill 50kg', amount: 48000, paidVia: 'TRANSFER', receiptAttached: true },
         { id: 'exp-3', title: 'Housekeeping Laundry Detergents', amount: 15000, paidVia: 'CASH', receiptAttached: true },
       ],
-      totalExpenses: 258000,
+      totalExpenses: 108000,
     },
     reconciliation: {
       totalPhysicalCashHandover: 410000,
       expectedCashOnHand: 410000, // (350k room + 120k fb) - 60k cash expenses = 410k
       cashDiscrepancy: 0,
-      receiptPhotoUrls: ['/receipts/pos_eod_20261023.png', '/receipts/diesel_waybill_20261023.png'],
+      receiptPhotoUrls: ['/receipts/pos_eod_20261023.png'],
       bankAlertNotes: 'GTBank & Zenith POS settlements verified in terminal batch report.',
-      managerNotes: 'Busy Friday corporate retreat arrivals. Generator switched off at 4pm when NEPA Disco light restored.',
+      managerNotes: 'Resort operated 100% off-grid solar microgrid smoothly (120 kWp PV + 360 kWh BESS). Zero generator fuel burn.',
     },
     audit: {
       status: 'SUBMITTED',
@@ -88,15 +88,15 @@ const INITIAL_DEMO_SHEETS = [
       bankTransferReceived: 100000,
     },
     energyExpenses: {
-      generatorRunHours: 7.0,
-      dieselLitresPurchased: 100,
-      dieselPricePerLitre: 1250,
-      totalDieselCost: 125000,
+      generatorRunHours: 0,
+      dieselLitresPurchased: 0,
+      dieselPricePerLitre: 0,
+      totalDieselCost: 0,
       otherPettyExpenses: [
         { id: 'exp-4', title: 'Bar Ice Blocks Purchase', amount: 12000, paidVia: 'CASH', receiptAttached: true },
         { id: 'exp-5', title: 'Plumbing fittings for Room 104', amount: 18000, paidVia: 'CASH', receiptAttached: true },
       ],
-      totalExpenses: 155000,
+      totalExpenses: 30000,
     },
     reconciliation: {
       totalPhysicalCashHandover: 340000,
@@ -104,7 +104,7 @@ const INITIAL_DEMO_SHEETS = [
       cashDiscrepancy: 0,
       receiptPhotoUrls: ['/receipts/pos_eod_20261022.png'],
       bankAlertNotes: 'All Moniepoint POS card payments reconciled with bank credit.',
-      managerNotes: 'Smooth operations. No customer complaints recorded.',
+      managerNotes: '100% pure solar operation. Zero diesel generator burn.',
     },
     audit: {
       status: 'AUDITED_VERIFIED',
@@ -122,6 +122,25 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
     let sheets = await DailyOperationSheet.find().sort({ date: -1 }).limit(30);
+
+    if (!sheets || sheets.length === 0) {
+      for (const item of INITIAL_DEMO_SHEETS) {
+        await DailyOperationSheet.create(item as any);
+      }
+      sheets = await DailyOperationSheet.find().sort({ date: -1 }).limit(30);
+    } else {
+      // If demo sheets were seeded with old 8.5 generator hours, reset them to 100% off-grid solar zero generator
+      for (const s of sheets) {
+        if (s.sheetId === 'SHEET-2026-10-23' && s.energyExpenses?.generatorRunHours === 8.5) {
+          s.energyExpenses.generatorRunHours = 0;
+          s.energyExpenses.dieselLitresPurchased = 0;
+          s.energyExpenses.dieselPricePerLitre = 0;
+          s.energyExpenses.totalDieselCost = 0;
+          s.energyExpenses.totalExpenses = 108000;
+          await s.save();
+        }
+      }
+    }
 
     if (!sheets || sheets.length === 0) {
       for (const item of INITIAL_DEMO_SHEETS) {
@@ -394,3 +413,52 @@ export async function PUT(req: NextRequest) {
   }
 }
 
+// Superadmin Permanent Data Item Deletion
+export async function DELETE(req: NextRequest) {
+  try {
+    await connectToDatabase();
+    const { searchParams } = new URL(req.url);
+    const sheetId = searchParams.get('sheetId');
+    const role = (searchParams.get('role') || '').toUpperCase();
+    const actorName = searchParams.get('actorName') || 'Super Admin';
+
+    if (role !== 'SUPERADMIN' && role !== 'OWNER' && role !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Only Superadmin has permission to completely delete operational closing sheets.' },
+        { status: 403 }
+      );
+    }
+
+    if (!sheetId) {
+      return NextResponse.json({ success: false, error: 'Sheet ID is required.' }, { status: 400 });
+    }
+
+    const deleted = await DailyOperationSheet.findOneAndDelete({ sheetId });
+    if (!deleted) {
+      return NextResponse.json({ success: false, error: `Daily operational sheet #${sheetId} not found.` }, { status: 404 });
+    }
+
+    // Record immutable audit log
+    await AuditLog.create({
+      roomNumber: 'RESORT-HQ',
+      category: 'SYSTEM',
+      headline: `Daily Operations Sheet #${sheetId} Deleted by Superadmin`,
+      details: `Superadmin ${actorName} permanently purged daily operational closing sheet #${sheetId} for date ${deleted.date}. Total Inflow Purged: ₦${((deleted.rooms?.roomRevenueTotal || 0) + (deleted.fbSales?.totalSalesAmount || 0)).toLocaleString()}`,
+      amount: (deleted.rooms?.roomRevenueTotal || 0) + (deleted.fbSales?.totalSalesAmount || 0),
+      actor: {
+        staffId: 'staff-admin',
+        staffName: actorName,
+        role: 'SUPERADMIN',
+      },
+      timestamp: new Date().toISOString(),
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Daily operational sheet #${sheetId} has been completely deleted by Superadmin.`,
+    });
+  } catch (err: any) {
+    console.error('Error deleting operational sheet:', err);
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}

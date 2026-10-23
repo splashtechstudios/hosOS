@@ -69,6 +69,21 @@ export default function Sidebar({
   onSeedDatabase,
 }: SidebarProps) {
   const [searchFilter, setSearchFilter] = useState('');
+  const [rbacRevision, setRbacRevision] = useState(0);
+
+  // Dynamically re-evaluate view clearance when Superadmin modifies RBAC matrix
+  React.useEffect(() => {
+    const handleRbacUpdate = () => {
+      setRbacRevision((prev) => prev + 1);
+    };
+    window.addEventListener('hosos_rbac_updated', handleRbacUpdate);
+    window.addEventListener('storage', handleRbacUpdate);
+    return () => {
+      window.removeEventListener('hosos_rbac_updated', handleRbacUpdate);
+      window.removeEventListener('storage', handleRbacUpdate);
+    };
+  }, []);
+
   const [collapsedDepts, setCollapsedDepts] = useState<Record<string, boolean>>({
     executive: false,
     crm: false,

@@ -228,6 +228,24 @@ function HosOSAppInner() {
     }
   }, [selectedRoom?.roomNumber]);
 
+  const [rbacRevision, setRbacRevision] = useState(0);
+
+  // Dynamically enforce view clearance and redirect if Superadmin modifies RBAC matrix
+  useEffect(() => {
+    const handleRbacUpdate = () => {
+      setRbacRevision((prev) => prev + 1);
+      if (currentUser && !canAccessView(currentUser.role, currentView)) {
+        setCurrentView(getDefaultViewForRole(currentUser.role));
+      }
+    };
+    window.addEventListener('hosos_rbac_updated', handleRbacUpdate);
+    window.addEventListener('storage', handleRbacUpdate);
+    return () => {
+      window.removeEventListener('hosos_rbac_updated', handleRbacUpdate);
+      window.removeEventListener('storage', handleRbacUpdate);
+    };
+  }, [currentUser, currentView]);
+
   // Seed MongoDB Atlas handler with Enterprise Confirmation, Success, and Failed Pop-Up Boxes
   const handleSeedDatabase = () => {
     showConfirm(

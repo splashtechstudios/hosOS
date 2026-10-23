@@ -1,4 +1,4 @@
-import { UserRole, AppPermission } from '@hosos/types';
+import { UserRole, AppPermission, RoleRBACDefinition } from '@hosos/types';
 import { RBAC_ROLE_DEFINITIONS } from './mockData';
 
 export type ExtendedRole = UserRole | 'ADMIN';
@@ -144,6 +144,27 @@ export const VIEW_TITLES: Record<string, string> = {
 };
 
 /**
+ * Retrieves active role configuration (incorporating Superadmin custom saved matrix from localStorage)
+ */
+export function getActiveRoleDefinition(role: string | undefined | null): RoleRBACDefinition | undefined {
+  if (!role) return undefined;
+  const normalized = role.toUpperCase();
+
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('hosos_custom_rbac_matrix');
+      if (saved) {
+        const parsed: RoleRBACDefinition[] = JSON.parse(saved);
+        const match = parsed.find((r) => r.role === normalized);
+        if (match) return match;
+      }
+    } catch (_) {}
+  }
+
+  return RBAC_ROLE_DEFINITIONS.find((r) => r.role === normalized);
+}
+
+/**
  * Checks whether an account is strictly a Read-Only Auditor (Accountant)
  * The accountant has full visibility but zero mutation permissions across board.
  */
@@ -154,11 +175,30 @@ export function isReadOnlyAuditor(role: string | undefined | null): boolean {
 
 /**
  * Checks whether a given role has authorization to access a specific view.
+ * Superadmin matrix configuration is strictly enforced in real time.
  */
 export function canAccessView(role: string | undefined | null, viewId: string): boolean {
   if (!role) return false;
-  const normalized = role.toUpperCase() as ExtendedRole;
-  const allowedViews = ROLE_VIEW_ACCESS[normalized];
+  const normalized = role.toUpperCase();
+
+  // Superadmin & Owner retain master governance access to prevent total lockouts
+  if (normalized === 'SUPERADMIN' || normalized === 'OWNER') {
+    return true;
+  }
+
+  const def = getActiveRoleDefinition(normalized);
+  if (def) {
+    // If Superadmin toggled this role completely OFF, deny access across board
+    if (def.isEnabled === false) {
+      return false;
+    }
+    // If Superadmin specifically configured allowed sub-page views for this role
+    if (Array.isArray(def.allowedViews) && def.allowedViews.length > 0) {
+      return def.allowedViews.includes(viewId);
+    }
+  }
+
+  const allowedViews = ROLE_VIEW_ACCESS[normalized as ExtendedRole];
   if (!allowedViews) return false;
   return allowedViews.includes(viewId);
 }
@@ -174,14 +214,24 @@ export function getDefaultViewForRole(role: string | undefined | null): string {
 
 /**
  * Checks whether a given role holds a specific AppPermission.
+ * Strictly enforced against Superadmin saved permissions.
  */
 export function hasPermission(role: string | undefined | null, permission: AppPermission): boolean {
   if (!role) return false;
   const normalized = role.toUpperCase();
-  if (normalized === 'OWNER' || normalized === 'GENERAL_MANAGER' || normalized === 'ADMIN') {
+
+  if (normalized === 'SUPERADMIN' || normalized === 'OWNER') {
     return true;
   }
-  const def = RBAC_ROLE_DEFINITIONS.find(r => r.role === normalized);
+
+  const def = getActiveRoleDefinition(normalized);
   if (!def) return false;
+
+  // If role is disabled by Superadmin, all actions are blocked
+  if (def.isEnabled === false) {
+    return false;
+  }
+
   return def.permissions.includes(permission);
 }
+

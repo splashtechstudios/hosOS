@@ -215,6 +215,7 @@ export default function RBACView({
       () => {
         if (typeof window !== 'undefined') {
           localStorage.setItem('hosos_custom_rbac_matrix', JSON.stringify(roleDefinitions));
+          window.dispatchEvent(new CustomEvent('hosos_rbac_updated', { detail: roleDefinitions }));
         }
         setHasUnsavedChanges(false);
         showSuccess(
