@@ -79,12 +79,22 @@ export function getItemImageUrl(itemId: string, name: string = '', category: str
 
   if (map[itemId]) return map[itemId];
   const lower = name.toLowerCase();
+  if (lower.includes('nutri milk') || lower.includes('nutri-milk')) return '/menu/nutri_milk.jpg';
+  if (lower.includes('nutri yo') || lower.includes('nutri-yo') || lower.includes('nutria')) return '/menu/nutri_yo.jpg';
+  if (lower.includes('beans soup') || lower.includes('gbegiri')) return '/menu/beans_soup.jpg';
+  if (lower.includes('catfish')) return '/menu/catfish_peppersoup.jpg';
+  if (lower.includes('white rice')) return '/menu/white_rice.jpg';
   if (lower.includes('rice') || lower.includes('jollof')) return '/menu/jollof_rice.jpg';
   if (lower.includes('soup') || lower.includes('egusi') || lower.includes('ogbono')) return '/menu/egusi_soup.jpg';
   if (lower.includes('yam') || lower.includes('eba') || lower.includes('fufu') || lower.includes('semovita') || lower.includes('swallow')) return '/menu/pounded_yam.jpg';
-  if (lower.includes('croaker') || lower.includes('fish') || lower.includes('catfish')) return '/menu/fish.jpg';
+  if (lower.includes('croaker') || lower.includes('fish')) return '/menu/fish.jpg';
   if (lower.includes('meat') || lower.includes('beef') || lower.includes('goat') || lower.includes('chicken') || lower.includes('asun')) return '/menu/chicken.jpg';
   if (lower.includes('spaghetti') || lower.includes('macaroni') || lower.includes('pasta')) return '/menu/jollof_spaghetti.jpg';
+  if (lower.includes('fayrouz')) return '/menu/fayrouz.jpg';
+  if (lower.includes('radler')) return '/menu/star_radler.jpg';
+  if (lower.includes('star')) return '/menu/star_beer.jpg';
+  if (lower.includes('legend')) return '/menu/legend_stout.jpg';
+  if (lower.includes('exotic')) return '/menu/exotic.jpg';
   if (category === 'Bar' || lower.includes('beer') || lower.includes('drink') || lower.includes('stout')) return '/menu/maltina.jpg';
   return '/menu/jollof_rice.jpg';
 }
