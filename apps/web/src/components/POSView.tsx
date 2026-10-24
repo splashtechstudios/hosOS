@@ -65,7 +65,7 @@ export default function POSView({
     // 1. Swallow (No price, no description)
     {
       id: 'swallow-1',
-      name: 'Eba (Garri portion)',
+      name: 'Eba',
       category: 'Swallow',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -115,7 +115,7 @@ export default function POSView({
     // 2. Soups (No price, no description)
     {
       id: 'soup-1',
-      name: 'Egusi Soup',
+      name: 'Egusi',
       category: 'Soups',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -127,7 +127,7 @@ export default function POSView({
     },
     {
       id: 'soup-2',
-      name: 'Ogbono Soup',
+      name: 'Ogbono',
       category: 'Soups',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -139,7 +139,7 @@ export default function POSView({
     },
     {
       id: 'soup-3',
-      name: 'Vegetable Soup (Efo Riro - on special order)',
+      name: 'Vegetable (on special Order)',
       category: 'Soups',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -151,7 +151,7 @@ export default function POSView({
     },
     {
       id: 'soup-4',
-      name: 'Beans Soup (Gbegiri - on special order)',
+      name: 'Beans Soup (on special Order)',
       category: 'Soups',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -163,7 +163,19 @@ export default function POSView({
     },
     {
       id: 'soup-5',
-      name: 'Groundnut Soup (on special order)',
+      name: 'Groundnut Soup (on special Order)',
+      category: 'Soups',
+      pricingType: 'OPEN_MARKET_PRICE',
+      suggestedPrice: 0,
+      priceFloor: 0,
+      dailyPriceSnapshot: 0,
+      description: '',
+      addedBy: 'Babajide Ogundimu (Manager)',
+      isAvailable: true,
+    },
+    {
+      id: 'dyn-2',
+      name: 'Catfish Pepper Soup',
       category: 'Soups',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -174,10 +186,10 @@ export default function POSView({
       isAvailable: true,
     },
 
-    // 3. Rice Meals (No price, no description)
+    // 3. Rice Meals (Strict user menu names)
     {
       id: 'rice-1',
-      name: 'White Rice & Stew or Vegetable',
+      name: 'white rice and stew or vegetable',
       category: 'Rice Meals',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -189,7 +201,7 @@ export default function POSView({
     },
     {
       id: 'rice-2',
-      name: 'Jollof Rice (Party Style)',
+      name: 'jollof rice',
       category: 'Rice Meals',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -201,7 +213,7 @@ export default function POSView({
     },
     {
       id: 'rice-3',
-      name: 'Asun Rice (on special order)',
+      name: 'Asun Rice',
       category: 'Rice Meals',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -212,10 +224,10 @@ export default function POSView({
       isAvailable: true,
     },
 
-    // 4. Proteins (No price, no description)
+    // 4. Proteins (Plain protein name only: Beef, Goat meat, Chicken, Fish)
     {
       id: 'protein-1',
-      name: 'Beef (Braised & Stewed Portion)',
+      name: 'Beef',
       category: 'Proteins',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -227,7 +239,7 @@ export default function POSView({
     },
     {
       id: 'protein-2',
-      name: 'Goat Meat (Peppered / Stewed Cut)',
+      name: 'Goat meat',
       category: 'Proteins',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -239,7 +251,7 @@ export default function POSView({
     },
     {
       id: 'protein-3',
-      name: 'Chicken (Crispy Fried / Stewed Quarter)',
+      name: 'Chicken',
       category: 'Proteins',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -251,7 +263,7 @@ export default function POSView({
     },
     {
       id: 'protein-4',
-      name: 'Fish (Fresh Catch / Grilled or Stewed Portion)',
+      name: 'Fish',
       category: 'Proteins',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -262,10 +274,10 @@ export default function POSView({
       isAvailable: true,
     },
 
-    // 5. Pasta Menu (No price, no description)
+    // 5. Pasta Menu (Strict user menu names)
     {
       id: 'pasta-1',
-      name: 'White Spaghetti & Savory Stew',
+      name: 'white spaghetti and stew',
       category: 'Pasta Menu',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -277,7 +289,7 @@ export default function POSView({
     },
     {
       id: 'pasta-2',
-      name: 'Veggies Jollof Spaghetti',
+      name: 'Veggies Jollof spaghetti',
       category: 'Pasta Menu',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -289,7 +301,7 @@ export default function POSView({
     },
     {
       id: 'pasta-3',
-      name: 'White Macaroni & Savory Stew',
+      name: 'white marcaroni and stew',
       category: 'Pasta Menu',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
@@ -301,34 +313,8 @@ export default function POSView({
     },
     {
       id: 'pasta-4',
-      name: 'Eggs / Veggies Jollof Macaroni (on special order)',
+      name: 'eggs/veggies jollof marcaroni',
       category: 'Pasta Menu',
-      pricingType: 'OPEN_MARKET_PRICE',
-      suggestedPrice: 0,
-      priceFloor: 0,
-      dailyPriceSnapshot: 0,
-      description: '',
-      addedBy: 'Babajide Ogundimu (Manager)',
-      isAvailable: true,
-    },
-
-    // 6. Coastal & Bar Specialties (No price on food, no description)
-    {
-      id: 'dyn-1',
-      name: 'Catch of the Day: Whole Grilled Croaker (by size/kg)',
-      category: 'Kitchen',
-      pricingType: 'OPEN_MARKET_PRICE',
-      suggestedPrice: 0,
-      priceFloor: 0,
-      dailyPriceSnapshot: 0,
-      description: '',
-      addedBy: 'Babajide Ogundimu (Manager)',
-      isAvailable: true,
-    },
-    {
-      id: 'dyn-2',
-      name: 'Live Catfish Pepper Soup Pot (Point & Kill)',
-      category: 'Soups',
       pricingType: 'OPEN_MARKET_PRICE',
       suggestedPrice: 0,
       priceFloor: 0,
@@ -805,6 +791,7 @@ export default function POSView({
 
   // Responsive screen detection: Chowdeck & Glovo Mobile UX (Mobile = Cards default)
   const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState<boolean>(false);
   const [userViewMode, setUserViewMode] = useState<'LIST' | 'GRID' | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -985,6 +972,282 @@ export default function POSView({
     return matchesCategory && matchesSearch;
   });
 
+  // Reusable Ticket Component for Desktop Column & Mobile Sliding Drawer Modal
+  const renderTicketContent = (isDrawerModal: boolean = false) => (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+            Active Order Ticket
+          </h3>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Server: <strong style={{ color: 'var(--text-primary)' }}>{activeStaff.name}</strong>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="badge badge-brand">KOT Firing</span>
+          {isDrawerModal && (
+            <button
+              type="button"
+              onClick={() => setMobileDrawerOpen(false)}
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--bg-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontWeight: 800,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Room / Destination Selector */}
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
+          Bill Destination
+        </label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <button
+            onClick={() => setOrderType('ROOM_SERVICE')}
+            style={{
+              padding: '8px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              backgroundColor: orderType === 'ROOM_SERVICE' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+              color: orderType === 'ROOM_SERVICE' ? '#FFFFFF' : 'var(--text-secondary)',
+            }}
+          >
+            Charge Room
+          </button>
+          <button
+            onClick={() => setOrderType('DINE_IN')}
+            style={{
+              padding: '8px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              backgroundColor: orderType === 'DINE_IN' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+              color: orderType === 'DINE_IN' ? '#FFFFFF' : 'var(--text-secondary)',
+            }}
+          >
+            Direct Cash/POS
+          </button>
+        </div>
+
+        {orderType === 'ROOM_SERVICE' && (
+          <div style={{ marginTop: '8px' }}>
+            <select
+              value={selectedRoomNumber}
+              onChange={(e) => setSelectedRoomNumber(e.target.value)}
+              style={{ width: '100%', fontSize: '0.85rem' }}
+            >
+              {rooms.map((r) => (
+                <option key={r.id} value={r.roomNumber}>
+                  Room #{r.roomNumber} ({r.currentGuestName || 'Unassigned'})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Cart Item List with ON-THE-FLY PRICE EDITING */}
+      <div style={{
+        maxHeight: isDrawerModal ? '42vh' : '320px',
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        paddingRight: '4px',
+        marginBottom: '16px',
+      }}>
+        {cart.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            Order is empty. Tap Swallow, Soups, Rice, or Proteins to assemble meal.
+          </div>
+        ) : (
+          cart.map((item) => {
+            const isBelowFloor = item.priceFloor > 0 && item.price < item.priceFloor;
+            return (
+              <div 
+                key={item.id}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  padding: '10px 12px',
+                  background: 'var(--bg-secondary)',
+                  borderRadius: '8px',
+                  border: isBelowFloor ? '1px solid var(--crimson-border)' : '1px solid var(--border-color)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.85rem', flex: 1, paddingRight: '6px' }}>
+                    {item.name}
+                  </div>
+                  <button
+                    onClick={() => removeFromCart(item.id)}
+                    style={{ background: 'transparent', color: 'var(--rose-primary)', padding: '2px', border: 'none', cursor: 'pointer' }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+
+                {/* Interactive Dynamic Price & Quantity Row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {/* Editable Unit Price */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>₦</span>
+                    <input
+                      type="number"
+                      value={item.price}
+                      onChange={(e) => updateItemPrice(item.id, Number(e.target.value))}
+                      style={{
+                        width: '95px',
+                        padding: '3px 6px',
+                        fontSize: '0.8rem',
+                        fontWeight: 800,
+                        backgroundColor: '#FFFFFF',
+                        borderRadius: '4px',
+                        border: isBelowFloor ? '1px solid var(--crimson-primary)' : '1px solid var(--border-color)',
+                      }}
+                    />
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>/unit</span>
+                  </div>
+
+                  {/* Quantity Stepper */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '4px' }}>
+                    <button
+                      onClick={() => updateQuantity(item.id, -1)}
+                      style={{ padding: '3px 8px', background: 'transparent', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, minWidth: '16px', textAlign: 'center' }}>
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(item.id, 1)}
+                      style={{ padding: '3px 8px', background: 'transparent', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}
+                    >
+                      <Plus size={12} />
+                    </button>
+                  </div>
+
+                  {/* Extended Total */}
+                  <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
+                    {formatNaira(item.price * item.quantity)}
+                  </span>
+                </div>
+
+                {/* Floor Warning Tag */}
+                {isBelowFloor && (
+                  <div style={{ fontSize: '0.675rem', color: 'var(--crimson-primary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Lock size={10} /> Below Cost Recovery Floor (₦{item.priceFloor.toLocaleString()})
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Calculation Totals */}
+      <div style={{
+        borderTop: '1px solid var(--border-color)',
+        paddingTop: '12px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px',
+        fontSize: '0.85rem',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+          <span>Subtotal (Dynamic Prices)</span>
+          <span style={{ fontFamily: 'var(--font-mono)' }}>{formatNaira(subtotal)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+          <span>VAT (7.5%)</span>
+          <span style={{ fontFamily: 'var(--font-mono)' }}>{formatNaira(vat)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+          <span>Service Charge (10%)</span>
+          <span style={{ fontFamily: 'var(--font-mono)' }}>{formatNaira(serviceCharge)}</span>
+        </div>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          color: 'var(--text-primary)',
+          fontWeight: 800,
+          fontSize: '1.15rem',
+          marginTop: '8px',
+          paddingTop: '8px',
+          borderTop: '1px solid var(--border-color)',
+        }}>
+          <span>Total</span>
+          <span style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)' }}>
+            {formatNaira(total)}
+          </span>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div style={{ marginTop: '18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {orderType === 'ROOM_SERVICE' ? (
+          <button
+            onClick={() => {
+              handleChargeToRoom();
+              if (isDrawerModal) setMobileDrawerOpen(false);
+            }}
+            disabled={cart.length === 0}
+            className="btn-primary"
+            style={{ width: '100%', padding: '12px', fontSize: '0.9rem', fontWeight: 800 }}
+          >
+            <CreditCard size={16} /> Post Charge to Room #{selectedRoomNumber}
+          </button>
+        ) : (
+          <button
+            onClick={() => {
+              showSuccess(
+                'Order Settled Direct',
+                `Payment of ${formatNaira(total)} collected via POS / Cash.`,
+                `Items: ${cart.map((c) => c.name).join(', ')}`
+              );
+              setCart([]);
+              if (isDrawerModal) setMobileDrawerOpen(false);
+            }}
+            disabled={cart.length === 0}
+            className="btn-primary"
+            style={{ width: '100%', padding: '12px', fontSize: '0.9rem', fontWeight: 800, backgroundColor: 'var(--emerald-primary)' }}
+          >
+            <Banknote size={16} /> Settle Bill Direct ({formatNaira(total)})
+          </button>
+        )}
+
+        <button
+          onClick={() => {
+            setCart([]);
+            if (isDrawerModal) setMobileDrawerOpen(false);
+          }}
+          disabled={cart.length === 0}
+          className="btn-secondary"
+          style={{ width: '100%', padding: '8px', fontSize: '0.8rem' }}
+        >
+          Clear Ticket
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <div style={{
       display: 'grid',
@@ -1030,6 +1293,29 @@ export default function POSView({
                 <option value="DINE_IN">Table Dine-In</option>
                 <option value="BAR_TAB">Bar Tab</option>
               </select>
+
+              {isMobile && (
+                <button
+                  type="button"
+                  onClick={() => setMobileDrawerOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '6px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: cart.length > 0 ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                    color: cart.length > 0 ? '#FFFFFF' : 'var(--text-secondary)',
+                    border: '1px solid var(--border-color)',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <ShoppingBag size={13} />
+                  <span>Ticket ({cart.reduce((s, i) => s + i.quantity, 0)})</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1092,8 +1378,15 @@ export default function POSView({
           </div>
         </div>
 
-        {/* Category Filter Bar */}
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        {/* Category Filter Bar (Chowdeck & Glovo Horizontal Touch Scroll Rail) */}
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          overflowX: 'auto',
+          paddingBottom: '4px',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+        }}>
           {[
             { id: 'ALL', label: 'All Items' },
             { id: 'SWALLOW', label: '🥣 Swallow' },
@@ -1101,21 +1394,23 @@ export default function POSView({
             { id: 'RICE MEALS', label: '🍚 Rice Meals' },
             { id: 'PASTA MENU', label: '🍝 Pasta Menu' },
             { id: 'PROTEINS', label: '🥩 Proteins' },
-            { id: 'GRILL', label: '🍢 Grill / BBQ' },
             { id: 'BAR', label: '🍹 Bar Drinks' },
           ].map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
               style={{
-                padding: '6px 14px',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+                padding: isMobile ? '6px 12px' : '7px 15px',
                 borderRadius: '20px',
-                fontSize: '0.75rem',
+                fontSize: isMobile ? '0.72rem' : '0.78rem',
                 fontWeight: 700,
                 backgroundColor: selectedCategory === cat.id ? 'var(--brand-primary)' : 'var(--bg-secondary)',
                 color: selectedCategory === cat.id ? '#FFFFFF' : 'var(--text-secondary)',
-                border: '1px solid var(--border-color)',
+                border: selectedCategory === cat.id ? '1px solid var(--brand-primary)' : '1px solid var(--border-color)',
                 cursor: 'pointer',
+                transition: 'all 0.15s ease',
               }}
             >
               {cat.label}
@@ -1306,8 +1601,8 @@ export default function POSView({
             /* 2. CHOWDECK & GLOVO CARDS VIEW (Mobile Default with Authentic Photos) */
             <div style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(150px, 1fr))' : 'repeat(auto-fill, minmax(220px, 1fr))',
-              gap: isMobile ? '12px' : '16px',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(220px, 1fr))',
+              gap: isMobile ? '10px' : '16px',
             }}>
               {filteredMenuItems.map((item) => {
                 const isBar = item.category === 'Bar';
@@ -1328,7 +1623,7 @@ export default function POSView({
                       flexDirection: 'column',
                       backgroundColor: '#FFFFFF',
                       border: inCartQty > 0 ? '2px solid var(--brand-primary)' : '1px solid var(--border-color)',
-                      borderRadius: '14px',
+                      borderRadius: isMobile ? '12px' : '14px',
                       overflow: 'hidden',
                       transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                       boxShadow: inCartQty > 0 ? '0 4px 14px rgba(37, 99, 235, 0.15)' : '0 1px 3px rgba(0,0,0,0.04)',
@@ -1338,7 +1633,7 @@ export default function POSView({
                     <div style={{
                       position: 'relative',
                       width: '100%',
-                      height: isMobile ? '120px' : '140px',
+                      height: isMobile ? '110px' : '140px',
                       backgroundColor: 'var(--bg-secondary)',
                       overflow: 'hidden',
                     }}>
@@ -1543,260 +1838,17 @@ export default function POSView({
 
       </div>
 
-      {/* Right: Active Ticket / Cart Drawer with Editable Unit Prices */}
-      <div id="pos-order-ticket" className="ent-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: 'fit-content', backgroundColor: '#FFFFFF' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-              Active Order Ticket
-            </h3>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Server: <strong style={{ color: 'var(--text-primary)' }}>{activeStaff.name}</strong>
-            </div>
-          </div>
-          <span className="badge badge-brand">KOT Firing</span>
+      {/* Right: Active Ticket on Desktop */}
+      {!isMobile && (
+        <div id="pos-order-ticket" className="ent-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: 'fit-content', backgroundColor: '#FFFFFF' }}>
+          {renderTicketContent(false)}
         </div>
+      )}
 
-        {/* Room / Destination Selector */}
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
-            Bill Destination
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <button
-              onClick={() => setOrderType('ROOM_SERVICE')}
-              style={{
-                padding: '8px',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                backgroundColor: orderType === 'ROOM_SERVICE' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
-                color: orderType === 'ROOM_SERVICE' ? '#FFFFFF' : 'var(--text-secondary)',
-              }}
-            >
-              Charge Room
-            </button>
-            <button
-              onClick={() => setOrderType('DINE_IN')}
-              style={{
-                padding: '8px',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                backgroundColor: orderType === 'DINE_IN' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
-                color: orderType === 'DINE_IN' ? '#FFFFFF' : 'var(--text-secondary)',
-              }}
-            >
-              Direct Cash/POS
-            </button>
-          </div>
-
-          {orderType === 'ROOM_SERVICE' && (
-            <div style={{ marginTop: '8px' }}>
-              <select
-                value={selectedRoomNumber}
-                onChange={(e) => setSelectedRoomNumber(e.target.value)}
-                style={{ width: '100%', fontSize: '0.85rem' }}
-              >
-                {rooms.map((r) => (
-                  <option key={r.id} value={r.roomNumber}>
-                    Room #{r.roomNumber} ({r.currentGuestName || 'Unassigned'})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-
-        {/* Cart Item List with ON-THE-FLY PRICE EDITING */}
-        <div style={{
-          maxHeight: '320px',
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          paddingRight: '4px',
-          marginBottom: '16px',
-        }}>
-          {cart.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              Order is empty. Tap Swallow, Soups, Rice, or Proteins to assemble meal.
-            </div>
-          ) : (
-            cart.map((item) => {
-              const isBelowFloor = item.priceFloor > 0 && item.price < item.priceFloor;
-              return (
-                <div 
-                  key={item.id}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    padding: '10px 12px',
-                    background: 'var(--bg-secondary)',
-                    borderRadius: '8px',
-                    border: isBelowFloor ? '1px solid var(--crimson-border)' : '1px solid var(--border-color)',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.85rem', flex: 1, paddingRight: '6px' }}>
-                      {item.name}
-                    </div>
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      style={{ background: 'transparent', color: 'var(--rose-primary)', padding: '2px', border: 'none', cursor: 'pointer' }}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-
-                  {/* Interactive Dynamic Price & Quantity Row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    {/* Editable Unit Price */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>₦</span>
-                      <input
-                        type="number"
-                        value={item.price}
-                        onChange={(e) => updateItemPrice(item.id, Number(e.target.value))}
-                        style={{
-                          width: '95px',
-                          padding: '3px 6px',
-                          fontSize: '0.8rem',
-                          fontWeight: 800,
-                          backgroundColor: '#FFFFFF',
-                          borderRadius: '4px',
-                          border: isBelowFloor ? '1px solid var(--crimson-primary)' : '1px solid var(--border-color)',
-                        }}
-                      />
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>/unit</span>
-                    </div>
-
-                    {/* Quantity Stepper */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '4px' }}>
-                      <button
-                        onClick={() => updateQuantity(item.id, -1)}
-                        style={{ padding: '3px 8px', background: 'transparent', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}
-                      >
-                        <Minus size={12} />
-                      </button>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 700, minWidth: '16px', textAlign: 'center' }}>
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(item.id, 1)}
-                        style={{ padding: '3px 8px', background: 'transparent', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}
-                      >
-                        <Plus size={12} />
-                      </button>
-                    </div>
-
-                    {/* Extended Total */}
-                    <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
-                      {formatNaira(item.price * item.quantity)}
-                    </span>
-                  </div>
-
-                  {/* Floor Warning Tag */}
-                  {isBelowFloor && (
-                    <div style={{ fontSize: '0.675rem', color: 'var(--crimson-primary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Lock size={10} /> Below Cost Recovery Floor (₦{item.priceFloor.toLocaleString()})
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {/* Calculation Totals */}
-        <div style={{
-          borderTop: '1px solid var(--border-color)',
-          paddingTop: '12px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '6px',
-          fontSize: '0.85rem',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
-            <span>Subtotal (Dynamic Prices)</span>
-            <span style={{ fontFamily: 'var(--font-mono)' }}>{formatNaira(subtotal)}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
-            <span>VAT (7.5%)</span>
-            <span style={{ fontFamily: 'var(--font-mono)' }}>{formatNaira(vat)}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
-            <span>Service Charge (10%)</span>
-            <span style={{ fontFamily: 'var(--font-mono)' }}>{formatNaira(serviceCharge)}</span>
-          </div>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            color: 'var(--text-primary)',
-            fontWeight: 800,
-            fontSize: '1.15rem',
-            marginTop: '8px',
-            paddingTop: '8px',
-            borderTop: '1px solid var(--border-color)',
-          }}>
-            <span>Total</span>
-            <span style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)' }}>
-              {formatNaira(total)}
-            </span>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div style={{ marginTop: '18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {orderType === 'ROOM_SERVICE' ? (
-            <button
-              onClick={handleChargeToRoom}
-              disabled={cart.length === 0}
-              className="btn-primary"
-              style={{ width: '100%', padding: '12px', fontSize: '0.9rem', fontWeight: 800 }}
-            >
-              <CreditCard size={16} /> Post Charge to Room #{selectedRoomNumber}
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                showSuccess(
-                  'Order Settled Direct',
-                  `Payment of ${formatNaira(total)} collected via POS / Cash.`,
-                  `Items: ${cart.map((c) => c.name).join(', ')}`
-                );
-                setCart([]);
-              }}
-              disabled={cart.length === 0}
-              className="btn-primary"
-              style={{ width: '100%', padding: '12px', fontSize: '0.9rem', fontWeight: 800, backgroundColor: 'var(--emerald-primary)' }}
-            >
-              <Banknote size={16} /> Settle Bill Direct ({formatNaira(total)})
-            </button>
-          )}
-
-          <button
-            onClick={() => setCart([])}
-            disabled={cart.length === 0}
-            className="btn-secondary"
-            style={{ width: '100%', padding: '8px', fontSize: '0.8rem' }}
-          >
-            Clear Ticket
-          </button>
-        </div>
-
-      </div>
-
-      {/* Chowdeck & Glovo Mobile Sticky Order Bar */}
-      {isMobile && cart.length > 0 && (
+      {/* Chowdeck & Glovo Mobile Sticky Order Pill (Fixed Bottom Bar) */}
+      {isMobile && cart.length > 0 && !mobileDrawerOpen && (
         <div
-          onClick={() => {
-            const ticketElem = document.getElementById('pos-order-ticket');
-            if (ticketElem) {
-              ticketElem.scrollIntoView({ behavior: 'smooth' });
-            }
-          }}
+          onClick={() => setMobileDrawerOpen(true)}
           style={{
             position: 'fixed',
             bottom: '20px',
@@ -1829,6 +1881,52 @@ export default function POSView({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-mono)' }}>
             <span>{formatNaira(total)}</span>
             <ArrowRight size={18} />
+          </div>
+        </div>
+      )}
+
+      {/* Chowdeck & Glovo Mobile Sliding Ticket Bottom Sheet Drawer */}
+      {isMobile && mobileDrawerOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            backgroundColor: 'rgba(15, 23, 42, 0.7)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setMobileDrawerOpen(false);
+            }
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderTopLeftRadius: '24px',
+              borderTopRightRadius: '24px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '16px 20px 32px',
+              boxShadow: '0 -10px 40px rgba(0,0,0,0.3)',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            {/* Top Grab Handle */}
+            <div style={{
+              width: '40px',
+              height: '4px',
+              backgroundColor: 'var(--border-color)',
+              borderRadius: '2px',
+              margin: '0 auto 12px',
+            }} />
+
+            {renderTicketContent(true)}
           </div>
         </div>
       )}

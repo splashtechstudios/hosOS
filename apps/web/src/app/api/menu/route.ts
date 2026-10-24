@@ -10,10 +10,10 @@ import { getItemImageUrl } from '@/lib/menuImages';
 // Initial dynamic menu items for Osieka Resort (market pricing & daily specials)
 // Authentic Osieka Resort dynamic menu catalog (No fixed prices - market catch, daily specials & benchmarks)
 const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
-  // 1. Swallow (No fixed prices - market price / zero suggested, no description)
+  // 1. Swallow (No fixed prices - market price, plain names)
   {
     itemId: 'swallow-1',
-    name: 'Eba (Garri portion)',
+    name: 'Eba',
     category: 'Swallow',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -60,10 +60,10 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     isAvailable: true,
   },
 
-  // 2. Soups (No fixed prices - market rate, no description)
+  // 2. Soups (No fixed prices, plain user names)
   {
     itemId: 'soup-1',
-    name: 'Egusi Soup',
+    name: 'Egusi',
     category: 'Soups',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -75,7 +75,7 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
   },
   {
     itemId: 'soup-2',
-    name: 'Ogbono Soup',
+    name: 'Ogbono',
     category: 'Soups',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -87,7 +87,7 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
   },
   {
     itemId: 'soup-3',
-    name: 'Vegetable Soup (Efo Riro - on special order)',
+    name: 'Vegetable (on special Order)',
     category: 'Soups',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -99,7 +99,7 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
   },
   {
     itemId: 'soup-4',
-    name: 'Beans Soup (Gbegiri - on special order)',
+    name: 'Beans Soup (on special Order)',
     category: 'Soups',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -111,7 +111,19 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
   },
   {
     itemId: 'soup-5',
-    name: 'Groundnut Soup (on special order)',
+    name: 'Groundnut Soup (on special Order)',
+    category: 'Soups',
+    pricingType: 'OPEN_MARKET_PRICE',
+    suggestedPrice: 0,
+    priceFloor: 0,
+    dailyPriceSnapshot: 0,
+    description: '',
+    addedBy: 'Babajide Ogundimu (Manager)',
+    isAvailable: true,
+  },
+  {
+    itemId: 'dyn-2',
+    name: 'Catfish Pepper Soup',
     category: 'Soups',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -122,10 +134,10 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     isAvailable: true,
   },
 
-  // 3. Rice Meals (No fixed prices, no description)
+  // 3. Rice Meals (Strict user menu names)
   {
     itemId: 'rice-1',
-    name: 'White Rice & Stew or Vegetable',
+    name: 'white rice and stew or vegetable',
     category: 'Rice Meals',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -137,7 +149,7 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
   },
   {
     itemId: 'rice-2',
-    name: 'Jollof Rice (Party Style)',
+    name: 'jollof rice',
     category: 'Rice Meals',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -149,7 +161,7 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
   },
   {
     itemId: 'rice-3',
-    name: 'Asun Rice (on special order)',
+    name: 'Asun Rice',
     category: 'Rice Meals',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -160,10 +172,10 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     isAvailable: true,
   },
 
-  // 4. Proteins (No fixed prices, no description)
+  // 4. Proteins (Plain protein name only: Beef, Goat meat, Chicken, Fish)
   {
     itemId: 'protein-1',
-    name: 'Beef (Braised & Stewed Portion)',
+    name: 'Beef',
     category: 'Proteins',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -175,7 +187,7 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
   },
   {
     itemId: 'protein-2',
-    name: 'Goat Meat (Peppered / Stewed Cut)',
+    name: 'Goat meat',
     category: 'Proteins',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -187,7 +199,7 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
   },
   {
     itemId: 'protein-3',
-    name: 'Chicken (Crispy Fried / Stewed Quarter)',
+    name: 'Chicken',
     category: 'Proteins',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -199,7 +211,7 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
   },
   {
     itemId: 'protein-4',
-    name: 'Fish (Fresh Catch / Grilled or Stewed Portion)',
+    name: 'Fish',
     category: 'Proteins',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -210,10 +222,10 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     isAvailable: true,
   },
 
-  // 5. Pasta Menu (No fixed prices, no description)
+  // 5. Pasta Menu (Strict user menu names)
   {
     itemId: 'pasta-1',
-    name: 'White Spaghetti & Savory Stew',
+    name: 'white spaghetti and stew',
     category: 'Pasta Menu',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -225,7 +237,7 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
   },
   {
     itemId: 'pasta-2',
-    name: 'Veggies Jollof Spaghetti',
+    name: 'Veggies Jollof spaghetti',
     category: 'Pasta Menu',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -237,7 +249,7 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
   },
   {
     itemId: 'pasta-3',
-    name: 'White Macaroni & Savory Stew',
+    name: 'white marcaroni and stew',
     category: 'Pasta Menu',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -249,7 +261,7 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
   },
   {
     itemId: 'pasta-4',
-    name: 'Eggs / Veggies Jollof Macaroni (on special order)',
+    name: 'eggs/veggies jollof marcaroni',
     category: 'Pasta Menu',
     pricingType: 'OPEN_MARKET_PRICE',
     suggestedPrice: 0,
@@ -260,31 +272,6 @@ const INITIAL_DYNAMIC_MENU: IDynamicMenuItem[] = [
     isAvailable: true,
   },
 
-  // 6. Coastal & Special Platters (No fixed prices, no description)
-  {
-    itemId: 'dyn-1',
-    name: 'Catch of the Day: Whole Grilled Croaker (by size/kg)',
-    category: 'Kitchen',
-    pricingType: 'OPEN_MARKET_PRICE',
-    suggestedPrice: 0,
-    priceFloor: 0,
-    dailyPriceSnapshot: 0,
-    description: '',
-    addedBy: 'Babajide Ogundimu (Manager)',
-    isAvailable: true,
-  },
-  {
-    itemId: 'dyn-2',
-    name: 'Live Catfish Pepper Soup Pot (Point & Kill)',
-    category: 'Soups',
-    pricingType: 'OPEN_MARKET_PRICE',
-    suggestedPrice: 0,
-    priceFloor: 0,
-    dailyPriceSnapshot: 0,
-    description: '',
-    addedBy: 'Babajide Ogundimu (Manager)',
-    isAvailable: true,
-  },
 
   // 7. Official Osieka Resort Bar Menu (Printed Register: No. 3 Resort Close, Aiyeromi Quarters, Ogori)
   {
@@ -770,6 +757,16 @@ export async function GET() {
       );
       // Remove descriptions from all items as requested
       await DynamicMenuItem.updateMany({}, { $set: { description: '' } });
+
+      // Synchronize exact names from INITIAL_DYNAMIC_MENU
+      for (const item of INITIAL_DYNAMIC_MENU) {
+        await DynamicMenuItem.updateOne(
+          { itemId: item.itemId },
+          { $set: { name: item.name, category: item.category, description: '' } }
+        );
+      }
+      // Remove any unwanted extras
+      await DynamicMenuItem.deleteOne({ itemId: 'dyn-1' });
     }
 
     const items = await DynamicMenuItem.find().sort({ category: 1, name: 1 });
