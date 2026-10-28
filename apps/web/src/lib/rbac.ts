@@ -134,7 +134,8 @@ export const VIEW_TITLES: Record<string, string> = {
   'crm-guests': 'VIP Guest Profiles',
   'crm-deals': 'Corporate Event Pipeline',
   'room-audit': 'Room 360° Internal Room Audit',
-  'front-desk': 'Tape Chart & Room Grid',
+  'front-desk': 'Hospitality Command Hub',
+  'hospitality-hub': 'Hospitality Command Hub',
   pos: 'Restaurant & Bar POS',
   'inventory-tots': 'Bar Tot Dipstick Audit',
   'inventory-bom': 'Recipe Bill of Materials',
@@ -142,6 +143,23 @@ export const VIEW_TITLES: Record<string, string> = {
   'onboarding-directory': 'Staff Directory & Access',
   'rbac-matrix': 'Multi-Role RBAC Matrix',
 };
+
+/**
+ * Retrieves per-user permission overrides (grants and denials) from localStorage.
+ * These are configured by SuperAdmin in the RBAC Per-User Overrides panel.
+ */
+function getUserPermissionOverrides(userId?: string | null) {
+  if (!userId || typeof window === 'undefined') return null;
+  try {
+    const overrides = JSON.parse(localStorage.getItem('hosos_user_permission_overrides') || '{}');
+    return overrides[userId] as {
+      grantedPermissions: AppPermission[];
+      deniedPermissions: AppPermission[];
+      allowedViews: string[];
+      elevatedRole?: string;
+    } | undefined;
+  } catch { return null; }
+}
 
 /**
  * Retrieves active role configuration (incorporating Superadmin custom saved matrix from localStorage)
@@ -177,13 +195,29 @@ export function isReadOnlyAuditor(role: string | undefined | null): boolean {
  * Checks whether a given role has authorization to access a specific view.
  * Superadmin matrix configuration is strictly enforced in real time.
  */
-export function canAccessView(role: string | undefined | null, viewId: string): boolean {
+export function canAccessView(role: string | undefined | null, viewId: string, userId?: string | null): boolean {
   if (!role) return false;
   const normalized = role.toUpperCase();
 
   // Superadmin & Owner retain master governance access to prevent total lockouts
   if (normalized === 'SUPERADMIN' || normalized === 'OWNER') {
     return true;
+  }
+
+  // Check per-user view access overrides first
+  if (userId) {
+    const userOverride = getUserPermissionOverrides(userId);
+    if (userOverride) {
+      // If user has been elevated to a different role, use that role's views
+      if (userOverride.elevatedRole) {
+        const elevatedNorm = userOverride.elevatedRole.toUpperCase();
+        if (elevatedNorm === 'SUPERADMIN' || elevatedNorm === 'OWNER') return true;
+        const elevatedDef = getActiveRoleDefinition(elevatedNorm);
+        if (elevatedDef?.allowedViews.includes(viewId)) return true;
+      }
+      // Extra views granted to this specific user
+      if (userOverride.allowedViews.includes(viewId)) return true;
+    }
   }
 
   const def = getActiveRoleDefinition(normalized);
@@ -216,12 +250,30 @@ export function getDefaultViewForRole(role: string | undefined | null): string {
  * Checks whether a given role holds a specific AppPermission.
  * Strictly enforced against Superadmin saved permissions.
  */
-export function hasPermission(role: string | undefined | null, permission: AppPermission): boolean {
+export function hasPermission(role: string | undefined | null, permission: AppPermission, userId?: string | null): boolean {
   if (!role) return false;
   const normalized = role.toUpperCase();
 
   if (normalized === 'SUPERADMIN' || normalized === 'OWNER') {
     return true;
+  }
+
+  // Check per-user overrides first
+  if (userId) {
+    const userOverride = getUserPermissionOverrides(userId);
+    if (userOverride) {
+      // Explicit deny overrides everything
+      if (userOverride.deniedPermissions?.includes(permission)) return false;
+      // Explicit grant overrides role default
+      if (userOverride.grantedPermissions?.includes(permission)) return true;
+      // If user has an elevated role, check that role's permissions
+      if (userOverride.elevatedRole) {
+        const elevatedNorm = userOverride.elevatedRole.toUpperCase();
+        if (elevatedNorm === 'SUPERADMIN' || elevatedNorm === 'OWNER') return true;
+        const elevatedDef = getActiveRoleDefinition(elevatedNorm);
+        if (elevatedDef && elevatedDef.isEnabled !== false && elevatedDef.permissions.includes(permission)) return true;
+      }
+    }
   }
 
   const def = getActiveRoleDefinition(normalized);

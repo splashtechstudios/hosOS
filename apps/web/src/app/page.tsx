@@ -58,6 +58,10 @@ function HosOSAppInner() {
 
   // Active View in Department Submenus
   const [currentView, setCurrentView] = useState<string>('dashboard');
+  // Hub sub-view: which department was clicked in the Hub
+  const [hubSubView, setHubSubView] = useState<'rooms' | 'kitchen' | 'bar' | null>(null);
+  // POS sub-view: 'kitchen' or 'bar' to pre-select category
+  const [posInitialCategory, setPosInitialCategory] = useState<'kitchen' | 'bar'>('kitchen');
 
   // Staff and Data State
   const [staffList, setStaffList] = useState<StaffUser[]>(INITIAL_STAFF);
@@ -604,7 +608,7 @@ function HosOSAppInner() {
         <main style={{ flex: 1, padding: '0 24px 60px 24px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
           
           {/* RBAC 403 Security Screen if unauthorized */}
-          {!canAccessView(currentUser.role, currentView) ? (
+          {!canAccessView(currentUser.role, currentView, currentUser.id) ? (
             <div className="ent-card" style={{ padding: '48px 32px', textAlign: 'center', margin: '40px auto', maxWidth: '640px' }}>
               <div style={{
                 width: '64px',
@@ -688,27 +692,48 @@ function HosOSAppInner() {
             />
           )}
 
-          {currentView === 'front-desk' && (
+          {currentView === 'front-desk' && !hubSubView && (
+            <HospitalityHubView
+              activeStaff={currentUser}
+              rooms={rooms}
+              onNavigate={(view) => {
+                if (view === 'rooms') {
+                  setHubSubView('rooms');
+                } else if (view === 'kitchen') {
+                  setHubSubView('kitchen');
+                  setPosInitialCategory('kitchen');
+                } else if (view === 'bar') {
+                  setHubSubView('bar');
+                  setPosInitialCategory('bar');
+                }
+              }}
+            />
+          )}
+
+          {currentView === 'front-desk' && hubSubView === 'rooms' && (
             <FrontDeskView
               rooms={rooms}
               onSelectRoomForAudit={(room) => {
                 setSelectedRoom(room);
                 setCurrentView('room-audit');
+                setHubSubView(null);
               }}
               activeStaff={currentUser}
               onOpenCheckIn={handleOpenCheckIn}
               onOpenCheckOut={handleOpenCheckOut}
               onOpenNewReservation={() => setIsReservationModalOpen(true)}
               onRefreshRooms={loadRooms}
+              onBack={() => setHubSubView(null)}
             />
           )}
 
-          {/* Food & Beverage */}
-          {currentView === 'pos' && (
+          {currentView === 'front-desk' && (hubSubView === 'kitchen' || hubSubView === 'bar') && (
             <POSView
               rooms={rooms}
               activeStaff={currentUser}
               onPostChargeToRoom={handlePostChargeToRoom}
+              initialCategory={posInitialCategory === 'kitchen' ? 'Kitchen' : 'Bar'}
+              onBack={() => setHubSubView(null)}
             />
           )}
 

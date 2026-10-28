@@ -470,6 +470,7 @@ export type AppPermission =
   | 'rooms.status.override'
   | 'rooms.checkin'
   | 'rooms.checkout'
+  | 'rooms.customize'
   | 'orders.create'
   | 'orders.increment'
   | 'prices.override'

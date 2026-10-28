@@ -24,8 +24,11 @@ import {
   LayoutGrid,
   Search,
   ArrowRight,
-  ShoppingBag
+  ShoppingBag,
+  ArrowLeft,
+  Wine,
 } from 'lucide-react';
+import { hasPermission } from '@/lib/rbac';
 
 interface POSViewProps {
   rooms: Room[];
@@ -37,6 +40,8 @@ interface POSViewProps {
     items?: Array<{ name: string; quantity: number; unitPrice: number }>,
     chargeToRoom?: boolean
   ) => void;
+  initialCategory?: 'Kitchen' | 'Bar';
+  onBack?: () => void;
 }
 
 interface CartItem {
@@ -53,12 +58,52 @@ export default function POSView({
   rooms,
   activeStaff,
   onPostChargeToRoom,
+  initialCategory = 'Kitchen',
+  onBack,
 }: POSViewProps) {
   const { showConfirm, showSuccess, showToast } = useFeedback();
   const [selectedOutlet, setSelectedOutlet] = useState<'RESTAURANT' | 'POOL_BAR' | 'LOUNGE'>('RESTAURANT');
   const [orderType, setOrderType] = useState<'DINE_IN' | 'ROOM_SERVICE' | 'BAR_TAB'>('ROOM_SERVICE');
   const [selectedRoomNumber, setSelectedRoomNumber] = useState('204');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    initialCategory === 'Bar' ? 'BEERS' : 'SWALLOW'
+  );
+
+  useEffect(() => {
+    setSelectedCategory(initialCategory === 'Bar' ? 'BEERS' : 'SWALLOW');
+  }, [initialCategory]);
+
+  // Helper to categorize bar drink items into specific subcategories (No "All" tab)
+  const getBarSubCategory = (item: DynamicMenuItem): 'BEERS' | 'SOFT_DRINKS' | 'ENERGY' | 'SPIRITS' => {
+    const name = item.name.toLowerCase();
+    if (name.includes('predator') || name.includes('bullet') || name.includes('climax')) {
+      return 'ENERGY';
+    }
+    if (
+      name.includes('smirnoff') ||
+      name.includes('origin') ||
+      name.includes('orijin') ||
+      name.includes('bigmask') ||
+      name.includes('chapman') ||
+      name.includes('palm wine')
+    ) {
+      return 'SPIRITS';
+    }
+    if (
+      name.includes('5 alive') ||
+      name.includes('five alive') ||
+      name.includes('exotic') ||
+      name.includes('maltina') ||
+      name.includes('coke') ||
+      name.includes('nutri') ||
+      name.includes('fayrouz') ||
+      name.includes('hollandia') ||
+      name.includes('water')
+    ) {
+      return 'SOFT_DRINKS';
+    }
+    return 'BEERS';
+  };
   
   // Authentic Osieka Resort Initial Menu Items (No fixed prices on food; drinks have printed menu prices)
   const DEFAULT_MENU_ITEMS: DynamicMenuItem[] = [
@@ -804,14 +849,19 @@ export default function POSView({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Effective view mode: Mobile defaults to Cards ('GRID'); Desktop defaults to List ('LIST'). Manual toggle overrides.
-  const effectiveViewMode = userViewMode ?? (isMobile ? 'GRID' : 'LIST');
+  // Effective view mode: Defaults to Cards ('GRID') for picture-heavy display as requested by user. Manual toggle overrides.
+  const effectiveViewMode = userViewMode ?? 'GRID';
 
-  // Superadmin Authority check
+  // Superadmin & Granular RBAC Authority checks with activeStaff.id for custom/elevated overrides
   const isSuperAdmin =
     activeStaff.role === 'SUPERADMIN' ||
     activeStaff.role === 'OWNER' ||
     (activeStaff.role as any) === 'ADMIN';
+
+  const canCreateOrder = hasPermission(activeStaff.role, 'orders.create', activeStaff.id);
+  const canOverridePrice = isSuperAdmin || hasPermission(activeStaff.role, 'prices.override', activeStaff.id);
+  const canManageMenu = isSuperAdmin || hasPermission(activeStaff.role, 'menu.manage', activeStaff.id);
+  const canDirectSettle = hasPermission(activeStaff.role, 'cash.receive', activeStaff.id);
 
   // Initial cart: starts clean for order entry
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -959,17 +1009,24 @@ export default function POSView({
     );
   };
 
-  // Fast Live Search & Category Filtering (Chowdeck & Glovo responsiveness)
+  // Fast Live Search & Category Filtering (No "All" tab: only clicked data displayed)
   const filteredMenuItems = menuItems.filter((item) => {
-    const matchesCategory =
-      selectedCategory === 'ALL' ||
-      item.category.toUpperCase().replace(/\s+/g, '') === selectedCategory.toUpperCase().replace(/\s+/g, '');
     const q = searchQuery.toLowerCase().trim();
     const matchesSearch =
       !q ||
       item.name.toLowerCase().includes(q) ||
       item.category.toLowerCase().includes(q);
-    return matchesCategory && matchesSearch;
+    if (!matchesSearch) return false;
+
+    if (initialCategory === 'Bar') {
+      if (item.category !== 'Bar') return false;
+      return getBarSubCategory(item) === selectedCategory;
+    } else {
+      if (item.category === 'Bar') return false;
+      const targetCat = selectedCategory.toUpperCase().replace(/\s+/g, '');
+      const itemCat = item.category.toUpperCase().replace(/\s+/g, '');
+      return itemCat === targetCat;
+    }
   });
 
   // Reusable Ticket Component for Desktop Column & Mobile Sliding Drawer Modal
@@ -1111,15 +1168,17 @@ export default function POSView({
                     <input
                       type="number"
                       value={item.price}
+                      disabled={!canOverridePrice}
                       onChange={(e) => updateItemPrice(item.id, Number(e.target.value))}
                       style={{
                         width: '95px',
                         padding: '3px 6px',
                         fontSize: '0.8rem',
                         fontWeight: 800,
-                        backgroundColor: '#FFFFFF',
+                        backgroundColor: canOverridePrice ? '#FFFFFF' : 'var(--bg-secondary)',
                         borderRadius: '4px',
                         border: isBelowFloor ? '1px solid var(--crimson-primary)' : '1px solid var(--border-color)',
+                        cursor: canOverridePrice ? 'text' : 'not-allowed',
                       }}
                     />
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>/unit</span>
@@ -1208,7 +1267,7 @@ export default function POSView({
               handleChargeToRoom();
               if (isDrawerModal) setMobileDrawerOpen(false);
             }}
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || !canCreateOrder}
             className="btn-primary"
             style={{ width: '100%', padding: '12px', fontSize: '0.9rem', fontWeight: 800 }}
           >
@@ -1225,7 +1284,7 @@ export default function POSView({
               setCart([]);
               if (isDrawerModal) setMobileDrawerOpen(false);
             }}
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || !canDirectSettle}
             className="btn-primary"
             style={{ width: '100%', padding: '12px', fontSize: '0.9rem', fontWeight: 800, backgroundColor: 'var(--emerald-primary)' }}
           >
@@ -1260,39 +1319,107 @@ export default function POSView({
       {/* Left: Outlet Switcher + Search + Menu Grid */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
-        {/* Outlet & Mode Bar */}
-        <div className="ent-card" style={{ padding: '16px 20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {(['RESTAURANT', 'POOL_BAR', 'LOUNGE'] as const).map((outlet) => (
+        {/* Top Operational Header with Back, Title, Station & List/Cards Toggle */}
+        <div className="ent-card" style={{ padding: '18px 22px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {onBack && (
                 <button
-                  key={outlet}
-                  onClick={() => setSelectedOutlet(outlet)}
+                  type="button"
+                  onClick={onBack}
                   style={{
-                    padding: '8px 16px',
-                    borderRadius: 'var(--radius-sm)',
-                    fontWeight: 700,
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    color: 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '6px 12px',
+                    gap: '6px',
                     fontSize: '0.8rem',
-                    backgroundColor: selectedOutlet === outlet ? 'var(--brand-primary)' : 'var(--bg-secondary)',
-                    color: selectedOutlet === outlet ? '#FFFFFF' : 'var(--text-secondary)',
+                    fontWeight: 700,
                   }}
+                  title="Return to Hospitality Hub"
                 >
-                  {outlet.replace(/_/g, ' ')}
+                  <ArrowLeft size={16} /> Hub
                 </button>
-              ))}
+              )}
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '12px',
+                backgroundColor: initialCategory === 'Bar' ? 'rgba(147, 51, 234, 0.12)' : 'rgba(234, 88, 12, 0.12)',
+                color: initialCategory === 'Bar' ? '#9333ea' : '#ea580c',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: `1px solid ${initialCategory === 'Bar' ? 'rgba(147, 51, 234, 0.25)' : 'rgba(234, 88, 12, 0.25)'}`,
+              }}>
+                {initialCategory === 'Bar' ? <Wine size={22} /> : <UtensilsCrossed size={22} />}
+              </div>
+              <div>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                  {initialCategory === 'Bar' ? 'Bar & Beverage Order Board' : 'Kitchen POS & Order Board'}
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', margin: 0 }}>
+                  {initialCategory === 'Bar'
+                    ? 'Chilled beers, juices, energy drinks & signature resort cocktails'
+                    : 'Authentic Nigerian swallow, soups, rice, pasta & coastal proteins'}
+                </p>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Station:</span>
-              <select
-                value={orderType}
-                onChange={(e) => setOrderType(e.target.value as any)}
-                style={{ fontSize: '0.8rem' }}
-              >
-                <option value="ROOM_SERVICE">Room Service Delivery</option>
-                <option value="DINE_IN">Table Dine-In</option>
-                <option value="BAR_TAB">Bar Tab</option>
-              </select>
+            {/* List vs Cards Toggle Button at the TOP */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{
+                display: 'flex',
+                backgroundColor: 'var(--bg-secondary)',
+                padding: '3px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setUserViewMode('GRID')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    borderRadius: '6px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    backgroundColor: effectiveViewMode === 'GRID' ? '#FFFFFF' : 'transparent',
+                    color: effectiveViewMode === 'GRID' ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                    border: 'none',
+                    boxShadow: effectiveViewMode === 'GRID' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <LayoutGrid size={14} /> Cards (Photo Heavy)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUserViewMode('LIST')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    borderRadius: '6px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    backgroundColor: effectiveViewMode === 'LIST' ? '#FFFFFF' : 'transparent',
+                    color: effectiveViewMode === 'LIST' ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                    border: 'none',
+                    boxShadow: effectiveViewMode === 'LIST' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <List size={14} /> List View
+                </button>
+              </div>
 
               {isMobile && (
                 <button
@@ -1302,20 +1429,57 @@ export default function POSView({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '5px',
-                    padding: '6px 12px',
-                    borderRadius: 'var(--radius-sm)',
+                    padding: '7px 14px',
+                    borderRadius: '8px',
                     backgroundColor: cart.length > 0 ? 'var(--brand-primary)' : 'var(--bg-secondary)',
                     color: cart.length > 0 ? '#FFFFFF' : 'var(--text-secondary)',
                     border: '1px solid var(--border-color)',
-                    fontSize: '0.75rem',
+                    fontSize: '0.78rem',
                     fontWeight: 700,
                     cursor: 'pointer',
                   }}
                 >
-                  <ShoppingBag size={13} />
+                  <ShoppingBag size={14} />
                   <span>Ticket ({cart.reduce((s, i) => s + i.quantity, 0)})</span>
                 </button>
               )}
+            </div>
+          </div>
+
+          {/* Sub-bar: Outlet & Station */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {(['RESTAURANT', 'POOL_BAR', 'LOUNGE'] as const).map((outlet) => (
+                <button
+                  key={outlet}
+                  onClick={() => setSelectedOutlet(outlet)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    backgroundColor: selectedOutlet === outlet ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                    color: selectedOutlet === outlet ? '#FFFFFF' : 'var(--text-secondary)',
+                    border: '1px solid var(--border-color)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {outlet.replace(/_/g, ' ')}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Destination:</span>
+              <select
+                value={orderType}
+                onChange={(e) => setOrderType(e.target.value as any)}
+                style={{ fontSize: '0.78rem', padding: '4px 8px' }}
+              >
+                <option value="ROOM_SERVICE">Room Service Delivery</option>
+                <option value="DINE_IN">Table Dine-In</option>
+                <option value="BAR_TAB">Bar Tab</option>
+              </select>
             </div>
           </div>
         </div>
@@ -1327,7 +1491,7 @@ export default function POSView({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search authentic Nigerian meals (Eba, Egusi, Jollof) or chilled drink bottles..."
+            placeholder={initialCategory === 'Bar' ? 'Search chilled beer bottles, juices, energy boosts, cocktails...' : 'Search authentic Nigerian dishes (Eba, Egusi, Jollof, Semo)...'}
             style={{
               width: '100%',
               padding: '11px 16px 11px 40px',
@@ -1374,51 +1538,63 @@ export default function POSView({
         }}>
           <Fish size={20} color="var(--brand-primary)" />
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            <strong>Authentic Nigerian Menu:</strong> Coastal catch, special orders & authentic local dishes have <strong>no fixed prices</strong> (Price on Order). Only official bar drinks have printed prices.
+            <strong>Authentic Nigerian Hospitality:</strong> {initialCategory === 'Bar' ? 'Official bar inventory with verified price snapshots. Tap any drink to add to live guest ticket.' : 'Coastal seafood, chef specials and authentic local dishes priced per portion. Bar drinks retain fixed register prices.'}
           </div>
         </div>
 
-        {/* Category Filter Bar (Chowdeck & Glovo Horizontal Touch Scroll Rail) */}
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          overflowX: 'auto',
-          paddingBottom: '4px',
-          WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'none',
-        }}>
-          {[
-            { id: 'ALL', label: 'All Items' },
+        {/* Category Filter Bar (No "All" tab! Strictly clicked category items) */}
+        {(() => {
+          const kitchenCats = [
             { id: 'SWALLOW', label: '🥣 Swallow' },
             { id: 'SOUPS', label: '🍲 Soups' },
             { id: 'RICE MEALS', label: '🍚 Rice Meals' },
             { id: 'PASTA MENU', label: '🍝 Pasta Menu' },
             { id: 'PROTEINS', label: '🥩 Proteins' },
-            { id: 'BAR', label: '🍹 Bar Drinks' },
-          ].map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              style={{
-                flexShrink: 0,
-                whiteSpace: 'nowrap',
-                padding: isMobile ? '6px 12px' : '7px 15px',
-                borderRadius: '20px',
-                fontSize: isMobile ? '0.72rem' : '0.78rem',
-                fontWeight: 700,
-                backgroundColor: selectedCategory === cat.id ? 'var(--brand-primary)' : 'var(--bg-secondary)',
-                color: selectedCategory === cat.id ? '#FFFFFF' : 'var(--text-secondary)',
-                border: selectedCategory === cat.id ? '1px solid var(--brand-primary)' : '1px solid var(--border-color)',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
+          ];
+          const barCats = [
+            { id: 'BEERS', label: '🍺 Beers & Stouts' },
+            { id: 'SOFT_DRINKS', label: '🧃 Juices & Soft Drinks' },
+            { id: 'ENERGY', label: '⚡ Energy Drinks' },
+            { id: 'SPIRITS', label: '🍸 Spirits & Cocktails' },
+          ];
+          const currentCategories = initialCategory === 'Bar' ? barCats : kitchenCats;
 
-        {/* Menu Items Container (Chowdeck & Glovo: Mobile Cards Default, Desktop List Default) */}
+          return (
+            <div style={{
+              display: 'flex',
+              gap: '8px',
+              overflowX: 'auto',
+              paddingBottom: '4px',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+            }}>
+              {currentCategories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  style={{
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
+                    padding: isMobile ? '8px 14px' : '9px 18px',
+                    borderRadius: '20px',
+                    fontSize: isMobile ? '0.75rem' : '0.825rem',
+                    fontWeight: 700,
+                    backgroundColor: selectedCategory === cat.id ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                    color: selectedCategory === cat.id ? '#FFFFFF' : 'var(--text-secondary)',
+                    border: selectedCategory === cat.id ? '1px solid var(--brand-primary)' : '1px solid var(--border-color)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: selectedCategory === cat.id ? '0 2px 8px rgba(37,99,235,0.25)' : 'none',
+                  }}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
+
+        {/* Menu Items Container */}
         <div>
           <div style={{
             display: 'flex',
@@ -1429,7 +1605,23 @@ export default function POSView({
             gap: '12px',
           }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-              {selectedCategory === 'ALL' ? 'All Authentic Dishes & Drinks' : selectedCategory} ({filteredMenuItems.length} available)
+              {(() => {
+                const kitchenCats = [
+                  { id: 'SWALLOW', label: '🥣 Swallow' },
+                  { id: 'SOUPS', label: '🍲 Soups' },
+                  { id: 'RICE MEALS', label: '🍚 Rice Meals' },
+                  { id: 'PASTA MENU', label: '🍝 Pasta Menu' },
+                  { id: 'PROTEINS', label: '🥩 Proteins' },
+                ];
+                const barCats = [
+                  { id: 'BEERS', label: '🍺 Beers & Stouts' },
+                  { id: 'SOFT_DRINKS', label: '🧃 Juices & Soft Drinks' },
+                  { id: 'ENERGY', label: '⚡ Energy Drinks' },
+                  { id: 'SPIRITS', label: '🍸 Spirits & Cocktails' },
+                ];
+                const cats = initialCategory === 'Bar' ? barCats : kitchenCats;
+                return cats.find(c => c.id === selectedCategory)?.label || selectedCategory;
+              })()} ({filteredMenuItems.length} available)
             </h3>
 
             {/* List vs Cards View Switcher */}
@@ -1575,11 +1767,11 @@ export default function POSView({
                               >
                                 <Plus size={13} /> Add
                               </button>
-                              {isSuperAdmin && (
+                              {canManageMenu && (
                                 <button
                                   className="btn-danger"
                                   style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '6px' }}
-                                  title="Permanently purge item (Superadmin)"
+                                  title="Permanently purge item (Authorized)"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleDeleteMenuItem(item.id, item.name);
@@ -1598,11 +1790,11 @@ export default function POSView({
               </div>
             </div>
           ) : (
-            /* 2. CHOWDECK & GLOVO CARDS VIEW (Mobile Default with Authentic Photos) */
+            /* 2. CHOWDECK & GLOVO CARDS VIEW (Picture Heavy Display) */
             <div style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(220px, 1fr))',
-              gap: isMobile ? '10px' : '16px',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(235px, 1fr))',
+              gap: isMobile ? '12px' : '20px',
             }}>
               {filteredMenuItems.map((item) => {
                 const isBar = item.category === 'Bar';
@@ -1614,26 +1806,26 @@ export default function POSView({
                 return (
                   <div
                     key={item.id}
-                    onClick={() => addToCart(item)}
+                    onClick={() => canCreateOrder && addToCart(item)}
                     className="ent-card-interactive"
                     style={{
                       padding: 0,
-                      cursor: 'pointer',
+                      cursor: canCreateOrder ? 'pointer' : 'default',
                       display: 'flex',
                       flexDirection: 'column',
                       backgroundColor: '#FFFFFF',
                       border: inCartQty > 0 ? '2px solid var(--brand-primary)' : '1px solid var(--border-color)',
-                      borderRadius: isMobile ? '12px' : '14px',
+                      borderRadius: isMobile ? '12px' : '16px',
                       overflow: 'hidden',
-                      transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                      boxShadow: inCartQty > 0 ? '0 4px 14px rgba(37, 99, 235, 0.15)' : '0 1px 3px rgba(0,0,0,0.04)',
+                      transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                      boxShadow: inCartQty > 0 ? '0 6px 20px rgba(37, 99, 235, 0.18)' : '0 2px 8px rgba(0,0,0,0.04)',
                     }}
                   >
-                    {/* Card Photo Container (Authentic Nigerian Dishes & Real Drink Bottles) */}
+                    {/* Card Photo Container (Picture Heavy Display with Authentic Nigerian Dishes & Drinks) */}
                     <div style={{
                       position: 'relative',
                       width: '100%',
-                      height: isMobile ? '110px' : '140px',
+                      height: isMobile ? '130px' : '185px',
                       backgroundColor: 'var(--bg-secondary)',
                       overflow: 'hidden',
                     }}>
@@ -1764,12 +1956,12 @@ export default function POSView({
                             <Plus size={13} /> Add
                           </button>
 
-                          {isSuperAdmin && (
+                          {canManageMenu && (
                             <button
                               type="button"
                               className="btn-danger"
                               style={{ padding: '4px 7px', fontSize: '0.725rem', borderRadius: '6px' }}
-                              title="Permanently purge item (Superadmin)"
+                              title="Permanently purge item (Authorized)"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteMenuItem(item.id, item.name);
