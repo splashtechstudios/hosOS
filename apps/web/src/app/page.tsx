@@ -428,11 +428,12 @@ function HosOSAppInner() {
     }
   };
 
-  // 3. Handle Payment (Live MongoDB + Folio Ledger + Audit Trail)
+  // 3. Handle Payment (Live MongoDB + Folio Ledger + Audit Trail + Accounting Sync)
   const handleAddPayment = async (data: {
     amount: number;
     method: string;
     reference: string;
+    split?: any[];
     staff: StaffUser;
   }) => {
     try {
@@ -444,16 +445,21 @@ function HosOSAppInner() {
           amount: data.amount,
           method: data.method,
           reference: data.reference,
+          split: data.split,
           staff: data.staff,
         }),
       });
 
       const result = await res.json();
       if (result.success) {
+        const methodDesc = data.split && data.split.length > 0
+          ? `Split: ${data.split.map(s => `₦${Number(s.amount).toLocaleString()} via ${s.method.replace(/_/g, ' ')}`).join(' + ')}`
+          : data.method.replace(/_/g, ' ');
+
         showSuccess(
-          'Payment Recorded in MongoDB Atlas & Folio Updated!',
-          `Received ₦${data.amount.toLocaleString()} via ${data.method.replace(/_/g, ' ')} for Room #${selectedRoom.roomNumber}.`,
-          `Cashier: ${data.staff.name} • Reference Receipt: ${data.reference} • Remaining Folio Balance: ₦${result.folio?.balance?.toLocaleString() || 0}`
+          'Payment Recorded in MongoDB Atlas & Accounting Ledger Updated!',
+          `Received ₦${data.amount.toLocaleString()} (${methodDesc}) for Room #${selectedRoom.roomNumber}.`,
+          `Cashier: ${data.staff.name} • Reference: ${data.reference} • Remaining Balance: ₦${result.folio?.balance?.toLocaleString() || 0}`
         );
         loadRoomAudit(selectedRoom.roomNumber);
       } else {

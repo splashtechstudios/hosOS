@@ -5,6 +5,7 @@ import { Folio } from '@/models/Folio';
 import { Room } from '@/models/Room';
 import { AuditLog } from '@/models/AuditLog';
 import { InventoryItem } from '@/models/InventoryItem';
+import { syncPaymentToAccounting } from '@/lib/accountingSync';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,8 @@ export async function POST(req: NextRequest) {
       waiterId = 'staff-01',
       waiterRole = 'WAITER',
       reason,
+      paymentMethod = 'POS_TERMINAL',
+      split,
     } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -48,7 +51,7 @@ export async function POST(req: NextRequest) {
       orderNumber,
       outlet,
       roomNumber,
-      status: chargeToRoom ? 'BILLED' : 'CONFIRMED',
+      status: chargeToRoom ? 'BILLED' : 'PAID',
       items: items.map((i: any) => ({
         itemId: i.itemId || i.id,
         name: i.name,
@@ -65,6 +68,17 @@ export async function POST(req: NextRequest) {
       waiterName,
       waiterId,
     });
+
+    // 1b. If direct settlement (not charged to room), automatically sync to accounting (F&B channel)
+    if (!chargeToRoom) {
+      const isSplit = Array.isArray(split) && split.length > 0;
+      await syncPaymentToAccounting({
+        channel: 'FB',
+        payments: isSplit
+          ? split.map((s: any) => ({ method: s.method, amount: Number(s.amount) }))
+          : [{ method: paymentMethod as any, amount: total }],
+      });
+    }
 
     // 2. If Charge to Room, update Folio & append to immutable AuditLog
     let updatedFolio = null;

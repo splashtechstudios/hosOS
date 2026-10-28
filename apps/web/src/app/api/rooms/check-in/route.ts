@@ -4,6 +4,7 @@ import { Room } from '@/models/Room';
 import { Folio } from '@/models/Folio';
 import { AuditLog } from '@/models/AuditLog';
 import { sendGuestWelcomeSms } from '@/lib/notifications';
+import { syncPaymentToAccounting } from '@/lib/accountingSync';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,7 @@ export async function POST(req: NextRequest) {
   let paymentMethod = 'POS_TERMINAL';
   let paymentReference = '';
   let staff: any = null;
+  let split: Array<{ method: 'POS_TERMINAL' | 'BANK_TRANSFER' | 'CASH'; amount: number; reference?: string }> | undefined;
 
   try {
     const body = await req.json();
@@ -29,6 +31,7 @@ export async function POST(req: NextRequest) {
     paymentMethod = body.paymentMethod || 'POS_TERMINAL';
     paymentReference = body.paymentReference || `CHK-${Date.now().toString().slice(-6)}`;
     staff = body.staff;
+    split = body.split;
 
     if (!roomNumber || !guestName) {
       return NextResponse.json(
@@ -72,16 +75,38 @@ export async function POST(req: NextRequest) {
       },
     ];
 
-    const initialPayments = advancePayment > 0 ? [
-      {
-        id: `pay-${Date.now()}-1`,
-        method: paymentMethod as any,
-        amount: advancePayment,
-        reference: paymentReference,
-        receivedAt: checkInDate,
-        receivedByStaffName: staff?.name || 'Front Desk Receptionist',
-      },
-    ] : [];
+    const isSplit = Array.isArray(split) && split.length > 0;
+    const initialPayments = advancePayment > 0
+      ? isSplit
+        ? split.map((s, idx) => ({
+            id: `pay-${Date.now()}-${idx}`,
+            method: s.method as any,
+            amount: Number(s.amount),
+            reference: s.reference || `${paymentReference}-${s.method.slice(0, 3)}`,
+            receivedAt: checkInDate,
+            receivedByStaffName: staff?.name || 'Front Desk Receptionist',
+          }))
+        : [
+            {
+              id: `pay-${Date.now()}-1`,
+              method: paymentMethod as any,
+              amount: advancePayment,
+              reference: paymentReference,
+              receivedAt: checkInDate,
+              receivedByStaffName: staff?.name || 'Front Desk Receptionist',
+            },
+          ]
+      : [];
+
+    // Sync advance deposit to accounting (DailyOperationSheet)
+    if (advancePayment > 0) {
+      await syncPaymentToAccounting({
+        channel: 'ROOMS',
+        payments: isSplit
+          ? split.map((s) => ({ method: s.method, amount: Number(s.amount) }))
+          : [{ method: paymentMethod as any, amount: advancePayment }],
+      });
+    }
 
     // 3. Create active Folio
     const folio = await Folio.create({

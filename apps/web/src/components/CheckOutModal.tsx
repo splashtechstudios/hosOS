@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { StaffUser, Room } from '@hosos/types';
+import { StaffUser, Room, SplitPaymentDetail, PaymentMethod } from '@hosos/types';
 import { useFeedback } from '@/context/FeedbackContext';
+import PaymentMethodSelector from './PaymentMethodSelector';
 import {
   LogOut,
   X,
@@ -64,8 +65,10 @@ export default function CheckOutModal({
 
   // Settlement Inputs
   const [settlementAmount, setSettlementAmount] = useState<number>(0);
-  const [settlementMethod, setSettlementMethod] = useState<'POS_TERMINAL' | 'BANK_TRANSFER' | 'CASH'>('POS_TERMINAL');
+  const [settlementMethod, setSettlementMethod] = useState<PaymentMethod>('POS_TERMINAL');
   const [settlementReference, setSettlementReference] = useState('');
+  const [splitDetails, setSplitDetails] = useState<SplitPaymentDetail[] | undefined>();
+  const [isPaymentValid, setIsPaymentValid] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPrintReceipt, setShowPrintReceipt] = useState(false);
 
@@ -166,6 +169,7 @@ export default function CheckOutModal({
               settlementAmount: settlementAmount,
               settlementMethod: settlementMethod,
               settlementReference: settlementReference || `OUT-${Date.now().toString().slice(-6)}`,
+              split: settlementMethod === 'SPLIT' ? splitDetails : undefined,
               staff: activeStaff,
             }),
           });
@@ -566,50 +570,30 @@ export default function CheckOutModal({
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                      Settlement Amount (₦)
-                    </label>
-                    <input
-                      type="number"
-                      value={settlementAmount}
-                      onChange={(e) => setSettlementAmount(Number(e.target.value))}
-                      className="ent-input"
-                      style={{ width: '100%', fontFamily: 'var(--font-mono)', fontWeight: 700 }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                      Payment Method
-                    </label>
-                    <select
-                      value={settlementMethod}
-                      onChange={(e) => setSettlementMethod(e.target.value as any)}
-                      className="ent-input"
-                      style={{ width: '100%' }}
-                    >
-                      <option value="POS_TERMINAL">Moniepoint POS Terminal</option>
-                      <option value="BANK_TRANSFER">Providus Bank Transfer</option>
-                      <option value="CASH">Front Desk Cash Drawer</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: '10px' }}>
+                <div style={{ marginBottom: '14px' }}>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                    Payment Reference / Terminal RRN
+                    Settlement Amount to Pay (₦)
                   </label>
                   <input
-                    type="text"
-                    value={settlementReference}
-                    onChange={(e) => setSettlementReference(e.target.value)}
-                    placeholder="e.g. MP-POS-8829104 or NIP transfer ref"
+                    type="number"
+                    value={settlementAmount}
+                    onChange={(e) => setSettlementAmount(Number(e.target.value))}
                     className="ent-input"
-                    style={{ width: '100%', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}
+                    style={{ width: '100%', fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '1.1rem' }}
                   />
                 </div>
+
+                {/* 4-Option Payment Selector: POS, Transfer, Cash, Split */}
+                <PaymentMethodSelector
+                  totalAmount={settlementAmount}
+                  initialMethod={settlementMethod}
+                  onChange={({ method, reference, split, isValid }) => {
+                    setSettlementMethod(method);
+                    setSettlementReference(reference);
+                    setSplitDetails(split);
+                    setIsPaymentValid(isValid);
+                  }}
+                />
               </div>
             ) : (
               <div style={{
@@ -649,8 +633,12 @@ export default function CheckOutModal({
                 type="button"
                 onClick={handleExecuteCheckout}
                 className="btn-primary"
-                disabled={isSubmitting}
-                style={{ backgroundColor: 'var(--danger-primary)', borderColor: 'var(--danger-primary)' }}
+                disabled={isSubmitting || (balance > 0 && !isPaymentValid)}
+                style={{
+                  backgroundColor: 'var(--danger-primary)',
+                  borderColor: 'var(--danger-primary)',
+                  opacity: (balance > 0 && !isPaymentValid) ? 0.6 : 1,
+                }}
               >
                 <LogOut size={15} />
                 <span>{isSubmitting ? 'Processing Check-Out...' : 'Complete Check-Out & Release Room'}</span>

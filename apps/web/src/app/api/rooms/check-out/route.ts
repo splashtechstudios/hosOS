@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { Room } from '@/models/Room';
 import { Folio } from '@/models/Folio';
 import { AuditLog } from '@/models/AuditLog';
+import { syncPaymentToAccounting } from '@/lib/accountingSync';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,7 @@ export async function POST(req: NextRequest) {
   let settlementMethod = 'POS_TERMINAL';
   let settlementReference = '';
   let staff: any = null;
+  let split: Array<{ method: 'POS_TERMINAL' | 'BANK_TRANSFER' | 'CASH'; amount: number; reference?: string }> | undefined;
 
   try {
     const body = await req.json();
@@ -20,6 +22,7 @@ export async function POST(req: NextRequest) {
     settlementMethod = body.settlementMethod || 'POS_TERMINAL';
     settlementReference = body.settlementReference || `OUT-${Date.now().toString().slice(-6)}`;
     staff = body.staff;
+    split = body.split;
 
     if (!roomNumber) {
       return NextResponse.json({ success: false, error: 'roomNumber is required' }, { status: 400 });
@@ -35,20 +38,42 @@ export async function POST(req: NextRequest) {
     }
 
     const checkOutTimestamp = new Date().toISOString();
+    const isSplit = Array.isArray(split) && split.length > 0;
 
     if (folio) {
       // If settlement payment provided, apply it
       if (settlementAmount > 0) {
-        folio.payments.push({
-          id: `pay-${Date.now()}-settle`,
-          method: settlementMethod as any,
-          amount: settlementAmount,
-          reference: settlementReference,
-          receivedAt: checkOutTimestamp,
-          receivedByStaffName: staff?.name || 'Cashier / Front Desk',
-        });
+        if (isSplit) {
+          split.forEach((s, idx) => {
+            folio!.payments.push({
+              id: `pay-${Date.now()}-settle-${idx}`,
+              method: s.method as any,
+              amount: Number(s.amount),
+              reference: s.reference || `${settlementReference}-${s.method.slice(0, 3)}`,
+              receivedAt: checkOutTimestamp,
+              receivedByStaffName: staff?.name || 'Cashier / Front Desk',
+            });
+          });
+        } else {
+          folio.payments.push({
+            id: `pay-${Date.now()}-settle`,
+            method: settlementMethod as any,
+            amount: settlementAmount,
+            reference: settlementReference,
+            receivedAt: checkOutTimestamp,
+            receivedByStaffName: staff?.name || 'Cashier / Front Desk',
+          });
+        }
         folio.totalPayments += settlementAmount;
         folio.balance = folio.totalCharges - folio.totalPayments;
+
+        // Sync settlement to accounting
+        await syncPaymentToAccounting({
+          channel: 'ROOMS',
+          payments: isSplit
+            ? split.map((s) => ({ method: s.method, amount: Number(s.amount) }))
+            : [{ method: settlementMethod as any, amount: settlementAmount }],
+        });
       }
 
       // Verify folio balance is settled

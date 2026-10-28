@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { StaffUser, Room, RoomStatus } from '@hosos/types';
+import { StaffUser, Room, RoomStatus, SplitPaymentDetail, PaymentMethod } from '@hosos/types';
 import { X, UtensilsCrossed, Wrench, Banknote, BedDouble, ShieldAlert, Check } from 'lucide-react';
+import PaymentMethodSelector from './PaymentMethodSelector';
 
 // Common PIN Check Box for Light Enterprise Theme
 function PinInput({
@@ -416,6 +417,7 @@ export function AddPaymentModal({
     amount: number;
     method: string;
     reference: string;
+    split?: SplitPaymentDetail[];
     staff: StaffUser;
   }) => void;
 }) {
@@ -424,8 +426,16 @@ export function AddPaymentModal({
   const [pinError, setPinError] = useState<string | null>(null);
 
   const [amount, setAmount] = useState(30000);
-  const [method, setMethod] = useState('PHYSICAL_CASH');
-  const [reference, setReference] = useState('RCT-2026-9938');
+  const [paymentSelection, setPaymentSelection] = useState<{
+    method: PaymentMethod;
+    reference: string;
+    split?: SplitPaymentDetail[];
+    isValid: boolean;
+  }>({
+    method: 'POS_TERMINAL',
+    reference: '',
+    isValid: true,
+  });
 
   if (!isOpen) return null;
 
@@ -439,7 +449,17 @@ export function AddPaymentModal({
       setPinError('Invalid 4-digit PIN for selected staff member');
       return;
     }
-    onSuccess({ amount, method, reference, staff: selectedStaff });
+    if (!paymentSelection.isValid) {
+      setPinError('Please balance the split payment amounts before submitting.');
+      return;
+    }
+    onSuccess({
+      amount,
+      method: paymentSelection.method,
+      reference: paymentSelection.reference,
+      split: paymentSelection.split,
+      staff: selectedStaff,
+    });
     onClose();
   };
 
@@ -455,7 +475,7 @@ export function AddPaymentModal({
       zIndex: 100,
       padding: '20px',
     }}>
-      <div className="ent-card" style={{ width: '100%', maxWidth: '500px', padding: '24px' }}>
+      <div className="ent-card" style={{ width: '100%', maxWidth: '540px', padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Banknote size={20} color="var(--emerald-primary)" />
@@ -463,7 +483,7 @@ export function AddPaymentModal({
               Receive Money for Room {room.roomNumber}
             </h3>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', color: 'var(--text-muted)' }}>
+          <button onClick={onClose} style={{ background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>
             <X size={20} />
           </button>
         </div>
@@ -475,43 +495,20 @@ export function AddPaymentModal({
             </label>
             <input
               type="number"
-              min={1000}
-              step={1000}
+              min={100}
+              step={500}
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
-              style={{ width: '100%', fontSize: '1.1rem', fontWeight: 700, fontFamily: 'var(--font-mono)' }}
+              style={{ width: '100%', fontSize: '1.15rem', fontWeight: 800, fontFamily: 'var(--font-mono)' }}
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
-                Payment Method
-              </label>
-              <select
-                value={method}
-                onChange={(e) => setMethod(e.target.value)}
-                style={{ width: '100%' }}
-              >
-                <option value="PHYSICAL_CASH">Physical Cash (Till-A)</option>
-                <option value="POS_TERMINAL">POS Terminal Card</option>
-                <option value="BANK_TRANSFER">Bank Transfer (Verified)</option>
-                <option value="PAYSTACK">Paystack Online Link</option>
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
-                Receipt / Terminal Ref
-              </label>
-              <input
-                type="text"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                style={{ width: '100%' }}
-              />
-            </div>
-          </div>
+          {/* Payment Method Selector: POS, Transfer, Cash, Split */}
+          <PaymentMethodSelector
+            totalAmount={amount}
+            initialMethod="POS_TERMINAL"
+            onChange={setPaymentSelection}
+          />
 
           <PinInput
             staffList={staffList}
@@ -526,7 +523,12 @@ export function AddPaymentModal({
             <button type="button" onClick={onClose} className="btn-secondary">
               Cancel
             </button>
-            <button type="submit" className="btn-primary">
+            <button
+              type="submit"
+              disabled={!paymentSelection.isValid}
+              className="btn-primary"
+              style={{ opacity: paymentSelection.isValid ? 1 : 0.6 }}
+            >
               Post Payment & Print Receipt
             </button>
           </div>

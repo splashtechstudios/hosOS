@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Folio } from '@/models/Folio';
 import { AuditLog } from '@/models/AuditLog';
+import { syncPaymentToAccounting } from '@/lib/accountingSync';
 
 export async function POST(req: NextRequest) {
   let roomNumber = '';
@@ -9,6 +10,7 @@ export async function POST(req: NextRequest) {
   let method = 'CASH';
   let reference = '';
   let staff: any = null;
+  let split: Array<{ method: 'POS_TERMINAL' | 'BANK_TRANSFER' | 'CASH'; amount: number; reference?: string }> | undefined;
 
   try {
     const body = await req.json();
@@ -17,6 +19,7 @@ export async function POST(req: NextRequest) {
     method = body.method || 'CASH';
     reference = body.reference || `REF-${Date.now()}`;
     staff = body.staff;
+    split = body.split;
 
     if (!roomNumber || !amount) {
       return NextResponse.json(
@@ -43,26 +46,53 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const paymentItem = {
-      id: `pay-${Date.now()}`,
-      method: method as any,
-      amount: Number(amount),
-      reference,
-      receivedAt: new Date().toISOString(),
-      receivedByStaffName: staff?.name || 'Cashier Desk',
-    };
+    const timestamp = new Date().toISOString();
+    const isSplit = Array.isArray(split) && split.length > 0;
+    const paymentItemsToRecord = isSplit
+      ? split.map((s, idx) => ({
+          id: `pay-${Date.now()}-${idx}`,
+          method: s.method as any,
+          amount: Number(s.amount),
+          reference: s.reference || `${reference}-${s.method.slice(0, 3)}`,
+          receivedAt: timestamp,
+          receivedByStaffName: staff?.name || 'Cashier Desk',
+        }))
+      : [
+          {
+            id: `pay-${Date.now()}`,
+            method: method as any,
+            amount: Number(amount),
+            reference,
+            receivedAt: timestamp,
+            receivedByStaffName: staff?.name || 'Cashier Desk',
+          },
+        ];
 
-    folio.payments.push(paymentItem);
-    folio.totalPayments += Number(amount);
+    for (const p of paymentItemsToRecord) {
+      folio.payments.push(p);
+      folio.totalPayments += Number(p.amount);
+    }
     folio.balance = folio.totalCharges - folio.totalPayments;
     await folio.save();
+
+    // Automatically sync to accounting (DailyOperationSheet)
+    await syncPaymentToAccounting({
+      channel: 'ROOMS',
+      payments: isSplit
+        ? split.map((s) => ({ method: s.method, amount: Number(s.amount) }))
+        : [{ method: method as any, amount: Number(amount) }],
+    });
+
+    const splitSummary = isSplit
+      ? split.map((s) => `₦${Number(s.amount).toLocaleString()} via ${s.method.replace(/_/g, ' ')}`).join(' + ')
+      : `${method.replace(/_/g, ' ')}`;
 
     // Append to immutable internal room audit log
     const auditRecord = await AuditLog.create({
       roomNumber,
       category: 'PAYMENT',
       headline: `Payment Received (₦${Number(amount).toLocaleString()})`,
-      details: `Payment of ₦${Number(amount).toLocaleString()} settled via ${method.replace(/_/g, ' ')}. Reference/Receipt: ${reference}. Remaining Folio Balance: ₦${folio.balance.toLocaleString()}.`,
+      details: `Payment of ₦${Number(amount).toLocaleString()} settled via ${splitSummary}. Reference/Receipt: ${reference}. Remaining Folio Balance: ₦${folio.balance.toLocaleString()}.`,
       amount: Number(amount),
       actor: {
         staffId: staff?.id || 'staff-unassigned',
@@ -71,10 +101,11 @@ export async function POST(req: NextRequest) {
       },
       meta: {
         receiptNumber: reference,
-        method,
+        method: isSplit ? 'SPLIT' : method,
+        splitBreakdown: isSplit ? split : undefined,
         remainingBalance: folio.balance,
       },
-      timestamp: new Date().toISOString(),
+      timestamp,
     });
 
     return NextResponse.json({

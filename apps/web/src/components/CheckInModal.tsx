@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { StaffUser, Room } from '@hosos/types';
+import { StaffUser, Room, PaymentMethod, SplitPaymentDetail } from '@hosos/types';
 import { useFeedback } from '@/context/FeedbackContext';
+import PaymentMethodSelector from './PaymentMethodSelector';
 import { 
   UserCheck, 
   X, 
@@ -42,7 +43,9 @@ export default function CheckInModal({
   const [nightsCount, setNightsCount] = useState(2);
   const [ratePerNight, setRatePerNight] = useState(room.rackRatePerNight || 65000);
   const [advancePayment, setAdvancePayment] = useState(ratePerNight);
-  const [paymentMethod, setPaymentMethod] = useState<'POS_TERMINAL' | 'BANK_TRANSFER' | 'CASH'>('POS_TERMINAL');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('POS_TERMINAL');
+  const [splitDetails, setSplitDetails] = useState<SplitPaymentDetail[] | undefined>();
+  const [isPaymentValid, setIsPaymentValid] = useState(true);
   const [keycardNumber, setKeycardNumber] = useState(`KC-${room.roomNumber}-A`);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -89,6 +92,7 @@ export default function CheckInModal({
               ratePerNight,
               advancePayment,
               paymentMethod,
+              split: paymentMethod === 'SPLIT' ? splitDetails : undefined,
               staff: activeStaff,
             }),
           });
@@ -115,7 +119,7 @@ export default function CheckInModal({
       {
         confirmText: 'Activate Check-In & Issue Key',
         variant: 'emerald',
-        details: `Guest: ${guestName} | Room: #${room.roomNumber} (${room.roomTypeName}) | Advance Deposit: ${formatNaira(advancePayment)} (${paymentMethod.replace(/_/g, ' ')}) | Receptionist: ${activeStaff.name}`
+        details: `Guest: ${guestName} | Room: #${room.roomNumber} (${room.roomTypeName}) | Advance Deposit: ${formatNaira(advancePayment)} (${paymentMethod === 'SPLIT' && splitDetails ? splitDetails.map(s => `${s.method.replace(/_/g, ' ')}: ${formatNaira(s.amount)}`).join(' + ') : paymentMethod.replace(/_/g, ' ')}) | Receptionist: ${activeStaff.name}`
       }
     );
   };
@@ -282,7 +286,7 @@ export default function CheckInModal({
           </div>
 
           {/* Advance Deposit & Payment */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.775rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
                 Advance Deposit Amount (NGN)
@@ -296,20 +300,15 @@ export default function CheckInModal({
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.775rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                Payment Channel
-              </label>
-              <select
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as any)}
-                style={{ width: '100%', fontSize: '0.85rem' }}
-              >
-                <option value="POS_TERMINAL">Moniepoint POS Terminal</option>
-                <option value="BANK_TRANSFER">Instant Bank Transfer</option>
-                <option value="CASH">Physical Cash</option>
-              </select>
-            </div>
+            {advancePayment > 0 && (
+              <PaymentMethodSelector
+                totalAmount={advancePayment}
+                selectedMethod={paymentMethod}
+                onMethodChange={setPaymentMethod}
+                onSplitChange={setSplitDetails}
+                onValidityChange={setIsPaymentValid}
+              />
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -326,7 +325,7 @@ export default function CheckInModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (advancePayment > 0 && !isPaymentValid)}
               className="btn-primary"
               style={{ backgroundColor: 'var(--emerald-primary)' }}
             >

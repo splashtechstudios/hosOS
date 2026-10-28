@@ -186,7 +186,14 @@ export interface OrderIncrementLog {
   reason?: string;
 }
 
-export type PaymentMethod = 'CASH' | 'POS_TERMINAL' | 'BANK_TRANSFER' | 'ROOM_FOLIO';
+export type BasePaymentMethod = 'POS_TERMINAL' | 'BANK_TRANSFER' | 'CASH';
+export type PaymentMethod = BasePaymentMethod | 'ROOM_FOLIO' | 'SPLIT';
+
+export interface SplitPaymentDetail {
+  method: BasePaymentMethod;
+  amount: number;
+  reference?: string;
+}
 
 export interface PaymentSplit {
   paymentId: string;
