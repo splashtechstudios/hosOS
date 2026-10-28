@@ -11,10 +11,19 @@ const INITIAL_SERVICES: Array<Partial<IServiceItem>> = [
     name: 'Osieka Grand Ballroom',
     group: 'Halls and Events',
     price: 750000,
-    duration: 'Full Day (8am - 6pm)',
+    duration: 'Full Day (8:00 AM - 06:00 PM)',
     capacity: 600,
-    description: 'Fully air-conditioned luxury banquet hall with stage, lighting and backup sound system.',
+    description: 'Fully air-conditioned luxury banquet hall with stage, intelligent lighting and dual backup sound system.',
+    status: 'AVAILABLE',
     isAvailable: true,
+    amenities: [
+      'Chilled Central Air Conditioning',
+      'Acoustic Sound Treatment',
+      'Stage & Ambient Mood Lighting',
+      'Backup Generator 250kVA',
+      'VIP Dressing Suites',
+      'Banquet Tables & Chiavari Chairs',
+    ],
     addedBy: 'Super Admin',
   },
   {
@@ -22,10 +31,18 @@ const INITIAL_SERVICES: Array<Partial<IServiceItem>> = [
     name: 'Royal Diamond Conference Hall',
     group: 'Halls and Events',
     price: 450000,
-    duration: 'Full Day (8am - 6pm)',
+    duration: 'Full Day (8:00 AM - 06:00 PM)',
     capacity: 250,
-    description: 'Executive auditorium with high-definition multimedia projection and acoustic treatment.',
+    description: 'Executive auditorium with high-definition multimedia laser projection and acoustic wall panels.',
+    status: 'AVAILABLE',
     isAvailable: true,
+    amenities: [
+      'Dual 4K Laser Projectors',
+      'Wireless Lapel & Podium Mics',
+      'High-Speed Dedicated Wi-Fi',
+      'Executive Auditorium Seating',
+      'Climate Control AC',
+    ],
     addedBy: 'Super Admin',
   },
   {
@@ -35,8 +52,16 @@ const INITIAL_SERVICES: Array<Partial<IServiceItem>> = [
     price: 150000,
     duration: 'Half Day (4 hrs)',
     capacity: 30,
-    description: 'U-shaped executive boardroom with 4K smart conferencing screen and beverage station.',
+    description: 'U-shaped executive boardroom with 85" 4K smart conferencing screen and dedicated beverage station.',
+    status: 'AVAILABLE',
     isAvailable: true,
+    amenities: [
+      '85" 4K Smart Video Screen',
+      'Polycom Video Conferencing',
+      'Executive Leather Ergonomic Chairs',
+      'Dedicated Refreshment Station',
+      'High-Speed Wi-Fi',
+    ],
     addedBy: 'Super Admin',
   },
   {
@@ -44,10 +69,18 @@ const INITIAL_SERVICES: Array<Partial<IServiceItem>> = [
     name: 'Green Meadow Event Garden',
     group: 'Halls and Events',
     price: 500000,
-    duration: 'Full Day (8am - 10pm)',
+    duration: 'Full Day (8:00 AM - 10:00 PM)',
     capacity: 800,
-    description: 'Scenic outdoor landscape lawn ideal for corporate banquets, weddings, and grand receptions.',
+    description: 'Scenic outdoor landscape lawn ideal for corporate banquets, weddings, and grand evening receptions.',
+    status: 'AVAILABLE',
     isAvailable: true,
+    amenities: [
+      'Manicured Bermuda Lawn',
+      'Canopy Gazebo & Staging',
+      'Scenic Landscape Lighting',
+      'Private Restroom Trailer Access',
+      'Outdoor Sound Rig Ready',
+    ],
     addedBy: 'Super Admin',
   },
   {
@@ -58,7 +91,9 @@ const INITIAL_SERVICES: Array<Partial<IServiceItem>> = [
     duration: 'Same Day (6 hrs)',
     capacity: 0,
     description: 'Professional delicate steam dry-cleaning, crisp pressing and protective garment bagging.',
+    status: 'AVAILABLE',
     isAvailable: true,
+    amenities: ['Steam Sanitization', 'Crisp Starching', 'Protective Hanger Bag'],
     addedBy: 'Super Admin',
   },
   {
@@ -69,7 +104,9 @@ const INITIAL_SERVICES: Array<Partial<IServiceItem>> = [
     duration: '24 Hours',
     capacity: 0,
     description: 'Gentle laundering and crisp pressing for shirts, trousers, and gowns.',
+    status: 'AVAILABLE',
     isAvailable: true,
+    amenities: ['Color Safe Detergents', 'Steam Pressing'],
     addedBy: 'Super Admin',
   },
   {
@@ -80,7 +117,9 @@ const INITIAL_SERVICES: Array<Partial<IServiceItem>> = [
     duration: 'One Way',
     capacity: 4,
     description: 'Air-conditioned luxury SUV transfer to/from nearest airport with dedicated driver.',
+    status: 'AVAILABLE',
     isAvailable: true,
+    amenities: ['Chilled Bottled Water', 'Fibre 5G Hotspot In-Car', 'Air Conditioning'],
     addedBy: 'Super Admin',
   },
   {
@@ -91,7 +130,9 @@ const INITIAL_SERVICES: Array<Partial<IServiceItem>> = [
     duration: '60 Mins',
     capacity: 1,
     description: 'Therapeutic muscle relaxation session by licensed resort wellness masseuse.',
+    status: 'AVAILABLE',
     isAvailable: true,
+    amenities: ['Aromatherapy Oils', 'Private Spa Suite', 'Hot Stone Option'],
     addedBy: 'Super Admin',
   },
 ];
@@ -111,7 +152,6 @@ export async function GET() {
 
     const services = await ServiceItem.find().sort({ group: 1, name: 1 });
 
-    // Collect all unique groups
     const distinctGroups = Array.from(
       new Set([...CANONICAL_GROUPS, ...services.map((s) => s.group)])
     );
@@ -127,6 +167,10 @@ export async function GET() {
         duration: s.duration,
         capacity: s.capacity || 0,
         description: s.description || '',
+        status: s.status || 'AVAILABLE',
+        amenities: s.amenities || [],
+        currentEvent: s.currentEvent || null,
+        bookingHistory: s.bookingHistory || [],
         isAvailable: s.isAvailable,
         addedBy: s.addedBy,
         createdAt: s.createdAt,
@@ -140,6 +184,10 @@ export async function GET() {
       services: INITIAL_SERVICES.map((s) => ({
         ...s,
         id: s.serviceId,
+        status: s.status || 'AVAILABLE',
+        amenities: s.amenities || [],
+        currentEvent: null,
+        bookingHistory: [],
       })),
       groups: Array.from(new Set([...CANONICAL_GROUPS, 'Laundry & Ancillary Services'])),
       error: err.message,
@@ -150,7 +198,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, group, price, duration, capacity, description, addedBy } = body;
+    const { name, group, price, duration, capacity, description, amenities, addedBy } = body;
 
     if (!name || !group || price === undefined || !duration) {
       return NextResponse.json(
@@ -171,6 +219,8 @@ export async function POST(req: NextRequest) {
       duration: duration.trim(),
       capacity: capacity ? Number(capacity) : 0,
       description: description ? description.trim() : '',
+      status: 'AVAILABLE',
+      amenities: Array.isArray(amenities) ? amenities : [],
       isAvailable: true,
       addedBy: addedBy || 'Super Admin',
     });
@@ -184,7 +234,7 @@ export async function POST(req: NextRequest) {
           staffName: addedBy || 'Super Admin',
           role: 'SUPERADMIN',
         },
-        headline: `New Service Created: ${name}`,
+        headline: `New Venue/Service Created: ${name}`,
         details: `Created in group [${group}] at ₦${Number(price).toLocaleString()} (${duration})`,
         meta: { serviceId, price, duration, group },
         timestamp: new Date().toISOString(),
@@ -202,6 +252,8 @@ export async function POST(req: NextRequest) {
         duration: newService.duration,
         capacity: newService.capacity,
         description: newService.description,
+        status: newService.status,
+        amenities: newService.amenities,
         isAvailable: newService.isAvailable,
         addedBy: newService.addedBy,
       },
@@ -215,7 +267,21 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { serviceId, name, group, price, duration, capacity, description, isAvailable, updatedBy } = body;
+    const {
+      serviceId,
+      action,
+      name,
+      group,
+      price,
+      duration,
+      capacity,
+      description,
+      status,
+      amenities,
+      currentEvent,
+      isAvailable,
+      updatedBy,
+    } = body;
 
     if (!serviceId) {
       return NextResponse.json(
@@ -226,40 +292,67 @@ export async function PATCH(req: NextRequest) {
 
     await connectToDatabase();
 
-    const updateFields: any = {};
-    if (name !== undefined) updateFields.name = name.trim();
-    if (group !== undefined) updateFields.group = group.trim();
-    if (price !== undefined) updateFields.price = Number(price);
-    if (duration !== undefined) updateFields.duration = duration.trim();
-    if (capacity !== undefined) updateFields.capacity = Number(capacity);
-    if (description !== undefined) updateFields.description = description.trim();
-    if (isAvailable !== undefined) updateFields.isAvailable = Boolean(isAvailable);
-
-    const updated = await ServiceItem.findOneAndUpdate(
-      { serviceId },
-      { $set: updateFields },
-      { new: true }
-    );
-
-    if (!updated) {
+    const existing = await ServiceItem.findOne({ serviceId });
+    if (!existing) {
       return NextResponse.json(
         { success: false, error: `Service item ${serviceId} not found.` },
         { status: 404 }
       );
     }
 
+    // Handle high-level booking actions like Room Check-In / Check-Out
+    if (action === 'BOOK_HALL') {
+      existing.status = 'RESERVED';
+      existing.currentEvent = currentEvent;
+    } else if (action === 'START_EVENT') {
+      existing.status = 'EVENT_IN_PROGRESS';
+      if (existing.currentEvent) {
+        existing.currentEvent.status = 'IN_PROGRESS';
+      }
+    } else if (action === 'CONCLUDE_EVENT') {
+      existing.status = 'CLEANING_TURNAROUND';
+      if (existing.currentEvent) {
+        if (!existing.bookingHistory) existing.bookingHistory = [];
+        existing.bookingHistory.push({
+          bookingId: existing.currentEvent.bookingId,
+          eventName: existing.currentEvent.eventName,
+          clientName: existing.currentEvent.clientName,
+          date: existing.currentEvent.date,
+          totalAmount: existing.currentEvent.totalAmount,
+          status: 'COMPLETED',
+        });
+        existing.currentEvent = undefined;
+      }
+    } else if (action === 'MARK_CLEAN') {
+      existing.status = 'AVAILABLE';
+    } else {
+      // General field update
+      if (name !== undefined) existing.name = name.trim();
+      if (group !== undefined) existing.group = group.trim();
+      if (price !== undefined) existing.price = Number(price);
+      if (duration !== undefined) existing.duration = duration.trim();
+      if (capacity !== undefined) existing.capacity = Number(capacity);
+      if (description !== undefined) existing.description = description.trim();
+      if (status !== undefined) existing.status = status;
+      if (amenities !== undefined && Array.isArray(amenities)) existing.amenities = amenities;
+      if (currentEvent !== undefined) existing.currentEvent = currentEvent;
+      if (isAvailable !== undefined) existing.isAvailable = Boolean(isAvailable);
+    }
+
+    await existing.save();
+
     try {
       await AuditLog.create({
         roomNumber: 'RESORT',
         category: 'SERVICE',
         actor: {
-          staffId: 'superadmin-01',
-          staffName: updatedBy || 'Super Admin',
-          role: 'SUPERADMIN',
+          staffId: 'staff-action',
+          staffName: updatedBy || 'Staff User',
+          role: 'FRONT_DESK',
         },
-        headline: `Service Updated: ${updated.name}`,
-        details: `Updated parameters: ${Object.keys(updateFields).join(', ')}`,
-        meta: { serviceId, updateFields },
+        headline: `Hall/Venue Updated: ${existing.name} (${action || 'SETTINGS_UPDATED'})`,
+        details: `Venue status is now ${existing.status}. Current event: ${existing.currentEvent?.eventName || 'None'}.`,
+        meta: { serviceId, status: existing.status, action },
         timestamp: new Date().toISOString(),
       });
     } catch (_) {}
@@ -267,16 +360,20 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({
       success: true,
       service: {
-        id: updated.serviceId,
-        serviceId: updated.serviceId,
-        name: updated.name,
-        group: updated.group,
-        price: updated.price,
-        duration: updated.duration,
-        capacity: updated.capacity,
-        description: updated.description,
-        isAvailable: updated.isAvailable,
-        addedBy: updated.addedBy,
+        id: existing.serviceId,
+        serviceId: existing.serviceId,
+        name: existing.name,
+        group: existing.group,
+        price: existing.price,
+        duration: existing.duration,
+        capacity: existing.capacity,
+        description: existing.description,
+        status: existing.status,
+        amenities: existing.amenities,
+        currentEvent: existing.currentEvent,
+        bookingHistory: existing.bookingHistory,
+        isAvailable: existing.isAvailable,
+        addedBy: existing.addedBy,
       },
     });
   } catch (err: any) {

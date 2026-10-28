@@ -83,31 +83,6 @@ export default function RBACView({
   // == Tab ==
   const [configTab, setConfigTab] = useState<ConfigTab>('ROLES');
 
-  // == Sidebar Visibility State ==
-  const [isSidebarEnabled, setIsSidebarEnabled] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const val = localStorage.getItem('hosos_sidebar_visible');
-      return val !== 'false';
-    }
-    return true;
-  });
-
-  const handleToggleSidebar = () => {
-    const newVal = !isSidebarEnabled;
-    setIsSidebarEnabled(newVal);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('hosos_sidebar_visible', String(newVal));
-      window.dispatchEvent(new CustomEvent('hosos_sidebar_toggle', { detail: { visible: newVal } }));
-    }
-    showToast({
-      type: 'success',
-      title: newVal ? 'Staff Sidebar Enabled' : 'Staff Sidebar Disabled (Hub Only)',
-      message: newVal
-        ? 'Navigation sidebar is now visible for other staff users. Superadmins/Owners always retain sidebar access.'
-        : 'Navigation sidebar is now hidden for other staff users (Waiters, Receptionists, Cashiers). Superadmins/Owners still retain full sidebar access.',
-    });
-  };
-
   // == Master Database Purge (Superadmin Only) ==
   const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
   const [purgeConfirmationCode, setPurgeConfirmationCode] = useState('');
@@ -188,6 +163,18 @@ export default function RBACView({
         { key: 'rooms.checkin', label: 'Execute Guest Check-In', desc: 'Assign guests to clean rooms and issue folios' },
         { key: 'rooms.checkout', label: 'Execute Guest Check-Out', desc: 'Reconcile folio balance, print bill, release room' },
         { key: 'rooms.customize', label: 'Customize Room Names, Tags & Prices', desc: 'Edit custom display names, color tags, and adjust rack rate prices' },
+        { key: 'rooms.create', label: 'Create New Rooms & Suites', desc: 'Add new rooms into resort inventory with number, floor, rack rate, colors, and amenities' },
+        { key: 'rooms.manage_amenities', label: 'Manage Room Amenities', desc: 'Add and configure standard & bespoke room amenities (WiFi, Jacuzzi, Smart TV, etc.)' },
+      ],
+    },
+    {
+      name: 'Halls, Banqueting & Event Venues',
+      icon: Building2,
+      permissions: [
+        { key: 'halls.book', label: 'Book & Reserve Halls & Venues', desc: 'Create event reservations with client details, 12-hour time slots, and split payments' },
+        { key: 'halls.checkin', label: 'Start Event (Check-In)', desc: 'Transition reserved hall to Event In Progress and open event folio' },
+        { key: 'halls.checkout', label: 'Conclude Event & Settle Bill (Check-Out)', desc: 'Reconcile bill, collect balance, and release venue to Cleaning & Turnaround' },
+        { key: 'halls.manage', label: 'Create & Configure Halls & Venues', desc: 'Add new venues, set hourly/daily rates, duration, capacity, and amenities' },
       ],
     },
     {
@@ -198,7 +185,7 @@ export default function RBACView({
         { key: 'orders.increment', label: 'Add Extra Items to Bill', desc: 'Increment active table orders with attribution' },
         { key: 'prices.override', label: 'Enter Dynamic Custom Prices', desc: 'Input market/daily pricing for seafood and chef specials' },
         { key: 'menu.manage', label: 'Add & Manage Menu Catalog', desc: 'Add dishes and drinks to resort menu catalog' },
-        { key: 'services.manage', label: 'Manage Halls, Events & Ancillary Services', desc: 'Create and configure event halls, wedding grounds, laundry and ancillary offerings' },
+        { key: 'services.manage', label: 'Manage Ancillary Services', desc: 'Create and configure laundry and ancillary offerings' },
         { key: 'discounts.approve', label: 'Approve Customer Discounts', desc: 'Apply percentage or fixed reductions to bills' },
         { key: 'voids.execute', label: 'Cancel / Void Fired Orders', desc: 'Remove items with mandatory audit reason code' },
       ],
@@ -235,7 +222,7 @@ export default function RBACView({
         { key: 'users.delete', label: 'Purge & Delete Staff Users', desc: 'Permanently remove staff members from Osieka Resort systems' },
         { key: 'rbac.manage', label: 'Manage RBAC Security Matrix', desc: 'Toggle role permissions and sub-page clearances' },
         { key: 'crm.manage', label: 'VIP CRM & Corporate Deals', desc: 'Access VIP profiles and banquet event pipeline' },
-        { key: 'sidebar.toggle', label: 'Toggle Navigation Sidebar', desc: 'Permission to show, hide or collapse the main navigation sidebar' },
+        { key: 'sidebar.toggle', label: 'Toggle Navigation Sidebar Access', desc: 'Permission to show, hide or configure the navigation sidebar' },
         { key: 'database.clear', label: 'Superadmin Master Database Purge', desc: 'Wipe all operational transactions, folios, orders, and reset database' },
       ],
     },
@@ -271,6 +258,19 @@ export default function RBACView({
   const handleToggleDataScope = (role: UserRole) => {
     if (!isSuperAdmin) return;
     setRoleDefinitions(prev => prev.map(r => r.role !== role ? r : { ...r, dataScope: r.dataScope === 'ALL_RESORT_DATA' ? 'RESTRICTED_SHIFT_DATA' : 'ALL_RESORT_DATA' }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleToggleRoleSidebar = (role: UserRole) => {
+    if (!isSuperAdmin) {
+      showToast({ type: 'error', title: 'Unauthorized', message: 'Only Super Admin can toggle role sidebar status.' });
+      return;
+    }
+    setRoleDefinitions(prev => prev.map(r => {
+      if (r.role !== role) return r;
+      const currentVal = r.hasSidebar ?? (r.role === 'SUPERADMIN' || r.role === 'OWNER' || r.role === 'ACCOUNTANT' || r.role === 'GENERAL_MANAGER');
+      return { ...r, hasSidebar: !currentVal };
+    }));
     setHasUnsavedChanges(true);
   };
 
@@ -425,57 +425,6 @@ export default function RBACView({
         </div>
       </div>
 
-      {/* Main Navigation Sidebar Visibility Toggle for Other Users */}
-      <div className="ent-card" style={{ padding: '16px 20px', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '10px',
-            backgroundColor: isSidebarEnabled ? 'rgba(37, 99, 235, 0.1)' : 'var(--bg-secondary)',
-            color: isSidebarEnabled ? 'var(--brand-primary)' : 'var(--text-muted)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            {isSidebarEnabled ? <Eye size={20} /> : <EyeOff size={20} />}
-          </div>
-          <div>
-            <div style={{ fontSize: '0.925rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>Staff Navigation Sidebar (Other Users)</span>
-              <span className={`badge ${isSidebarEnabled ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '0.7rem' }}>
-                {isSidebarEnabled ? 'ENABLED FOR OTHER USERS' : 'DISABLED FOR OTHER USERS (HUB-ONLY)'}
-              </span>
-            </div>
-            <div style={{ fontSize: '0.775rem', color: 'var(--text-muted)' }}>
-              Controls sidebar visibility for operational staff (Waiters, Receptionists, Cashiers, Chefs). When disabled, other users operate solely within the lean Hospitality Hub. <strong>Superadmins, Owners, and GMs always retain their sidebar.</strong>
-            </div>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleToggleSidebar}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 18px',
-            borderRadius: 'var(--radius-sm)',
-            fontWeight: 700,
-            fontSize: '0.825rem',
-            cursor: 'pointer',
-            backgroundColor: isSidebarEnabled ? 'var(--rose-bg)' : 'var(--emerald-bg)',
-            color: isSidebarEnabled ? 'var(--rose-primary)' : 'var(--emerald-text)',
-            border: isSidebarEnabled ? '1px solid var(--rose-border)' : '1px solid var(--emerald-border)',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <Power size={14} />
-          <span>{isSidebarEnabled ? 'Disable Sidebar for Other Users' : 'Enable Sidebar for Other Users'}</span>
-        </button>
-      </div>
-
       {/* ===== ROLES TAB ===== */}
       {configTab === 'ROLES' && (
         <>
@@ -506,20 +455,44 @@ export default function RBACView({
           <div className="ent-card" style={{ padding: '24px', borderLeft: `6px solid ${currentRoleDef.isEnabled ? 'var(--brand-primary)' : 'var(--rose-primary)'}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{currentRoleDef.displayName}</h2>
                   <span className={`badge ${currentRoleDef.isEnabled ? 'badge-emerald' : 'badge-rose'}`} style={{ fontSize: '0.7rem' }}>
                     {currentRoleDef.isEnabled ? '● Active & Enabled' : '✕ Disabled'}
+                  </span>
+                  <span className={`badge ${currentRoleDef.hasSidebar ? 'badge-brand' : 'badge-neutral'}`} style={{ fontSize: '0.7rem' }}>
+                    {currentRoleDef.hasSidebar ? 'Sidebar: Enabled (Multi-Menu)' : 'Sidebar: Disabled (Hub Only)'}
                   </span>
                 </div>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '700px' }}>{currentRoleDef.description}</p>
               </div>
 
               {isSuperAdmin && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <button type="button" onClick={() => handleToggleRoleStatus(currentRoleDef.role)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', border: `1.5px solid ${currentRoleDef.isEnabled ? 'var(--emerald-border)' : 'var(--rose-border)'}`, backgroundColor: currentRoleDef.isEnabled ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem', color: currentRoleDef.isEnabled ? 'var(--emerald-primary)' : 'var(--rose-primary)' }}>
                     <Power size={15} />
                     <span>{currentRoleDef.isEnabled ? 'Role is ON (Click to Disable)' : 'Role is OFF (Click to Enable)'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleRoleSidebar(currentRoleDef.role)}
+                    title={currentRoleDef.hasSidebar ? 'Click to disable sidebar for this role (locks user to single Command Hub flow)' : 'Click to enable sidebar for this role (grants multi-menu navigation)'}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      border: `1.5px solid ${currentRoleDef.hasSidebar ? 'var(--brand-primary)' : 'var(--border-color)'}`,
+                      backgroundColor: currentRoleDef.hasSidebar ? 'rgba(37, 99, 235, 0.08)' : 'var(--bg-secondary)',
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
+                      color: currentRoleDef.hasSidebar ? 'var(--brand-primary)' : 'var(--text-muted)'
+                    }}
+                  >
+                    {currentRoleDef.hasSidebar ? <Eye size={14} /> : <EyeOff size={14} />}
+                    <span>Sidebar: {currentRoleDef.hasSidebar ? 'Enabled' : 'Disabled (Hub Only)'}</span>
                   </button>
                   <button type="button" onClick={() => handleToggleDataScope(currentRoleDef.role)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem', color: 'var(--text-primary)' }}>
                     <Sliders size={14} />
@@ -527,6 +500,8 @@ export default function RBACView({
                   </button>
                 </div>
               )}
+            </div>
+          </div>
             </div>
           </div>
 

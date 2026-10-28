@@ -66,6 +66,7 @@ export interface Room {
     customName?: string;
     colorTag?: string;
     colorBg?: string;
+    amenities?: string[];
     currentGuestName?: string;
     currentReservationId?: string;
     currentFolioId?: string;
@@ -353,7 +354,48 @@ export interface StaffOnboardingRecord {
     createdAt: string;
     completedAt?: string;
 }
-export type AppPermission = 'rooms.audit.view' | 'rooms.status.override' | 'rooms.checkin' | 'rooms.checkout' | 'rooms.customize' | 'orders.create' | 'orders.increment' | 'prices.override' | 'discounts.approve' | 'voids.execute' | 'menu.manage' | 'cash.receive' | 'maintenance.raise' | 'maintenance.signoff' | 'reports.export' | 'users.onboard' | 'crm.manage' | 'solar.log' | 'solar.powersaver_toggle' | 'diesel.log' | 'audit.stamp' | 'daily.submit' | 'daily.audit_update' | 'payment.split' | 'sidebar.toggle' | 'users.manage' | 'users.delete' | 'services.manage' | 'database.clear' | 'rbac.manage';
+export type AppPermission = 'rooms.audit.view' | 'rooms.status.override' | 'rooms.checkin' | 'rooms.checkout' | 'rooms.customize' | 'orders.create' | 'orders.increment' | 'prices.override' | 'discounts.approve' | 'voids.execute' | 'menu.manage' | 'cash.receive' | 'maintenance.raise' | 'maintenance.signoff' | 'reports.export' | 'users.onboard' | 'crm.manage' | 'solar.log' | 'solar.powersaver_toggle' | 'diesel.log' | 'audit.stamp' | 'daily.submit' | 'daily.audit_update' | 'payment.split' | 'sidebar.toggle' | 'rooms.create' | 'rooms.manage_amenities' | 'halls.book' | 'halls.checkin' | 'halls.checkout' | 'halls.manage' | 'users.manage' | 'users.delete' | 'services.manage' | 'database.clear' | 'rbac.manage';
+export type HallStatus = 'AVAILABLE' | 'RESERVED' | 'EVENT_IN_PROGRESS' | 'CLEANING_TURNAROUND' | 'MAINTENANCE';
+export interface EventHallVenue {
+    id: string;
+    hallId: string;
+    name: string;
+    status: HallStatus;
+    capacity: number;
+    ratePerDay: number;
+    ratePerHour?: number;
+    duration: string;
+    amenities?: string[];
+    description?: string;
+    currentEvent?: {
+        bookingId: string;
+        eventName: string;
+        clientName: string;
+        clientPhone: string;
+        clientEmail?: string;
+        date: string;
+        timeSlot: string;
+        totalAmount: number;
+        depositPaid: number;
+        balanceDue: number;
+        paymentMethod: 'POS' | 'TRANSFER' | 'CASH' | 'SPLIT';
+        splitDetails?: {
+            method1: string;
+            amount1: number;
+            method2: string;
+            amount2: number;
+        };
+        status: 'CONFIRMED' | 'IN_PROGRESS' | 'CONCLUDED';
+    };
+    bookingHistory?: Array<{
+        bookingId: string;
+        eventName: string;
+        clientName: string;
+        date: string;
+        totalAmount: number;
+        status: 'COMPLETED' | 'CANCELLED';
+    }>;
+}
 export interface ServiceItem {
     id: string;
     name: string;
@@ -371,6 +413,7 @@ export interface RoleRBACDefinition {
     department: DepartmentType;
     description: string;
     isEnabled: boolean;
+    hasSidebar?: boolean;
     allowedViews: string[];
     permissions: AppPermission[];
     dataScope: 'ALL_RESORT_DATA' | 'RESTRICTED_SHIFT_DATA';

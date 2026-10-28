@@ -436,7 +436,7 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
             <div style={{ padding: '12px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span className="badge badge-clean">Transfer Verified</span>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>17:10 WAT</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>05:10 PM WAT</span>
               </div>
               <div style={{ fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '4px' }}>
                 ₦35,000 Bank Transfer Claim Verified
@@ -449,7 +449,7 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
             <div style={{ padding: '12px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span className="badge badge-dirty">Stock Variance</span>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>16:00 WAT</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>04:00 PM WAT</span>
               </div>
               <div style={{ fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '4px' }}>
                 Hennessy VSOP Dipstick Count: -0.02 Btl Variance
@@ -462,7 +462,7 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
             <div style={{ padding: '12px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span className="badge badge-clean">Generator Benchmark</span>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>18:00 WAT</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>06:00 PM WAT</span>
               </div>
               <div style={{ fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '4px' }}>
                 Perkins 250kVA Burn Rate: 27.5 L/hr (Normal)

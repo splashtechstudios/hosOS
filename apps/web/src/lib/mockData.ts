@@ -150,6 +150,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     department: 'EXECUTIVE',
     description: 'Master governance. Full unconstrained visibility, privilege matrix controls, pricing thresholds, and executive audits.',
     isEnabled: true,
+    hasSidebar: true,
     dataScope: 'ALL_RESORT_DATA',
     allowedViews: [
       'dashboard', 'daily-operations', 'accountant-audit', 'front-desk', 'room-audit',
@@ -157,6 +158,8 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     ],
     permissions: [
       'rooms.audit.view', 'rooms.status.override', 'rooms.checkin', 'rooms.checkout',
+      'rooms.create', 'rooms.manage_amenities',
+      'halls.book', 'halls.checkin', 'halls.checkout', 'halls.manage',
       'orders.create', 'orders.increment', 'prices.override', 'discounts.approve',
       'voids.execute', 'menu.manage', 'cash.receive', 'maintenance.raise',
       'maintenance.signoff', 'reports.export', 'users.onboard', 'crm.manage',
@@ -170,10 +173,12 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     department: 'EXECUTIVE',
     description: 'Daily operational management, room check-in oversight, menu management, and single-screen daily closing submission.',
     isEnabled: true,
+    hasSidebar: false,
     dataScope: 'ALL_RESORT_DATA',
     allowedViews: ['daily-operations', 'front-desk', 'room-audit', 'pos'],
     permissions: [
       'rooms.audit.view', 'rooms.status.override', 'rooms.checkin', 'rooms.checkout',
+      'halls.book', 'halls.checkin', 'halls.checkout',
       'orders.create', 'orders.increment', 'menu.manage', 'cash.receive',
       'maintenance.raise', 'solar.log', 'solar.powersaver_toggle', 'daily.submit'
     ],
@@ -184,6 +189,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     department: 'ACCOUNTS_FINANCE',
     description: 'Super-admin read-only inspection, 3-way reconciliation, variance detection, price floor setting, and tax export.',
     isEnabled: true,
+    hasSidebar: true,
     dataScope: 'ALL_RESORT_DATA',
     allowedViews: ['accountant-audit', 'dashboard', 'night-audit', 'loss-prevention', 'room-audit'],
     permissions: [
@@ -196,14 +202,17 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     department: 'EXECUTIVE',
     description: 'Full unconstrained visibility into every department, profit & loss, loss prevention, and executive audits.',
     isEnabled: true,
+    hasSidebar: true,
     dataScope: 'ALL_RESORT_DATA',
     allowedViews: [
       'dashboard', 'daily-operations', 'accountant-audit', 'front-desk', 'room-audit',
       'pos', 'facilities-generators', 'night-audit', 'loss-prevention', 'onboarding-directory', 'rbac-matrix'
     ],
     permissions: [
-      'rooms.audit.view', 'rooms.status.override', 'orders.create', 'orders.increment',
-      'discounts.approve', 'voids.execute', 'cash.receive', 'maintenance.raise',
+      'rooms.audit.view', 'rooms.status.override', 'rooms.checkin', 'rooms.checkout',
+      'rooms.create', 'rooms.manage_amenities',
+      'halls.book', 'halls.checkin', 'halls.checkout', 'halls.manage',
+      'orders.create', 'orders.increment', 'discounts.approve', 'voids.execute', 'cash.receive', 'maintenance.raise',
       'maintenance.signoff', 'reports.export', 'users.onboard', 'crm.manage',
       'solar.log', 'solar.powersaver_toggle', 'diesel.log', 'audit.stamp',
       'daily.submit', 'daily.audit_update', 'rbac.manage'
@@ -215,14 +224,17 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     department: 'EXECUTIVE',
     description: 'Total operational control across rooms division, F&B outlets, store requisitions, and daily flash sign-offs.',
     isEnabled: true,
+    hasSidebar: true,
     dataScope: 'ALL_RESORT_DATA',
     allowedViews: [
       'dashboard', 'daily-operations', 'accountant-audit', 'front-desk', 'room-audit',
       'pos', 'facilities-generators', 'night-audit', 'loss-prevention', 'onboarding-directory', 'rbac-matrix'
     ],
     permissions: [
-      'rooms.audit.view', 'rooms.status.override', 'orders.create', 'orders.increment',
-      'discounts.approve', 'voids.execute', 'cash.receive', 'maintenance.raise',
+      'rooms.audit.view', 'rooms.status.override', 'rooms.checkin', 'rooms.checkout',
+      'rooms.create', 'rooms.manage_amenities',
+      'halls.book', 'halls.checkin', 'halls.checkout', 'halls.manage',
+      'orders.create', 'orders.increment', 'discounts.approve', 'voids.execute', 'cash.receive', 'maintenance.raise',
       'maintenance.signoff', 'reports.export', 'users.onboard', 'crm.manage',
       'solar.log', 'solar.powersaver_toggle', 'diesel.log', 'daily.submit'
     ],
@@ -233,10 +245,12 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     department: 'ROOMS_DIVISION',
     description: 'Guest check-in, keycard issuance, folio management, room moves, and cash deposit collection.',
     isEnabled: true,
+    hasSidebar: false,
     dataScope: 'RESTRICTED_SHIFT_DATA',
     allowedViews: ['daily-operations', 'front-desk', 'room-audit', 'pos'],
     permissions: [
       'rooms.audit.view', 'rooms.status.override', 'rooms.checkin', 'rooms.checkout',
+      'halls.book', 'halls.checkin', 'halls.checkout',
       'orders.create', 'orders.increment', 'cash.receive', 'maintenance.raise', 'crm.manage'
     ],
   },
@@ -246,6 +260,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     department: 'ACCOUNTS_FINANCE',
     description: 'Cash drawer balancing, POS card settlement, bank transfer verification, and folio closure.',
     isEnabled: true,
+    hasSidebar: false,
     dataScope: 'RESTRICTED_SHIFT_DATA',
     allowedViews: ['daily-operations', 'pos', 'room-audit', 'dashboard'],
     permissions: [
@@ -258,6 +273,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     department: 'FOOD_AND_BEVERAGE',
     description: 'Table order taking, room service delivery, and order increments with PIN authentication.',
     isEnabled: true,
+    hasSidebar: false,
     dataScope: 'RESTRICTED_SHIFT_DATA',
     allowedViews: ['pos'],
     permissions: [
@@ -270,6 +286,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     department: 'FOOD_AND_BEVERAGE',
     description: 'Cocktail dispensing, spirit tot decrement, bar tabs, and shift tot dipstick counts.',
     isEnabled: true,
+    hasSidebar: false,
     dataScope: 'RESTRICTED_SHIFT_DATA',
     allowedViews: ['pos'],
     permissions: [
@@ -282,6 +299,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     department: 'FOOD_AND_BEVERAGE',
     description: 'Kitchen Display System (KDS), food preparation dispatch, and recipe ingredient reconciliation.',
     isEnabled: true,
+    hasSidebar: false,
     dataScope: 'RESTRICTED_SHIFT_DATA',
     allowedViews: ['pos'],
     permissions: [
@@ -294,6 +312,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     department: 'ROOMS_DIVISION',
     description: 'Daily cleaning boards, room inspection checklists, lost & found, and maintenance ticket raising.',
     isEnabled: true,
+    hasSidebar: false,
     dataScope: 'RESTRICTED_SHIFT_DATA',
     allowedViews: ['front-desk', 'room-audit'],
     permissions: [
@@ -306,6 +325,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     department: 'MAINTENANCE_ENGINEERING',
     description: 'Solar PV array monitoring, BESS battery bank state of charge, power saver mode, and inverter maintenance.',
     isEnabled: true,
+    hasSidebar: false,
     dataScope: 'RESTRICTED_SHIFT_DATA',
     allowedViews: ['facilities-generators', 'room-audit'],
     permissions: [
@@ -318,6 +338,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     department: 'FOOD_AND_BEVERAGE',
     description: 'GRN inspection, bulk consumables discharge, inter-store requisitions, and shrinkage reporting.',
     isEnabled: true,
+    hasSidebar: false,
     dataScope: 'RESTRICTED_SHIFT_DATA',
     allowedViews: ['daily-operations'],
     permissions: [

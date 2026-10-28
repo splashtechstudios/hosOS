@@ -55,7 +55,7 @@ export default function HospitalityHubView({ activeStaff, rooms, onNavigate }: H
   const isSuperAdmin = activeStaff.role === 'SUPERADMIN' || activeStaff.role === 'OWNER' || (activeStaff.role as any) === 'ADMIN';
   const canManageServices = isSuperAdmin || hasPermission(activeStaff.role, 'services.manage', activeStaff.id);
 
-  const formatTime = (d: Date) => d.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const formatTime = (d: Date) => d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
   const formatDate = (d: Date) => d.toLocaleDateString('en-NG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   // Total canonical groups requested by user: Rooms, Kitchen, Drinks, Halls and Events

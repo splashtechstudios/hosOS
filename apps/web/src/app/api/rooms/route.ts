@@ -49,6 +49,7 @@ export async function GET() {
         activeMaintenanceTicketId: r.activeMaintenanceTicketId,
         lastCleanedAt: r.lastCleanedAt,
         lastCleanedByStaffName: r.lastCleanedByStaffName,
+        amenities: r.amenities && r.amenities.length > 0 ? r.amenities : ['Air Conditioning', 'High Speed Wi-Fi', 'Smart TV', 'Balcony', 'En-suite Jacuzzi'],
         occupancyHistory: [],
       })),
     });
@@ -116,6 +117,9 @@ export async function PATCH(req: NextRequest) {
     if (colorBg !== undefined) {
       room.colorBg = colorBg;
     }
+    if (body.amenities !== undefined && Array.isArray(body.amenities)) {
+      room.amenities = body.amenities;
+    }
 
     await room.save();
 
@@ -138,7 +142,7 @@ export async function PATCH(req: NextRequest) {
         },
         timestamp: new Date().toISOString(),
       });
-    } else if (rackRatePerNight !== undefined || customName !== undefined) {
+    } else if (rackRatePerNight !== undefined || customName !== undefined || body.amenities !== undefined) {
       auditRecord = await AuditLog.create({
         roomNumber,
         category: 'SERVICE',
@@ -153,6 +157,7 @@ export async function PATCH(req: NextRequest) {
           rackRatePerNight: room.rackRatePerNight,
           customName: room.customName,
           colorTag: room.colorTag,
+          amenities: room.amenities,
         },
         timestamp: new Date().toISOString(),
       });
@@ -167,5 +172,91 @@ export async function PATCH(req: NextRequest) {
   } catch (error: any) {
     console.error('Error updating room status:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    await connectToDatabase();
+    const body = await req.json();
+    const {
+      roomNumber,
+      roomTypeName,
+      customName,
+      colorTag,
+      colorBg,
+      floor,
+      rackRatePerNight,
+      amenities,
+      maxOccupancy,
+      createdBy,
+    } = body;
+
+    if (!roomNumber) {
+      return NextResponse.json({ success: false, error: 'Room number is required' }, { status: 400 });
+    }
+
+    const cleanRoomNum = String(roomNumber).trim();
+    const existing = await Room.findOne({ roomNumber: cleanRoomNum });
+    if (existing) {
+      return NextResponse.json({ success: false, error: `Room #${cleanRoomNum} already exists in registry.` }, { status: 409 });
+    }
+
+    const defaultAmenities = ['Air Conditioning', 'High Speed Wi-Fi', 'Smart TV', 'Balcony', 'En-suite Jacuzzi'];
+    const assignedAmenities = Array.isArray(amenities) && amenities.length > 0 ? amenities : defaultAmenities;
+
+    const newRoom = await Room.create({
+      roomNumber: cleanRoomNum,
+      roomTypeName: roomTypeName?.trim() || 'Executive Deluxe Suite',
+      customName: customName?.trim() || '',
+      colorTag: colorTag?.trim() || '#2563EB',
+      colorBg: colorBg?.trim() || 'rgba(37,99,235,0.06)',
+      floor: Number(floor) || 1,
+      rackRatePerNight: Number(rackRatePerNight) || 45000,
+      status: 'VACANT_CLEAN',
+      amenities: assignedAmenities,
+      maxOccupancy: Number(maxOccupancy) || 2,
+    });
+
+    try {
+      await AuditLog.create({
+        roomNumber: newRoom.roomNumber,
+        category: 'SERVICE',
+        actor: {
+          staffId: 'admin-01',
+          staffName: createdBy || 'Admin',
+          role: 'SUPERADMIN',
+        },
+        headline: `New Room Created: Room #${newRoom.roomNumber}`,
+        details: `Room #${newRoom.roomNumber} (${newRoom.roomTypeName}) added with rack rate ₦${newRoom.rackRatePerNight.toLocaleString()}`,
+        meta: {
+          roomNumber: newRoom.roomNumber,
+          roomTypeName: newRoom.roomTypeName,
+          rackRatePerNight: newRoom.rackRatePerNight,
+          amenities: assignedAmenities,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (_) {}
+
+    return NextResponse.json({
+      success: true,
+      room: {
+        id: String(newRoom._id),
+        roomNumber: newRoom.roomNumber,
+        roomTypeId: `type-${newRoom.roomNumber}`,
+        roomTypeName: newRoom.roomTypeName,
+        customName: newRoom.customName,
+        colorTag: newRoom.colorTag,
+        colorBg: newRoom.colorBg,
+        floor: newRoom.floor,
+        rackRatePerNight: newRoom.rackRatePerNight,
+        status: newRoom.status,
+        amenities: newRoom.amenities,
+      },
+    });
+  } catch (err: any) {
+    console.error('Error in POST /api/rooms:', err);
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }

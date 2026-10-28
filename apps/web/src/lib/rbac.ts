@@ -287,3 +287,18 @@ export function hasPermission(role: string | undefined | null, permission: AppPe
   return def.permissions.includes(permission);
 }
 
+/**
+ * Determines if the navigation sidebar is enabled for a given role based on the RBAC matrix configuration.
+ * Manager role defaults to false (single-flow Command Hub).
+ * Superadmin, Owner, Accountant, and General Manager default to true (multi-menu access).
+ */
+export function isSidebarEnabledForRole(role: string | undefined | null): boolean {
+  if (!role) return false;
+  const normalized = role.toUpperCase();
+  const def = getActiveRoleDefinition(normalized);
+  if (def && typeof def.hasSidebar === 'boolean') {
+    return def.hasSidebar;
+  }
+  // Default fallback if not explicitly set in matrix:
+  return normalized === 'SUPERADMIN' || normalized === 'OWNER' || normalized === 'ACCOUNTANT' || normalized === 'GENERAL_MANAGER';
+}

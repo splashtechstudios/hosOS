@@ -50,6 +50,17 @@ export default function Navbar({
 
   const currentRoleDef = RBAC_ROLE_DEFINITIONS.find(r => r.role === activeStaff.role);
 
+  const [liveTime, setLiveTime] = useState<string>('');
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setLiveTime(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' WAT');
+    };
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <header style={{
       borderBottom: '1px solid var(--border-color)',
@@ -129,7 +140,7 @@ export default function Navbar({
             fontFamily: 'var(--font-mono)',
           }}>
             <Clock size={14} color="var(--brand-primary)" />
-            <span>2026-10-15 19:25 WAT</span>
+            <span>{liveTime || '07:25:00 PM WAT'}</span>
           </div>
         </div>
 

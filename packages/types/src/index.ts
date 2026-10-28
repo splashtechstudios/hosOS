@@ -115,6 +115,7 @@ export interface Room {
   customName?: string;
   colorTag?: string;
   colorBg?: string;
+  amenities?: string[];
   currentGuestName?: string;
   currentReservationId?: string;
   currentFolioId?: string;
@@ -501,11 +502,55 @@ export type AppPermission =
   | 'daily.audit_update'
   | 'payment.split'
   | 'sidebar.toggle'
+  | 'rooms.create'
+  | 'rooms.manage_amenities'
+  | 'halls.book'
+  | 'halls.checkin'
+  | 'halls.checkout'
+  | 'halls.manage'
   | 'users.manage'
   | 'users.delete'
   | 'services.manage'
   | 'database.clear'
   | 'rbac.manage';
+
+export type HallStatus = 'AVAILABLE' | 'RESERVED' | 'EVENT_IN_PROGRESS' | 'CLEANING_TURNAROUND' | 'MAINTENANCE';
+
+export interface EventHallVenue {
+  id: string;
+  hallId: string;
+  name: string; // e.g. "Osieka Grand Ballroom"
+  status: HallStatus;
+  capacity: number; // e.g. 600
+  ratePerDay: number;
+  ratePerHour?: number;
+  duration: string; // e.g. "Full Day (8am - 6pm)"
+  amenities?: string[];
+  description?: string;
+  currentEvent?: {
+    bookingId: string;
+    eventName: string;
+    clientName: string;
+    clientPhone: string;
+    clientEmail?: string;
+    date: string;
+    timeSlot: string; // e.g. "10:00 AM - 06:00 PM"
+    totalAmount: number;
+    depositPaid: number;
+    balanceDue: number;
+    paymentMethod: 'POS' | 'TRANSFER' | 'CASH' | 'SPLIT';
+    splitDetails?: { method1: string; amount1: number; method2: string; amount2: number };
+    status: 'CONFIRMED' | 'IN_PROGRESS' | 'CONCLUDED';
+  };
+  bookingHistory?: Array<{
+    bookingId: string;
+    eventName: string;
+    clientName: string;
+    date: string;
+    totalAmount: number;
+    status: 'COMPLETED' | 'CANCELLED';
+  }>;
+}
 
 export interface ServiceItem {
   id: string;
@@ -525,6 +570,7 @@ export interface RoleRBACDefinition {
   department: DepartmentType;
   description: string;
   isEnabled: boolean; // Superadmin master toggle ON/OFF
+  hasSidebar?: boolean; // Per-role toggle: Manager uses Command Hub only, Superadmin/Accountant have full sidebar
   allowedViews: string[]; // Sub-page view clearance
   permissions: AppPermission[]; // Action-level clearance
   dataScope: 'ALL_RESORT_DATA' | 'RESTRICTED_SHIFT_DATA';
