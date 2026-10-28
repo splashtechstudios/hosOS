@@ -183,7 +183,7 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
 
 🍽️ *FOOD & BEVERAGE*
 • Restaurant Sales: ₦342,000
-• Main Bar & Pool Lounge: ₦241,500
+• Main Bar & Drinks: ₦241,500
 • Room Service Extra Charges: ₦85,000
 • *Total F&B Revenue:* ₦668,500
 

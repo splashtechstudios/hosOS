@@ -237,7 +237,7 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
               { name: 'Hotel Rooms & Suites', amount: 22500000, pct: 46, color: 'var(--brand-primary)' },
               { name: 'Restaurant & Room Service', amount: 12400000, pct: 25, color: 'var(--emerald-primary)' },
               { name: 'Corporate Events & Banqueting', amount: 8200000, pct: 17, color: 'var(--purple-primary)' },
-              { name: 'Main Bar & Pool Lounge', amount: 4420000, pct: 9, color: 'var(--amber-primary)' },
+              { name: 'Main Bar & Drinks', amount: 4420000, pct: 9, color: 'var(--amber-primary)' },
               { name: 'Laundry & Ancillary Services', amount: 1400000, pct: 3, color: '#64748B' },
             ].map((dept) => (
               <div key={dept.name}>

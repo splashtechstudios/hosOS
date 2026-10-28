@@ -79,6 +79,15 @@ export default function FrontDeskView({
   const [activeTab, setActiveTab] = useState<RoomTab>('VACANT_CLEAN');
   const [viewMode, setViewMode] = useState<ViewMode>('CARDS');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 900);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const [roomMeta, setRoomMeta] = useState<Record<string, { displayName?: string; colorTag?: string; colorBg?: string }>>({});
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
@@ -366,9 +375,9 @@ export default function FrontDeskView({
         </div>
       )}
 
-      {/* CARDS VIEW */}
+      {/* CARDS VIEW (Strictly 3 on a row on desktop) */}
       {viewMode === 'CARDS' && filteredRooms.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(3, 1fr)' : '1fr', gap: '16px' }}>
           {filteredRooms.map(room => {
             const accent = getRoomColor(room);
             const accBg = getRoomBg(room);

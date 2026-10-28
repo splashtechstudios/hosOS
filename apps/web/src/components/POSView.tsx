@@ -62,7 +62,7 @@ export default function POSView({
   onBack,
 }: POSViewProps) {
   const { showConfirm, showSuccess, showToast } = useFeedback();
-  const [selectedOutlet, setSelectedOutlet] = useState<'RESTAURANT' | 'POOL_BAR' | 'LOUNGE'>('RESTAURANT');
+  const [selectedOutlet, setSelectedOutlet] = useState<'RESTAURANT' | 'MAIN_BAR'>('RESTAURANT');
   const [orderType, setOrderType] = useState<'DINE_IN' | 'ROOM_SERVICE' | 'BAR_TAB'>('ROOM_SERVICE');
   const [selectedRoomNumber, setSelectedRoomNumber] = useState('204');
   const [selectedCategory, setSelectedCategory] = useState<string>(
@@ -866,9 +866,6 @@ export default function POSView({
   // Initial cart: starts clean for order entry
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  const [transferPending, setTransferPending] = useState(false);
-  const [transferVerified, setTransferVerified] = useState(false);
-
   // Fetch dynamic menu from backend
   useEffect(() => {
     fetch('/api/menu')
@@ -1449,7 +1446,7 @@ export default function POSView({
           {/* Sub-bar: Outlet & Station */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
             <div style={{ display: 'flex', gap: '6px' }}>
-              {(['RESTAURANT', 'POOL_BAR', 'LOUNGE'] as const).map((outlet) => (
+              {(['RESTAURANT', 'MAIN_BAR'] as const).map((outlet) => (
                 <button
                   key={outlet}
                   onClick={() => setSelectedOutlet(outlet)}
@@ -1790,10 +1787,10 @@ export default function POSView({
               </div>
             </div>
           ) : (
-            /* 2. CHOWDECK & GLOVO CARDS VIEW (Picture Heavy Display) */
+            /* 2. CHOWDECK & GLOVO CARDS VIEW (Picture Heavy Display - Strictly 3 on a row on desktop) */
             <div style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(235px, 1fr))',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
               gap: isMobile ? '12px' : '20px',
             }}>
               {filteredMenuItems.map((item) => {
@@ -1977,57 +1974,7 @@ export default function POSView({
                 );
               })}
             </div>
-          )}
         </div>
-
-        {/* Anti-Fraud Manual Bank Transfer Verification Queue */}
-        <div className="ent-card" style={{ padding: '20px', borderLeft: '4px solid var(--amber-primary)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-            <ShieldAlert size={20} color="var(--amber-primary)" />
-            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Anti-Fraud: Manual Bank Transfer Verification Queue
-            </h4>
-          </div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
-            Prevents fake bank credit SMS and screenshot scams. Waiters log the transfer claim, which must be verified against Osieka resort bank accounts before orders are released.
-          </p>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => {
-                setTransferPending(true);
-                setTransferVerified(false);
-              }}
-              className="btn-secondary"
-              style={{ fontSize: '0.8rem' }}
-            >
-              Simulate Guest Transfer (₦35,000 via GTBank)
-            </button>
-
-            {transferPending && !transferVerified && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="badge badge-dirty">Awaiting Cashier Verification</span>
-                <button
-                  onClick={() => {
-                    setTransferVerified(true);
-                    setTransferPending(false);
-                  }}
-                  className="btn-primary"
-                  style={{ fontSize: '0.75rem', padding: '6px 10px' }}
-                >
-                  Cashier Verify & Release
-                </button>
-              </div>
-            )}
-
-            {transferVerified && (
-              <span className="badge badge-clean">
-                <CheckCircle2 size={12} /> Verified by Fatima Sanusi (Funds Confirmed)
-              </span>
-            )}
-          </div>
-        </div>
-
       </div>
 
       {/* Right: Active Ticket on Desktop */}

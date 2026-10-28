@@ -25,6 +25,14 @@ interface HospitalityHubViewProps {
 export default function HospitalityHubView({ activeStaff, rooms, onNavigate }: HospitalityHubViewProps) {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 900);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -167,8 +175,8 @@ export default function HospitalityHubView({ activeStaff, rooms, onNavigate }: H
         </div>
       </div>
 
-      {/* 3 Hub Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+      {/* 3 Hub Cards (Strictly 3 on a row on desktop) */}
+      <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(3, 1fr)' : '1fr', gap: '24px' }}>
         {hubs.map((hub) => {
           const Icon = hub.icon;
           const isHovered = hoveredCard === hub.id;

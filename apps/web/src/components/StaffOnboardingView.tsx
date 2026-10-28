@@ -437,7 +437,7 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
                     style={{ width: '100%' }}
                   >
                     <option value="WAITER">WAITER (POS Server)</option>
-                    <option value="BARTENDER">BARTENDER (Lounge)</option>
+                    <option value="BARTENDER">BARTENDER (Main Bar)</option>
                     <option value="FRONT_DESK">FRONT_DESK (Folio Agent)</option>
                     <option value="CASHIER">CASHIER (Audit Settlement)</option>
                     <option value="CHEF">CHEF (Kitchen KDS)</option>

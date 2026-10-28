@@ -489,6 +489,7 @@ export type AppPermission =
   | 'audit.stamp'
   | 'daily.submit'
   | 'daily.audit_update'
+  | 'sidebar.toggle'
   | 'rbac.manage';
 
 export interface RoleRBACDefinition {

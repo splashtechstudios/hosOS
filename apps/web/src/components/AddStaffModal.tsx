@@ -218,7 +218,7 @@ export default function AddStaffModal({
                 <option value="FRONT_DESK">FRONT DESK Supervisor</option>
                 <option value="CASHIER">CASHIER (Chief Cashier)</option>
                 <option value="WAITER">WAITER (F&B Server)</option>
-                <option value="BARTENDER">BARTENDER (Lounge)</option>
+                <option value="BARTENDER">BARTENDER (Main Bar)</option>
                 <option value="CHEF">CHEF (Executive Kitchen)</option>
                 <option value="HOUSEKEEPING">HOUSEKEEPING Lead</option>
                 <option value="MAINTENANCE">MAINTENANCE Engineer</option>
