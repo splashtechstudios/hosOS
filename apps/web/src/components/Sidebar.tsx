@@ -29,7 +29,8 @@ import {
   Search,
   Sliders,
   DollarSign,
-  AlertTriangle
+  AlertTriangle,
+  Sparkles
 } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
 import { ENTERPRISE_ORG } from '@/lib/mockData';
@@ -108,6 +109,7 @@ export default function Sidebar({
       submenus: [
         { id: 'front-desk', label: 'Hospitality Command Hub', icon: Hotel, highlight: true, tag: 'Hub' },
         { id: 'halls-services', label: 'Halls & Event Venues', icon: Building2, tag: 'Banquets' },
+        { id: 'ancillary-services', label: 'Ancillary Operations Board', icon: Sparkles, tag: 'Laundry/Spa' },
         { id: 'room-audit', label: 'Room 360° Internal Audit', icon: ShieldCheck, tag: 'Live Folio' },
       ],
     },

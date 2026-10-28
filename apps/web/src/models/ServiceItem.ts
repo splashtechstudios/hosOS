@@ -2,6 +2,16 @@ import mongoose, { Schema, Model } from 'mongoose';
 
 export type HallStatus = 'AVAILABLE' | 'RESERVED' | 'EVENT_IN_PROGRESS' | 'CLEANING_TURNAROUND' | 'MAINTENANCE';
 
+export interface ICateringLineItem {
+  id: string;
+  category: 'FOOD' | 'DRINK';
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  total: number;
+  notes?: string;
+}
+
 export interface ICurrentEvent {
   bookingId: string;
   eventName: string;
@@ -10,6 +20,10 @@ export interface ICurrentEvent {
   clientEmail?: string;
   date: string;
   timeSlot: string; // e.g. "10:00 AM - 06:00 PM"
+  venueFee: number;
+  cateringItems?: ICateringLineItem[];
+  foodTotal: number;
+  drinksTotal: number;
   totalAmount: number;
   depositPaid: number;
   balanceDue: number;

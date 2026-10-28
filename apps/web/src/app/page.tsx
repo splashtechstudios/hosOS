@@ -20,6 +20,7 @@ import StaffOnboardingView from '@/components/StaffOnboardingView';
 import RBACView from '@/components/RBACView';
 import HospitalityHubView from '@/components/HospitalityHubView';
 import HallsAndServicesView from '@/components/HallsAndServicesView';
+import AncillaryOperationsView from '@/components/AncillaryOperationsView';
 import AddStaffModal from '@/components/AddStaffModal';
 import CheckInModal from '@/components/CheckInModal';
 import CheckOutModal from '@/components/CheckOutModal';
@@ -808,6 +809,14 @@ function HosOSAppInner() {
                 }
               }}
               defaultGroup={hallsDefaultGroup}
+            />
+          )}
+
+          {/* Ancillary Operations Board (Laundry, Airport Chauffeurs, Spa) */}
+          {currentView === 'ancillary-services' && (
+            <AncillaryOperationsView
+              activeStaff={currentUser}
+              onBack={() => setCurrentView('front-desk')}
             />
           )}
 

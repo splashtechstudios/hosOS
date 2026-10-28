@@ -20,7 +20,7 @@ const INITIAL_SERVICES: Array<Partial<IServiceItem>> = [
       'Chilled Central Air Conditioning',
       'Acoustic Sound Treatment',
       'Stage & Ambient Mood Lighting',
-      'Backup Generator 250kVA',
+      '100% Off-Grid Solar & BESS Power',
       'VIP Dressing Suites',
       'Banquet Tables & Chiavari Chairs',
     ],

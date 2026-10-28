@@ -19,19 +19,31 @@ import {
   X,
   Calendar,
   Tag,
-  UserPlus,
   LogOut,
-  ShieldCheck,
   CreditCard,
   FileText,
   AlertTriangle,
-  Play
+  Play,
+  UtensilsCrossed,
+  Wine,
+  PlusCircle,
+  Receipt
 } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
 import { hasPermission } from '@/lib/rbac';
 import { useFeedback } from '@/context/FeedbackContext';
 
 export type HallOperationalStatus = 'AVAILABLE' | 'RESERVED' | 'EVENT_IN_PROGRESS' | 'CLEANING_TURNAROUND' | 'MAINTENANCE';
+
+export interface CateringLineItem {
+  id: string;
+  category: 'FOOD' | 'DRINK';
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  total: number;
+  notes?: string;
+}
 
 export interface EventBookingData {
   bookingId: string;
@@ -40,8 +52,12 @@ export interface EventBookingData {
   clientPhone: string;
   clientEmail?: string;
   date: string;
-  timeSlot: string;
-  totalAmount: number;
+  timeSlot: string; // 12-hour format e.g. "10:00 AM - 06:00 PM"
+  venueFee: number;
+  cateringItems?: CateringLineItem[];
+  foodTotal: number;
+  drinksTotal: number;
+  totalAmount: number; // venueFee + foodTotal + drinksTotal
   depositPaid: number;
   balanceDue: number;
   paymentMethod: 'POS' | 'TRANSFER' | 'CASH' | 'SPLIT';
@@ -55,20 +71,27 @@ export interface EventBookingData {
   bookedBy?: string;
 }
 
-export interface ServiceItemData {
+export interface VenueItemData {
   id: string;
   serviceId: string;
   name: string;
-  group: string;
+  group: string; // 'Halls and Events' | 'Indoor Venues' | 'Outdoor Grounds' | 'Conference'
   price: number;
   duration: string;
   capacity?: number;
   description?: string;
+  isAvailable: boolean;
   status: HallOperationalStatus;
   amenities?: string[];
-  currentEvent?: EventBookingData | null;
-  bookingHistory?: any[];
-  isAvailable: boolean;
+  currentEvent?: EventBookingData;
+  bookingHistory?: Array<{
+    bookingId: string;
+    eventName: string;
+    clientName: string;
+    date: string;
+    totalAmount: number;
+    status: string;
+  }>;
   addedBy?: string;
 }
 
@@ -78,7 +101,19 @@ interface HallsAndServicesViewProps {
   defaultGroup?: string;
 }
 
-const CANONICAL_GROUPS = ['Rooms', 'Kitchen', 'Drinks', 'Halls and Events'];
+const PRESET_FOOD_MENUS: Array<{ name: string; price: number; desc: string }> = [
+  { name: 'Executive Royal Buffet (Jollof, Fried Rice, Asun, Croaker Fish & Chicken)', price: 6500, desc: 'Full multi-course luxury banquet buffet with salad and dessert' },
+  { name: 'Standard Banquet Pack (Party Jollof Rice, Salad & Quarter Chicken)', price: 4000, desc: 'Hot gourmet foil pack with fried plantains' },
+  { name: 'Gourmet Small Chops Platter (Samosa, Spring Rolls, Puff-Puff, Peppered Gizzard)', price: 2500, desc: 'Cocktail finger foods platter (5 pieces per guest)' },
+  { name: 'Pounded Yam & Choice of Native Soup (Egusi / Seafood Okro & Goat Meat)', price: 5500, desc: 'Traditional Nigerian luxury feast' },
+];
+
+const PRESET_DRINK_MENUS: Array<{ name: string; price: number; desc: string }> = [
+  { name: 'Assorted Soft Drinks & Juice Crate (24 Cans/Bottles)', price: 18000, desc: 'Coca-Cola, Fanta, Sprite, Chivita & 5 Alive mix' },
+  { name: 'Premium Heineken & Beer Crate (24 Bottles)', price: 36000, desc: 'Chilled Heineken, Stella & Guinness Stout' },
+  { name: 'Luxury Champagne (Moët & Chandon Imperial Brut) Bottle', price: 85000, desc: 'Chilled French champagne with dedicated flutes' },
+  { name: 'Pure Spring Water Carton (12 Bottles x 75cl)', price: 4500, desc: 'Chilled bottled mineral water' },
+];
 
 const STANDARD_VENUE_AMENITIES = [
   'Central Air Conditioning',
@@ -96,9 +131,9 @@ const STANDARD_VENUE_AMENITIES = [
 
 export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup = 'Halls and Events' }: HallsAndServicesViewProps) {
   const { showSuccess, showFailed, showConfirm } = useFeedback();
-  const [services, setServices] = useState<ServiceItemData[]>([]);
-  const [groups, setGroups] = useState<string[]>(['Rooms', 'Kitchen', 'Drinks', 'Halls and Events', 'Laundry & Ancillary Services']);
-  const [selectedGroup, setSelectedGroup] = useState<string>(defaultGroup);
+  const [venues, setVenues] = useState<VenueItemData[]>([]);
+  const [venueCategories, setVenueCategories] = useState<string[]>(['ALL', 'Halls and Events', 'Indoor Venues', 'Outdoor Grounds', 'Conference']);
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [activeStatusTab, setActiveStatusTab] = useState<'ALL' | HallOperationalStatus>('ALL');
   const [displayMode, setDisplayMode] = useState<'CARDS' | 'LIST'>('CARDS');
   const [isLoading, setIsLoading] = useState(true);
@@ -110,14 +145,14 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
   const canCheckOutHall = isSuperAdmin || hasPermission(activeStaff.role, 'halls.checkout' as any, activeStaff.id);
   const canManageHalls = isSuperAdmin || hasPermission(activeStaff.role, 'halls.manage' as any, activeStaff.id) || hasPermission(activeStaff.role, 'services.manage', activeStaff.id);
 
-  // Modal State: Create / Edit Venue or Service
+  // Modal State: Create / Edit Venue
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<ServiceItemData | null>(null);
+  const [editingItem, setEditingItem] = useState<VenueItemData | null>(null);
   const [name, setName] = useState('');
   const [group, setGroup] = useState('Halls and Events');
   const [isCreatingNewGroup, setIsCreatingNewGroup] = useState(false);
   const [customGroupName, setCustomGroupName] = useState('');
-  const [price, setPrice] = useState<number | ''>(250000);
+  const [price, setPrice] = useState<number | ''>(450000);
   const [duration, setDuration] = useState('Full Day (8:00 AM - 06:00 PM)');
   const [capacity, setCapacity] = useState<number | ''>(300);
   const [description, setDescription] = useState('');
@@ -125,16 +160,29 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
   const [customAmenityInput, setCustomAmenityInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Modal State: Book / Reserve Venue (Operates like Room Check-In)
+  // Modal State: Book / Reserve Venue (Operates symmetrically to Room Check-In + F&B Catering Add-Ons)
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [bookingVenue, setBookingVenue] = useState<ServiceItemData | null>(null);
+  const [bookingVenue, setBookingVenue] = useState<VenueItemData | null>(null);
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('+234 80');
   const [clientEmail, setClientEmail] = useState('');
   const [eventName, setEventName] = useState('');
   const [eventDate, setEventDate] = useState('2026-10-30');
   const [eventTimeSlot, setEventTimeSlot] = useState('10:00 AM - 06:00 PM');
-  const [bookingTotalAmount, setBookingTotalAmount] = useState<number>(500000);
+  
+  // Financial & Catering Add-on State
+  const [baseVenueFee, setBaseVenueFee] = useState<number>(500000);
+  const [cateringItems, setCateringItems] = useState<CateringLineItem[]>([]);
+  
+  // Custom Food / Drink Add Inputs
+  const [showFoodPicker, setShowFoodPicker] = useState(false);
+  const [showDrinkPicker, setShowDrinkPicker] = useState(false);
+  const [customItemCategory, setCustomItemCategory] = useState<'FOOD' | 'DRINK'>('FOOD');
+  const [customItemName, setCustomItemName] = useState('');
+  const [customItemPrice, setCustomItemPrice] = useState<number | ''>(4000);
+  const [customItemQty, setCustomItemQty] = useState<number>(50);
+
+  // Deposit & Payment
   const [depositPaid, setDepositPaid] = useState<number>(250000);
   const [paymentMethod, setPaymentMethod] = useState<'POS' | 'TRANSFER' | 'CASH' | 'SPLIT'>('TRANSFER');
   const [splitMethod1, setSplitMethod1] = useState('TRANSFER');
@@ -145,7 +193,7 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
 
   // Modal State: Conclude Event & Check-Out
   const [isCheckOutModalOpen, setIsCheckOutModalOpen] = useState(false);
-  const [checkOutVenue, setCheckOutVenue] = useState<ServiceItemData | null>(null);
+  const [checkOutVenue, setCheckOutVenue] = useState<VenueItemData | null>(null);
   const [settlementPaymentMethod, setSettlementPaymentMethod] = useState<'POS' | 'TRANSFER' | 'CASH' | 'SPLIT'>('POS');
   const [settleSplit1, setSettleSplit1] = useState('POS');
   const [settleAmount1, setSettleAmount1] = useState<number>(0);
@@ -154,7 +202,7 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
   const [isConcluding, setIsConcluding] = useState(false);
 
   // Modal State: Event Folio / Details
-  const [viewingFolioVenue, setViewingFolioVenue] = useState<ServiceItemData | null>(null);
+  const [viewingFolioVenue, setViewingFolioVenue] = useState<VenueItemData | null>(null);
 
   const formatNaira = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -164,43 +212,59 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
     }).format(amount);
   };
 
-  const fetchServices = async () => {
+  // Live Catering Calculations
+  const foodTotal = cateringItems
+    .filter(i => i.category === 'FOOD')
+    .reduce((sum, item) => sum + item.total, 0);
+
+  const drinksTotal = cateringItems
+    .filter(i => i.category === 'DRINK')
+    .reduce((sum, item) => sum + item.total, 0);
+
+  const contractGrandTotal = (baseVenueFee || 0) + foodTotal + drinksTotal;
+  const balanceDue = Math.max(0, contractGrandTotal - (depositPaid || 0));
+
+  const fetchVenues = async () => {
     try {
       setIsLoading(true);
       const res = await fetch('/api/services');
       const data = await res.json();
       if (data.success && data.services) {
-        setServices(data.services);
-        if (data.groups && data.groups.length > 0) {
-          setGroups(data.groups);
-        }
+        // Filter strictly to venues / halls (exclude laundry/dry cleaning items)
+        const venueItems: VenueItemData[] = data.services.filter((s: any) => 
+          s.group.toLowerCase().includes('hall') || 
+          s.group.toLowerCase().includes('event') || 
+          s.group.toLowerCase().includes('venue') ||
+          (s.capacity && s.capacity > 0)
+        );
+        setVenues(venueItems);
       }
     } catch (err: any) {
-      console.warn('Could not load services:', err);
+      console.warn('Could not load venues:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchServices();
+    fetchVenues();
   }, []);
 
   const openAddModal = () => {
     setEditingItem(null);
     setName('');
-    setGroup(selectedGroup === 'ALL' ? 'Halls and Events' : selectedGroup);
+    setGroup('Halls and Events');
     setIsCreatingNewGroup(false);
     setCustomGroupName('');
-    setPrice(selectedGroup === 'Halls and Events' ? 450000 : 5000);
-    setDuration(selectedGroup === 'Halls and Events' ? 'Full Day (8:00 AM - 06:00 PM)' : 'Same Day');
-    setCapacity(selectedGroup === 'Halls and Events' ? 300 : 0);
+    setPrice(450000);
+    setDuration('Full Day (8:00 AM - 06:00 PM)');
+    setCapacity(300);
     setDescription('');
-    setSelectedAmenities(selectedGroup === 'Halls and Events' ? ['Central Air Conditioning', 'Acoustic Sound Treatment', 'Stage & Lighting'] : []);
+    setSelectedAmenities(['Central Air Conditioning', 'Acoustic Sound Treatment', 'Stage & Lighting', '100% Off-Grid Solar & BESS Power']);
     setIsModalOpen(true);
   };
 
-  const openEditModal = (item: ServiceItemData) => {
+  const openEditModal = (item: VenueItemData) => {
     setEditingItem(item);
     setName(item.name);
     setGroup(item.group);
@@ -229,7 +293,7 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
     setCustomAmenityInput('');
   };
 
-  const handleSaveService = async (e: React.FormEvent) => {
+  const handleSaveVenue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || price === '' || !duration.trim()) return;
 
@@ -257,11 +321,11 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
         });
         const data = await res.json();
         if (data.success) {
-          showSuccess('Venue / Service Updated', `${name} settings saved to database.`);
+          showSuccess('Venue Updated', `${name} settings saved to database.`);
           setIsModalOpen(false);
-          fetchServices();
+          fetchVenues();
         } else {
-          showFailed('Update Error', data.error || 'Failed to update service.');
+          showFailed('Update Error', data.error || 'Failed to update venue.');
         }
       } else {
         const res = await fetch('/api/services', {
@@ -280,11 +344,11 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
         });
         const data = await res.json();
         if (data.success) {
-          showSuccess('New Venue Created', `${name} successfully added to group [${finalGroup}].`);
+          showSuccess('New Venue Created', `${name} successfully added to database.`);
           setIsModalOpen(false);
-          fetchServices();
+          fetchVenues();
         } else {
-          showFailed('Creation Error', data.error || 'Failed to create service.');
+          showFailed('Creation Error', data.error || 'Failed to create venue.');
         }
       }
     } catch (err: any) {
@@ -294,28 +358,57 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
     }
   };
 
-  // Open Event Booking Modal (Check-In flow for halls)
-  const openBookingModal = (venue: ServiceItemData) => {
+  // Open Event Booking Modal (Check-In flow with Catering Add-Ons)
+  const openBookingModal = (venue: VenueItemData) => {
     setBookingVenue(venue);
-    setBookingTotalAmount(venue.price);
-    setDepositPaid(Math.round(venue.price * 0.5));
+    setBaseVenueFee(venue.price);
+    setCateringItems([]);
     setClientName('');
     setClientPhone('+234 80');
     setClientEmail('');
     setEventName('');
     setEventDate(new Date().toISOString().split('T')[0]);
     setEventTimeSlot('10:00 AM - 06:00 PM');
+    setDepositPaid(Math.round(venue.price * 0.5));
     setPaymentMethod('TRANSFER');
     setSplitAmount1(Math.round(venue.price * 0.35));
     setSplitAmount2(Math.round(venue.price * 0.15));
     setIsBookingModalOpen(true);
   };
 
+  // Add Preset or Custom Catering Item
+  const handleAddCateringItem = (category: 'FOOD' | 'DRINK', itemName: string, unitPrice: number, qty: number) => {
+    if (!itemName || unitPrice <= 0 || qty <= 0) return;
+    const newItem: CateringLineItem = {
+      id: `cat-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      category,
+      name: itemName,
+      unitPrice,
+      quantity: qty,
+      total: unitPrice * qty,
+    };
+    setCateringItems([...cateringItems, newItem]);
+    
+    // Auto-update deposit recommendation
+    const newGrandTotal = baseVenueFee + foodTotal + drinksTotal + newItem.total;
+    setDepositPaid(Math.round(newGrandTotal * 0.5));
+    setSplitAmount1(Math.round(newGrandTotal * 0.35));
+    setSplitAmount2(Math.round(newGrandTotal * 0.15));
+  };
+
+  const handleRemoveCateringItem = (id: string) => {
+    const updated = cateringItems.filter(i => i.id !== id);
+    setCateringItems(updated);
+    const newFood = updated.filter(i => i.category === 'FOOD').reduce((s, i) => s + i.total, 0);
+    const newDrinks = updated.filter(i => i.category === 'DRINK').reduce((s, i) => s + i.total, 0);
+    const newGrandTotal = baseVenueFee + newFood + newDrinks;
+    setDepositPaid(Math.round(newGrandTotal * 0.5));
+  };
+
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bookingVenue || !clientName.trim() || !eventName.trim()) return;
 
-    const balanceDue = Math.max(0, bookingTotalAmount - depositPaid);
     const bookingPayload: EventBookingData = {
       bookingId: `EVT-${Date.now().toString().slice(-6)}`,
       eventName: eventName.trim(),
@@ -324,7 +417,11 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
       clientEmail: clientEmail.trim(),
       date: eventDate,
       timeSlot: eventTimeSlot,
-      totalAmount: bookingTotalAmount,
+      venueFee: baseVenueFee,
+      cateringItems,
+      foodTotal,
+      drinksTotal,
+      totalAmount: contractGrandTotal,
       depositPaid,
       balanceDue,
       paymentMethod,
@@ -353,12 +450,12 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
       const data = await res.json();
       if (data.success) {
         showSuccess(
-          'Venue Reserved Successfully!',
+          'Venue & Catering Reserved!',
           `"${eventName}" booked at ${bookingVenue.name} for ${clientName}.`,
-          `Deposit of ${formatNaira(depositPaid)} verified via ${paymentMethod}. Folio #${bookingPayload.bookingId} issued.`
+          `Grand Total: ${formatNaira(contractGrandTotal)} (Venue: ${formatNaira(baseVenueFee)}, Food: ${formatNaira(foodTotal)}, Drinks: ${formatNaira(drinksTotal)}). Deposit: ${formatNaira(depositPaid)} verified via ${paymentMethod}.`
         );
         setIsBookingModalOpen(false);
-        fetchServices();
+        fetchVenues();
       } else {
         showFailed('Booking Failed', data.error || 'Server rejected booking.');
       }
@@ -370,10 +467,10 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
   };
 
   // Start Event / Check-in
-  const handleStartEvent = (venue: ServiceItemData) => {
+  const handleStartEvent = (venue: VenueItemData) => {
     showConfirm(
       'Start Event / Check-In Venue?',
-      `Transition "${venue.name}" to EVENT IN PROGRESS for "${venue.currentEvent?.eventName || 'Booked Event'}"? This indicates active venue usage.`,
+      `Transition "${venue.name}" to EVENT IN PROGRESS for "${venue.currentEvent?.eventName || 'Booked Event'}"? Dispatches catering orders to Kitchen & Bar.`,
       async () => {
         try {
           const res = await fetch('/api/services', {
@@ -388,7 +485,7 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
           const data = await res.json();
           if (data.success) {
             showSuccess('Event Started!', `${venue.name} is now marked as EVENT IN PROGRESS.`);
-            fetchServices();
+            fetchVenues();
           } else {
             showFailed('Error', data.error);
           }
@@ -401,7 +498,7 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
   };
 
   // Open Conclude Event / Check-Out Modal
-  const openCheckOutModal = (venue: ServiceItemData) => {
+  const openCheckOutModal = (venue: VenueItemData) => {
     setCheckOutVenue(venue);
     const balance = venue.currentEvent?.balanceDue || 0;
     setSettleAmount1(Math.round(balance * 0.7));
@@ -427,12 +524,12 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
       const data = await res.json();
       if (data.success) {
         showSuccess(
-          'Event Concluded & Bill Settled!',
-          `"${checkOutVenue.name}" has been released to CLEANING & TURNAROUND.`,
-          `Folio settled via ${settlementPaymentMethod}. Archived in venue history.`
+          'Event Concluded & Folio Settled!',
+          `"${checkOutVenue.name}" has been released to CLEANING & RESET.`,
+          `Final balance settled via ${settlementPaymentMethod}. Revenue reconciled across Banqueting, Kitchen, and Bar ledgers.`
         );
         setIsCheckOutModalOpen(false);
-        fetchServices();
+        fetchVenues();
       } else {
         showFailed('Error', data.error);
       }
@@ -444,7 +541,7 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
   };
 
   // Mark Clean & Ready
-  const handleMarkClean = (venue: ServiceItemData) => {
+  const handleMarkClean = (venue: VenueItemData) => {
     showConfirm(
       'Mark Venue Clean & Available?',
       `Confirm that "${venue.name}" post-event teardown, sanitization, and equipment inspection have been completed?`,
@@ -461,8 +558,8 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
           });
           const data = await res.json();
           if (data.success) {
-            showSuccess('Venue Clean & Ready!', `"${venue.name}" is now AVAILABLE for new bookings.`);
-            fetchServices();
+            showSuccess('Venue Ready', `${venue.name} is now Available for new reservations.`);
+            fetchVenues();
           } else {
             showFailed('Error', data.error);
           }
@@ -470,48 +567,48 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
           showFailed('Network Error', err.message);
         }
       },
-      { confirmText: 'Mark Clean & Available', variant: 'emerald' }
+      { confirmText: 'Confirm Ready', variant: 'emerald' }
     );
   };
 
-  const handleDeleteService = (serviceId: string, serviceName: string) => {
+  const handleDeleteVenue = (serviceId: string, venueName: string) => {
     showConfirm(
-      'Delete Service / Venue?',
-      `Are you sure you want to delete "${serviceName}"? This will remove it from available catalogs in MongoDB Atlas.`,
+      'Delete Venue?',
+      `Are you sure you want to permanently delete "${venueName}"? This cannot be undone.`,
       async () => {
         try {
-          const res = await fetch(`/api/services?serviceId=${encodeURIComponent(serviceId)}`, {
+          const res = await fetch(`/api/services?serviceId=${serviceId}`, {
             method: 'DELETE',
           });
           const data = await res.json();
           if (data.success) {
-            showSuccess('Service Deleted', `"${serviceName}" has been removed.`);
-            fetchServices();
+            showSuccess('Venue Deleted', `${venueName} has been removed.`);
+            fetchVenues();
           } else {
-            showFailed('Deletion Error', data.error || 'Failed to delete service.');
+            showFailed('Delete Error', data.error);
           }
         } catch (err: any) {
-          showFailed('Error', err.message);
+          showFailed('Network Error', err.message);
         }
       },
-      { variant: 'danger', confirmText: 'Yes, Delete', cancelText: 'Cancel' }
+      { confirmText: 'Delete Venue', variant: 'danger' }
     );
   };
 
-  // Status Filter Tabs (Identical to Room Status Tabs!)
+  // Status Filter Tabs (Symmetrical to Room Status Tabs)
   const statusTabs: Array<{ id: 'ALL' | HallOperationalStatus; label: string; count: number; color: string; bg: string }> = [
-    { id: 'ALL', label: 'All Venues', count: services.filter(s => selectedGroup === 'ALL' || s.group.toLowerCase() === selectedGroup.toLowerCase()).length, color: 'var(--brand-primary)', bg: 'var(--bg-secondary)' },
-    { id: 'AVAILABLE', label: 'Available', count: services.filter(s => (selectedGroup === 'ALL' || s.group.toLowerCase() === selectedGroup.toLowerCase()) && s.status === 'AVAILABLE').length, color: '#059669', bg: '#F0FDF4' },
-    { id: 'RESERVED', label: 'Reserved / Booked', count: services.filter(s => (selectedGroup === 'ALL' || s.group.toLowerCase() === selectedGroup.toLowerCase()) && s.status === 'RESERVED').length, color: '#2563eb', bg: '#EFF6FF' },
-    { id: 'EVENT_IN_PROGRESS', label: 'In Progress (Active)', count: services.filter(s => (selectedGroup === 'ALL' || s.group.toLowerCase() === selectedGroup.toLowerCase()) && s.status === 'EVENT_IN_PROGRESS').length, color: '#7C3AED', bg: '#F5F3FF' },
-    { id: 'CLEANING_TURNAROUND', label: 'Cleaning & Reset', count: services.filter(s => (selectedGroup === 'ALL' || s.group.toLowerCase() === selectedGroup.toLowerCase()) && s.status === 'CLEANING_TURNAROUND').length, color: '#D97706', bg: '#FFFBEB' },
-    { id: 'MAINTENANCE', label: 'Maintenance', count: services.filter(s => (selectedGroup === 'ALL' || s.group.toLowerCase() === selectedGroup.toLowerCase()) && s.status === 'MAINTENANCE').length, color: '#E11D48', bg: '#FFF1F2' },
+    { id: 'ALL', label: 'All Venues', count: venues.length, color: 'var(--brand-primary)', bg: 'var(--bg-secondary)' },
+    { id: 'AVAILABLE', label: 'Available', count: venues.filter(v => v.status === 'AVAILABLE').length, color: '#059669', bg: '#F0FDF4' },
+    { id: 'RESERVED', label: 'Reserved / Booked', count: venues.filter(v => v.status === 'RESERVED').length, color: '#2563eb', bg: '#EFF6FF' },
+    { id: 'EVENT_IN_PROGRESS', label: 'Event In Progress', count: venues.filter(v => v.status === 'EVENT_IN_PROGRESS').length, color: '#7C3AED', bg: '#F5F3FF' },
+    { id: 'CLEANING_TURNAROUND', label: 'Cleaning & Reset', count: venues.filter(v => v.status === 'CLEANING_TURNAROUND').length, color: '#D97706', bg: '#FFFBEB' },
+    { id: 'MAINTENANCE', label: 'Maintenance', count: venues.filter(v => v.status === 'MAINTENANCE').length, color: '#E11D48', bg: '#FFF1F2' },
   ];
 
-  const filteredServices = services.filter((item) => {
-    const matchesGroup = selectedGroup === 'ALL' || item.group.toLowerCase() === selectedGroup.toLowerCase();
+  const filteredVenues = venues.filter((item) => {
+    const matchesCategory = selectedCategory === 'ALL' || item.group.toLowerCase() === selectedCategory.toLowerCase();
     const matchesStatus = activeStatusTab === 'ALL' || item.status === activeStatusTab;
-    return matchesGroup && matchesStatus;
+    return matchesCategory && matchesStatus;
   });
 
   const getStatusBadge = (status: HallOperationalStatus) => {
@@ -535,7 +632,7 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 0 60px' }}>
       
       {/* Top Header & Navigation Bar */}
-      <div className="ent-card" style={{ padding: '20px 28px' }}>
+      <div className="ent-card" style={{ padding: '24px 32px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -557,12 +654,12 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
               >
                 <ArrowLeft size={14} /> Back to Command Hub
               </button>
-              <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>
-                Halls, Venues & Ancillary Operations Board
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>
+                Halls, Venues & Event Banqueting Board
               </h2>
             </div>
             <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginTop: '6px', marginBottom: 0 }}>
-              Symmetrical operational board for banquet halls, auditoriums, wedding gardens, and laundry ancillary services.
+              Dedicated operational desk for banquet ballrooms, conference halls, wedding gardens, and banquet catering accounting.
             </p>
           </div>
 
@@ -615,68 +712,14 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
             {canManageHalls && (
               <button onClick={openAddModal} className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.825rem' }}>
                 <Plus size={15} />
-                <span>+ Add Venue / Service</span>
+                <span>+ Add Venue / Hall</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Department Group Filter Tabs */}
+        {/* Status Filter Tabs (Symmetrical to Room Status Matrix) */}
         <div style={{ display: 'flex', gap: '8px', marginTop: '20px', flexWrap: 'wrap', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px' }}>
-          <button
-            onClick={() => setSelectedGroup('ALL')}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '20px',
-              fontSize: '0.75rem',
-              fontWeight: selectedGroup === 'ALL' ? 800 : 600,
-              backgroundColor: selectedGroup === 'ALL' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
-              color: selectedGroup === 'ALL' ? '#FFFFFF' : 'var(--text-secondary)',
-              border: `1px solid ${selectedGroup === 'ALL' ? 'var(--brand-primary)' : 'var(--border-subtle)'}`,
-              cursor: 'pointer',
-            }}
-          >
-            All Groups ({services.length})
-          </button>
-
-          {groups.map((grp) => {
-            const count = services.filter((s) => s.group.toLowerCase() === grp.toLowerCase()).length;
-            const isSelected = selectedGroup.toLowerCase() === grp.toLowerCase();
-            return (
-              <button
-                key={grp}
-                onClick={() => setSelectedGroup(grp)}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '20px',
-                  fontSize: '0.75rem',
-                  fontWeight: isSelected ? 800 : 600,
-                  backgroundColor: isSelected ? 'var(--brand-primary)' : 'var(--bg-secondary)',
-                  color: isSelected ? '#FFFFFF' : 'var(--text-secondary)',
-                  border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-subtle)'}`,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <span>{grp}</span>
-                <span style={{
-                  fontSize: '0.65rem',
-                  padding: '1px 6px',
-                  borderRadius: '10px',
-                  backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : 'var(--border-color)',
-                  color: isSelected ? '#FFFFFF' : 'var(--text-muted)',
-                }}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Status Switcher Tabs (Symmetrical to Front Desk Room Tabs!) */}
-        <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
           {statusTabs.map((tab) => {
             const isSelected = activeStatusTab === tab.id;
             return (
@@ -684,29 +727,31 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                 key={tab.id}
                 onClick={() => setActiveStatusTab(tab.id)}
                 style={{
-                  padding: '6px 12px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 14px',
                   borderRadius: '8px',
                   fontSize: '0.75rem',
                   fontWeight: isSelected ? 800 : 600,
-                  backgroundColor: isSelected ? tab.color : 'transparent',
+                  backgroundColor: isSelected ? 'var(--brand-primary)' : 'var(--bg-secondary)',
                   color: isSelected ? '#FFFFFF' : 'var(--text-secondary)',
-                  border: `1px solid ${isSelected ? tab.color : 'var(--border-subtle)'}`,
+                  border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-subtle)'}`,
                   cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
                   transition: 'all 0.15s ease',
                 }}
               >
                 <span>{tab.label}</span>
-                <span style={{
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  padding: '1px 5px',
-                  borderRadius: '8px',
-                  backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : 'var(--bg-secondary)',
-                  color: isSelected ? '#FFFFFF' : 'var(--text-muted)',
-                }}>
+                <span
+                  style={{
+                    backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : 'var(--bg-card)',
+                    color: isSelected ? '#FFFFFF' : tab.color,
+                    padding: '1px 7px',
+                    borderRadius: '10px',
+                    fontSize: '0.7rem',
+                    fontWeight: 800,
+                  }}
+                >
                   {tab.count}
                 </span>
               </button>
@@ -715,14 +760,10 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
         </div>
       </div>
 
-      {/* Services & Venues Content: CARDS Display */}
+      {/* Venues Grid / Cards Display */}
       {displayMode === 'CARDS' && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-          gap: '20px',
-        }}>
-          {filteredServices.map((item) => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '24px' }}>
+          {filteredVenues.map((item) => (
             <div
               key={item.serviceId}
               className="ent-card"
@@ -731,250 +772,288 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                borderTop: item.status === 'EVENT_IN_PROGRESS'
-                  ? '4px solid #7C3AED'
-                  : item.status === 'RESERVED'
-                  ? '4px solid #2563EB'
-                  : item.status === 'CLEANING_TURNAROUND'
-                  ? '4px solid #D97706'
-                  : '4px solid #059669',
-                position: 'relative',
+                borderLeft: `5px solid ${
+                  item.status === 'AVAILABLE' ? '#059669' :
+                  item.status === 'RESERVED' ? '#2563eb' :
+                  item.status === 'EVENT_IN_PROGRESS' ? '#7C3AED' :
+                  item.status === 'CLEANING_TURNAROUND' ? '#D97706' : '#E11D48'
+                }`,
               }}
             >
               <div>
-                {/* Header Badge */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                  <span className="badge badge-purple" style={{ fontSize: '0.7rem' }}>
-                    {item.group}
-                  </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                   {getStatusBadge(item.status)}
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 900, color: 'var(--emerald-primary)', fontSize: '1.25rem' }}>
+                      {formatNaira(item.price)}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                      Standard Rack Rate
+                    </div>
+                  </div>
                 </div>
 
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 6px' }}>
                   {item.name}
                 </h3>
 
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                  {item.capacity ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700, color: 'var(--brand-primary)' }}>
+                      <Users size={13} /> {item.capacity} Guests Max
+                    </span>
+                  ) : null}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Clock size={13} /> {item.duration}
+                  </span>
+                </div>
+
                 {item.description && (
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 16px', lineHeight: 1.45 }}>
                     {item.description}
                   </p>
                 )}
 
-                {/* Capacity & Price Strip */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', marginBottom: '14px' }}>
-                  {item.capacity ? (
-                    <div>
-                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Capacity</div>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#8B5CF6' }}>Up to {item.capacity} Guests</div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Turnaround</div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{item.duration}</div>
-                    </div>
-                  )}
-
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Standard Rate</div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--emerald-primary)', fontFamily: 'var(--font-mono)' }}>
-                      {formatNaira(item.price)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Amenities Badges */}
+                {/* Standard Amenities Chips */}
                 {item.amenities && item.amenities.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '14px' }}>
-                    {item.amenities.map((amenity) => (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
+                    {item.amenities.slice(0, 4).map((am) => (
                       <span
-                        key={amenity}
+                        key={am}
                         style={{
                           fontSize: '0.68rem',
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          backgroundColor: 'rgba(37,99,235,0.06)',
-                          color: 'var(--brand-primary)',
-                          border: '1px solid rgba(37,99,235,0.15)',
-                          fontWeight: 600,
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          backgroundColor: 'var(--bg-secondary)',
+                          color: 'var(--text-secondary)',
+                          border: '1px solid var(--border-subtle)',
                         }}
                       >
-                        ✓ {amenity}
+                        ✓ {am}
                       </span>
                     ))}
+                    {item.amenities.length > 4 && (
+                      <span style={{ fontSize: '0.68rem', color: 'var(--brand-primary)', fontWeight: 700, alignSelf: 'center' }}>
+                        +{item.amenities.length - 4} more
+                      </span>
+                    )}
                   </div>
                 )}
 
-                {/* Current Active or Reserved Event Strip */}
+                {/* Current Active Event Banner with F&B Breakdown */}
                 {item.currentEvent && (
-                  <div style={{ padding: '12px', background: item.status === 'EVENT_IN_PROGRESS' ? '#F5F3FF' : '#EFF6FF', borderRadius: '8px', border: `1px solid ${item.status === 'EVENT_IN_PROGRESS' ? '#DDD6FE' : '#BFDBFE'}`, marginBottom: '14px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: item.status === 'EVENT_IN_PROGRESS' ? '#6D28D9' : '#1D4ED8', textTransform: 'uppercase' }}>
-                        {item.status === 'EVENT_IN_PROGRESS' ? '⚡ Ongoing Event' : '📅 Confirmed Booking'}
+                  <div
+                    style={{
+                      padding: '12px 14px',
+                      backgroundColor: 'var(--bg-secondary)',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-subtle)',
+                      marginBottom: '16px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--brand-primary)' }}>
+                        CURRENT EVENT FOLIO
                       </span>
-                      <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                        {item.currentEvent.timeSlot}
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                        #{item.currentEvent.bookingId}
                       </span>
                     </div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
+
+                    <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                       {item.currentEvent.eventName}
                     </div>
+
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      Client: <strong>{item.currentEvent.clientName}</strong> ({item.currentEvent.clientPhone})
+                      Host: {item.currentEvent.clientName} ({item.currentEvent.clientPhone})
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-                      <span>Deposit: <strong>{formatNaira(item.currentEvent.depositPaid)}</strong></span>
-                      <span style={{ color: item.currentEvent.balanceDue > 0 ? '#E11D48' : '#059669', fontWeight: 700 }}>
-                        Balance: {formatNaira(item.currentEvent.balanceDue)}
+
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', gap: '10px' }}>
+                      <span>📅 {item.currentEvent.date}</span>
+                      <span>🕒 {item.currentEvent.timeSlot}</span>
+                    </div>
+
+                    {/* Catering Summary if food/drinks booked */}
+                    {(item.currentEvent.foodTotal > 0 || item.currentEvent.drinksTotal > 0) && (
+                      <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px dashed var(--border-subtle)', display: 'flex', gap: '8px', fontSize: '0.7rem' }}>
+                        {item.currentEvent.foodTotal > 0 && (
+                          <span style={{ color: '#ea580c', fontWeight: 700 }}>
+                            🍲 Meals: {formatNaira(item.currentEvent.foodTotal)}
+                          </span>
+                        )}
+                        {item.currentEvent.drinksTotal > 0 && (
+                          <span style={{ color: '#9333ea', fontWeight: 700 }}>
+                            🍾 Drinks: {formatNaira(item.currentEvent.drinksTotal)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid var(--border-subtle)', fontSize: '0.75rem' }}>
+                      <span>Contract Total:</span>
+                      <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+                        {formatNaira(item.currentEvent.totalAmount)}
                       </span>
                     </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                      <span>Deposit Paid:</span>
+                      <span style={{ fontWeight: 800, color: 'var(--emerald-primary)', fontFamily: 'var(--font-mono)' }}>
+                        {formatNaira(item.currentEvent.depositPaid)} ({item.currentEvent.paymentMethod})
+                      </span>
+                    </div>
+
+                    {item.currentEvent.balanceDue > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#E11D48' }}>
+                        <span>Balance Due:</span>
+                        <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+                          {formatNaira(item.currentEvent.balanceDue)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
-              {/* Interactive Operational Actions (Symmetrical to Check-in / Check-out) */}
-              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '14px', marginTop: '10px' }}>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    {/* Booking action for Available venues */}
-                    {item.status === 'AVAILABLE' && canBookHall && (
-                      <button
-                        onClick={() => openBookingModal(item)}
-                        className="btn-primary"
-                        style={{ padding: '6px 12px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
-                      >
-                        <Calendar size={13} />
-                        <span>Book Venue</span>
-                      </button>
-                    )}
+              {/* Action Buttons */}
+              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  
+                  {/* Book button for Available venues */}
+                  {item.status === 'AVAILABLE' && canBookHall && (
+                    <button
+                      onClick={() => openBookingModal(item)}
+                      className="btn-primary"
+                      style={{ padding: '6px 14px', fontSize: '0.75rem' }}
+                    >
+                      Reserve & Add Catering
+                    </button>
+                  )}
 
-                    {/* Start event for Reserved venues */}
-                    {item.status === 'RESERVED' && canCheckInHall && (
-                      <button
-                        onClick={() => handleStartEvent(item)}
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: '0.75rem',
-                          backgroundColor: '#059669',
-                          color: '#FFFFFF',
-                          borderRadius: '6px',
-                          border: 'none',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                        }}
-                      >
-                        <Play size={12} fill="#FFFFFF" />
-                        <span>Start Event</span>
-                      </button>
-                    )}
+                  {/* Start event for Reserved venues */}
+                  {item.status === 'RESERVED' && canCheckInHall && (
+                    <button
+                      onClick={() => handleStartEvent(item)}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '0.75rem',
+                        backgroundColor: '#059669',
+                        color: '#FFFFFF',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                      }}
+                    >
+                      <Play size={12} fill="#FFFFFF" />
+                      <span>Start Event</span>
+                    </button>
+                  )}
 
-                    {/* Conclude event for In-Progress venues */}
-                    {item.status === 'EVENT_IN_PROGRESS' && canCheckOutHall && (
-                      <button
-                        onClick={() => openCheckOutModal(item)}
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: '0.75rem',
-                          backgroundColor: '#E11D48',
-                          color: '#FFFFFF',
-                          borderRadius: '6px',
-                          border: 'none',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                        }}
-                      >
-                        <LogOut size={13} />
-                        <span>Conclude & Settle</span>
-                      </button>
-                    )}
+                  {/* Conclude event for In-Progress venues */}
+                  {item.status === 'EVENT_IN_PROGRESS' && canCheckOutHall && (
+                    <button
+                      onClick={() => openCheckOutModal(item)}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '0.75rem',
+                        backgroundColor: '#E11D48',
+                        color: '#FFFFFF',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                      }}
+                    >
+                      <LogOut size={13} />
+                      <span>Conclude & Settle</span>
+                    </button>
+                  )}
 
-                    {/* Mark Clean for Turnaround venues */}
-                    {item.status === 'CLEANING_TURNAROUND' && (
-                      <button
-                        onClick={() => handleMarkClean(item)}
-                        className="btn-secondary"
-                        style={{ padding: '6px 12px', fontSize: '0.75rem', color: '#059669', borderColor: '#86EFAC', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
-                      >
-                        <Sparkles size={13} color="#059669" />
-                        <span>Mark Clean</span>
-                      </button>
-                    )}
+                  {/* Mark Clean for Turnaround venues */}
+                  {item.status === 'CLEANING_TURNAROUND' && (
+                    <button
+                      onClick={() => handleMarkClean(item)}
+                      className="btn-secondary"
+                      style={{ padding: '6px 12px', fontSize: '0.75rem', color: '#059669', borderColor: '#86EFAC', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    >
+                      <Sparkles size={13} color="#059669" />
+                      <span>Mark Ready</span>
+                    </button>
+                  )}
 
-                    {/* View Folio if event exists */}
-                    {item.currentEvent && (
-                      <button
-                        onClick={() => setViewingFolioVenue(item)}
-                        className="btn-secondary"
-                        style={{ padding: '6px 10px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        <FileText size={12} />
-                        <span>Folio</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Admin settings */}
-                  {canManageHalls && (
-                    <div style={{ display: 'flex', gap: '5px' }}>
-                      <button
-                        onClick={() => openEditModal(item)}
-                        className="btn-secondary"
-                        style={{ padding: '5px 8px', fontSize: '0.72rem' }}
-                        title="Edit Venue Settings & Amenities"
-                      >
-                        <Edit3 size={12} color="var(--brand-primary)" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteService(item.serviceId, item.name)}
-                        className="btn-danger"
-                        style={{ padding: '5px 8px', fontSize: '0.72rem' }}
-                        title="Delete Venue"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
+                  {/* View Folio if event exists */}
+                  {item.currentEvent && (
+                    <button
+                      onClick={() => setViewingFolioVenue(item)}
+                      className="btn-secondary"
+                      style={{ padding: '6px 10px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <FileText size={12} />
+                      <span>Folio</span>
+                    </button>
                   )}
                 </div>
+
+                {/* Admin settings */}
+                {canManageHalls && (
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    <button
+                      onClick={() => openEditModal(item)}
+                      className="btn-secondary"
+                      style={{ padding: '5px 8px', fontSize: '0.72rem' }}
+                      title="Edit Venue Settings & Amenities"
+                    >
+                      <Edit3 size={12} color="var(--brand-primary)" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteVenue(item.serviceId, item.name)}
+                      className="btn-danger"
+                      style={{ padding: '5px 8px', fontSize: '0.72rem' }}
+                      title="Delete Venue"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Services Content: LIST Display */}
+      {/* Venues Content: LIST Display */}
       {displayMode === 'LIST' && (
         <div className="ent-card" style={{ padding: '20px' }}>
           <div style={{ overflowX: 'auto' }}>
             <table className="ent-table" style={{ width: '100%', fontSize: '0.825rem' }}>
               <thead>
                 <tr style={{ backgroundColor: 'var(--bg-secondary)', textAlign: 'left' }}>
-                  <th style={{ padding: '10px 14px' }}>Venue / Service</th>
-                  <th style={{ padding: '10px 14px' }}>Department Group</th>
-                  <th style={{ padding: '10px 14px' }}>Capacity / Turnaround</th>
-                  <th style={{ padding: '10px 14px' }}>Standard Rate</th>
+                  <th style={{ padding: '10px 14px' }}>Venue Name</th>
+                  <th style={{ padding: '10px 14px' }}>Max Capacity</th>
+                  <th style={{ padding: '10px 14px' }}>Rack Rate</th>
                   <th style={{ padding: '10px 14px' }}>Current Status</th>
                   <th style={{ padding: '10px 14px' }}>Current Event / Client</th>
+                  <th style={{ padding: '10px 14px' }}>Catering Add-Ons</th>
                   <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredServices.map((item) => (
+                {filteredVenues.map((item) => (
                   <tr key={item.serviceId} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                     <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--text-primary)' }}>
                       {item.name}
                       {item.amenities && item.amenities.length > 0 && (
                         <div style={{ fontSize: '0.7rem', color: 'var(--brand-primary)', fontWeight: 500, marginTop: '2px' }}>
-                          {item.amenities.slice(0, 3).join(' • ')} {item.amenities.length > 3 ? `+${item.amenities.length - 3} more` : ''}
+                          {item.amenities.slice(0, 3).join(' • ')}
                         </div>
                       )}
-                    </td>
-                    <td style={{ padding: '12px 14px' }}>
-                      <span className="badge badge-purple" style={{ fontSize: '0.68rem' }}>{item.group}</span>
                     </td>
                     <td style={{ padding: '12px 14px' }}>
                       {item.capacity ? `${item.capacity} Guests` : item.duration}
@@ -995,31 +1074,41 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                         <span style={{ color: 'var(--text-muted)' }}>—</span>
                       )}
                     </td>
+                    <td style={{ padding: '12px 14px' }}>
+                      {item.currentEvent ? (
+                        <div style={{ fontSize: '0.72rem' }}>
+                          <div>Meals: {formatNaira(item.currentEvent.foodTotal || 0)}</div>
+                          <div>Drinks: {formatNaira(item.currentEvent.drinksTotal || 0)}</div>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </td>
                     <td style={{ padding: '12px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'inline-flex', gap: '6px' }}>
                         {item.status === 'AVAILABLE' && canBookHall && (
-                          <button onClick={() => openBookingModal(item)} className="btn-primary" style={{ padding: '4px 8px', fontSize: '0.7rem' }}>
-                            Book
+                          <button onClick={() => openBookingModal(item)} className="btn-primary" style={{ padding: '4px 10px', fontSize: '0.72rem' }}>
+                            Reserve
                           </button>
                         )}
                         {item.status === 'RESERVED' && canCheckInHall && (
-                          <button onClick={() => handleStartEvent(item)} style={{ padding: '4px 8px', fontSize: '0.7rem', backgroundColor: '#059669', color: '#fff', borderRadius: '4px', border: 'none', cursor: 'pointer' }}>
-                            Start
+                          <button onClick={() => handleStartEvent(item)} style={{ padding: '4px 10px', fontSize: '0.72rem', backgroundColor: '#059669', color: '#FFFFFF', border: 'none', borderRadius: '5px', fontWeight: 700, cursor: 'pointer' }}>
+                            Start Event
                           </button>
                         )}
                         {item.status === 'EVENT_IN_PROGRESS' && canCheckOutHall && (
-                          <button onClick={() => openCheckOutModal(item)} style={{ padding: '4px 8px', fontSize: '0.7rem', backgroundColor: '#E11D48', color: '#fff', borderRadius: '4px', border: 'none', cursor: 'pointer' }}>
+                          <button onClick={() => openCheckOutModal(item)} style={{ padding: '4px 10px', fontSize: '0.72rem', backgroundColor: '#E11D48', color: '#FFFFFF', border: 'none', borderRadius: '5px', fontWeight: 700, cursor: 'pointer' }}>
                             Conclude
                           </button>
                         )}
                         {item.status === 'CLEANING_TURNAROUND' && (
-                          <button onClick={() => handleMarkClean(item)} className="btn-secondary" style={{ padding: '4px 8px', fontSize: '0.7rem', color: '#059669' }}>
-                            Clean
+                          <button onClick={() => handleMarkClean(item)} className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.72rem' }}>
+                            Mark Ready
                           </button>
                         )}
-                        {canManageHalls && (
-                          <button onClick={() => openEditModal(item)} className="btn-secondary" style={{ padding: '4px 8px', fontSize: '0.7rem' }}>
-                            <Edit3 size={11} color="var(--brand-primary)" />
+                        {item.currentEvent && (
+                          <button onClick={() => setViewingFolioVenue(item)} className="btn-secondary" style={{ padding: '4px 8px', fontSize: '0.72rem' }}>
+                            Folio
                           </button>
                         )}
                       </div>
@@ -1032,56 +1121,58 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
         </div>
       )}
 
-      {/* MODAL 1: Book / Reserve Venue (Operates Symmetrically like Room Check-In) */}
+      {/* MODAL 1: BOOKING & CATERING ADD-ONS MODAL */}
       {isBookingModalOpen && bookingVenue && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '20px' }}>
-          <div className="ent-card" style={{ width: '100%', maxWidth: '600px', padding: '28px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Calendar size={22} color="var(--brand-primary)" />
-                <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                    Reserve & Book Venue: {bookingVenue.name}
-                  </h3>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
-                    Standard Rate: {formatNaira(bookingVenue.price)} · Capacity: {bookingVenue.capacity} Guests
-                  </p>
-                </div>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '20px' }}>
+          <div className="ent-card" style={{ width: '100%', maxWidth: '640px', maxHeight: '92vh', overflowY: 'auto', padding: '28px' }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>
+                  Event Reservation & Banquet Catering
+                </h3>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+                  Venue: <strong style={{ color: 'var(--brand-primary)' }}>{bookingVenue.name}</strong> • Max Capacity: {bookingVenue.capacity || 0} Guests
+                </p>
               </div>
               <button type="button" onClick={() => setIsBookingModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleBookingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                  Event Title / Purpose
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. TotalEnergies Annual General Meeting, Adewale Wedding Gala Reception"
-                  value={eventName}
-                  onChange={(e) => setEventName(e.target.value)}
-                  required
-                  style={{ width: '100%' }}
-                />
-              </div>
-
+            <form onSubmit={handleBookingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* Event & Client Details */}
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                    Client / Corporate Host Name
+                    Event Title / Occasion
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Chief Babatunde Adeleke"
+                    placeholder="e.g. Chief Adeleke Golden Jubilee Banquet"
+                    value={eventName}
+                    onChange={(e) => setEventName(e.target.value)}
+                    required
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                    Organizer / Host Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Alhaji Ibrahim Danjuma"
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
                     required
                     style={{ width: '100%' }}
                   />
                 </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
                     Phone Contact
@@ -1094,9 +1185,6 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                     style={{ width: '100%' }}
                   />
                 </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
                     Event Date
@@ -1111,7 +1199,7 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                    Time Slot / Schedule (12-Hour)
+                    12-Hour Time Slot
                   </label>
                   <input
                     type="text"
@@ -1124,38 +1212,214 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                 </div>
               </div>
 
-              {/* Price & Deposit */}
+              {/* SECTION: Base Hall Rental Fee */}
+              <div style={{ padding: '14px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '0.825rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      1. Base Hall Rental Fee (Venue Contract)
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      Allocated directly to Corporate Events & Banqueting Revenue
+                    </div>
+                  </div>
+                  <div style={{ width: '160px' }}>
+                    <input
+                      type="number"
+                      min={0}
+                      value={baseVenueFee}
+                      onChange={(e) => setBaseVenueFee(Number(e.target.value))}
+                      style={{ width: '100%', fontFamily: 'var(--font-mono)', fontWeight: 800, textAlign: 'right' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION: Food & Meals Catering Add-Ons */}
+              <div style={{ padding: '14px', backgroundColor: 'rgba(234, 88, 12, 0.04)', borderRadius: '8px', border: '1px solid rgba(234, 88, 12, 0.2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <UtensilsCrossed size={16} color="#ea580c" />
+                    <div>
+                      <div style={{ fontSize: '0.825rem', fontWeight: 800, color: '#ea580c' }}>
+                        2. Banquet Food & Catering Packages
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                        Dispatched & credited to Kitchen & Meals Ledger
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#ea580c', fontSize: '0.9rem' }}>
+                    {formatNaira(foodTotal)}
+                  </span>
+                </div>
+
+                {/* Added Food Line Items */}
+                {cateringItems.filter(i => i.category === 'FOOD').length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
+                    {cateringItems.filter(i => i.category === 'FOOD').map(item => (
+                      <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-card)', padding: '6px 10px', borderRadius: '6px', fontSize: '0.75rem', border: '1px solid var(--border-subtle)' }}>
+                        <div>
+                          <strong style={{ color: 'var(--text-primary)' }}>{item.name}</strong>
+                          <span style={{ color: 'var(--text-muted)', marginLeft: '6px' }}>
+                            ({item.quantity} plates @ {formatNaira(item.unitPrice)})
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#ea580c' }}>
+                            {formatNaira(item.total)}
+                          </span>
+                          <button type="button" onClick={() => handleRemoveCateringItem(item.id)} style={{ background: 'none', border: 'none', color: '#E11D48', cursor: 'pointer', padding: 0 }}>
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Quick Add Presets */}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                  {PRESET_FOOD_MENUS.map(m => (
+                    <button
+                      key={m.name}
+                      type="button"
+                      onClick={() => handleAddCateringItem('FOOD', m.name, m.price, 100)}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '0.68rem',
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid rgba(234, 88, 12, 0.3)',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      + Add {m.name.slice(0, 24)}... (100 @ {formatNaira(m.price)})
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* SECTION: Drinks & Bar Packages */}
+              <div style={{ padding: '14px', backgroundColor: 'rgba(147, 51, 234, 0.04)', borderRadius: '8px', border: '1px solid rgba(147, 51, 234, 0.2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Wine size={16} color="#9333ea" />
+                    <div>
+                      <div style={{ fontSize: '0.825rem', fontWeight: 800, color: '#9333ea' }}>
+                        3. Bar & Beverage Packages
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                        Dispatched & credited to Bar & Drinks Ledger
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#9333ea', fontSize: '0.9rem' }}>
+                    {formatNaira(drinksTotal)}
+                  </span>
+                </div>
+
+                {/* Added Drinks Line Items */}
+                {cateringItems.filter(i => i.category === 'DRINK').length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
+                    {cateringItems.filter(i => i.category === 'DRINK').map(item => (
+                      <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-card)', padding: '6px 10px', borderRadius: '6px', fontSize: '0.75rem', border: '1px solid var(--border-subtle)' }}>
+                        <div>
+                          <strong style={{ color: 'var(--text-primary)' }}>{item.name}</strong>
+                          <span style={{ color: 'var(--text-muted)', marginLeft: '6px' }}>
+                            ({item.quantity} units @ {formatNaira(item.unitPrice)})
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#9333ea' }}>
+                            {formatNaira(item.total)}
+                          </span>
+                          <button type="button" onClick={() => handleRemoveCateringItem(item.id)} style={{ background: 'none', border: 'none', color: '#E11D48', cursor: 'pointer', padding: 0 }}>
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Quick Add Presets */}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                  {PRESET_DRINK_MENUS.map(m => (
+                    <button
+                      key={m.name}
+                      type="button"
+                      onClick={() => handleAddCateringItem('DRINK', m.name, m.price, 10)}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '0.68rem',
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid rgba(147, 51, 234, 0.3)',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      + Add {m.name.slice(0, 24)}... (10 @ {formatNaira(m.price)})
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* FINANCIAL RECONCILIATION SUMMARY */}
+              <div style={{ padding: '16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--brand-primary)', textTransform: 'uppercase' }}>
+                  Departmental Accounting Allocation
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                  <span>Corporate Events & Venues:</span>
+                  <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{formatNaira(baseVenueFee)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                  <span>Kitchen & Meals:</span>
+                  <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#ea580c' }}>{formatNaira(foodTotal)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                  <span>Bar & Drinks:</span>
+                  <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#9333ea' }}>{formatNaira(drinksTotal)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 900, borderTop: '1px solid var(--border-subtle)', paddingTop: '6px', marginTop: '4px' }}>
+                  <span>Grand Total Event Contract:</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--emerald-primary)' }}>{formatNaira(contractGrandTotal)}</span>
+                </div>
+              </div>
+
+              {/* Deposit Payment & Settlement Channel */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                    Agreed Hall Fee (₦ NGN)
+                    Deposit Paid Now (₦)
                   </label>
                   <input
                     type="number"
                     min={0}
-                    value={bookingTotalAmount}
-                    onChange={(e) => setBookingTotalAmount(Number(e.target.value))}
+                    max={contractGrandTotal}
+                    value={depositPaid}
+                    onChange={(e) => setDepositPaid(Number(e.target.value))}
                     required
-                    style={{ width: '100%', fontFamily: 'var(--font-mono)', fontWeight: 700 }}
+                    style={{ width: '100%', fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--emerald-primary)' }}
                   />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                    Deposit Paid Now (₦ NGN)
+                    Balance Due on Event Day (₦)
                   </label>
                   <input
-                    type="number"
-                    min={0}
-                    max={bookingTotalAmount}
-                    value={depositPaid}
-                    onChange={(e) => setDepositPaid(Number(e.target.value))}
-                    required
-                    style={{ width: '100%', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--emerald-primary)' }}
+                    type="text"
+                    disabled
+                    value={formatNaira(balanceDue)}
+                    style={{ width: '100%', fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#E11D48', backgroundColor: 'var(--bg-secondary)' }}
                   />
                 </div>
               </div>
 
-              {/* Payment Method Selector (POS, Transfer, Cash, Split) */}
+              {/* Settlement Channel (POS, Transfer, Cash, Split) */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
                   Settlement Method for Deposit
@@ -1167,7 +1431,7 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                       type="button"
                       onClick={() => setPaymentMethod(m)}
                       style={{
-                        padding: '8px 10px',
+                        padding: '8px',
                         borderRadius: '6px',
                         fontSize: '0.75rem',
                         fontWeight: paymentMethod === m ? 800 : 600,
@@ -1195,7 +1459,6 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                       </select>
                       <input
                         type="number"
-                        placeholder="Amount 1"
                         value={splitAmount1}
                         onChange={(e) => setSplitAmount1(Number(e.target.value))}
                         style={{ fontFamily: 'var(--font-mono)' }}
@@ -1209,7 +1472,6 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                       </select>
                       <input
                         type="number"
-                        placeholder="Amount 2"
                         value={splitAmount2}
                         onChange={(e) => setSplitAmount2(Number(e.target.value))}
                         style={{ fontFamily: 'var(--font-mono)' }}
@@ -1219,19 +1481,12 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                 )}
               </div>
 
-              <div style={{ padding: '10px 14px', backgroundColor: 'rgba(37,99,235,0.06)', borderRadius: '6px', fontSize: '0.78rem', display: 'flex', justifyContent: 'space-between' }}>
-                <span>Remaining Balance Due on Event Day:</span>
-                <span style={{ fontWeight: 800, color: '#E11D48', fontFamily: 'var(--font-mono)' }}>
-                  {formatNaira(Math.max(0, bookingTotalAmount - depositPaid))}
-                </span>
-              </div>
-
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
                 <button type="button" onClick={() => setIsBookingModalOpen(false)} className="btn-secondary" disabled={isSubmittingBooking}>
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary" disabled={isSubmittingBooking}>
-                  {isSubmittingBooking ? 'Recording Reservation...' : 'Confirm Venue Reservation'}
+                  {isSubmittingBooking ? 'Recording Reservation & Dispatch...' : 'Confirm Reservation & Catering Contract'}
                 </button>
               </div>
             </form>
@@ -1239,7 +1494,7 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
         </div>
       )}
 
-      {/* MODAL 2: Conclude Event & Check-Out Modal */}
+      {/* MODAL 2: CONCLUDE EVENT & SETTLE FOLIO */}
       {isCheckOutModalOpen && checkOutVenue && checkOutVenue.currentEvent && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 125, padding: '20px' }}>
           <div className="ent-card" style={{ width: '100%', maxWidth: '520px', padding: '28px' }}>
@@ -1256,75 +1511,61 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
             </div>
 
             <form onSubmit={handleConcludeEventSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              <div style={{ padding: '14px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
+                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
                   {checkOutVenue.currentEvent.eventName}
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  Venue: {checkOutVenue.name} · Host: {checkOutVenue.currentEvent.clientName}
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  Venue: {checkOutVenue.name} • Host: {checkOutVenue.currentEvent.clientName}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-subtle)' }}>
-                  <span>Total Event Bill:</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{formatNaira(checkOutVenue.currentEvent.totalAmount)}</span>
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--border-subtle)', fontSize: '0.8rem' }}>
+                  <span>Contract Grand Total:</span>
+                  <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)' }}>{formatNaira(checkOutVenue.currentEvent.totalAmount)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                  <span>Deposit Previously Paid:</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--emerald-primary)' }}>-{formatNaira(checkOutVenue.currentEvent.depositPaid)}</span>
+                  <span>Advance Deposit Paid:</span>
+                  <span style={{ fontWeight: 800, color: 'var(--emerald-primary)', fontFamily: 'var(--font-mono)' }}>{formatNaira(checkOutVenue.currentEvent.depositPaid)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: 900, color: '#E11D48', marginTop: '4px' }}>
-                  <span>Outstanding Balance to Settle:</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 900, color: '#E11D48', marginTop: '4px' }}>
+                  <span>Remaining Folio Balance:</span>
                   <span style={{ fontFamily: 'var(--font-mono)' }}>{formatNaira(checkOutVenue.currentEvent.balanceDue)}</span>
                 </div>
               </div>
 
-              {checkOutVenue.currentEvent.balanceDue > 0 && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                    Settle Final Balance Via
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                    {(['POS', 'TRANSFER', 'CASH', 'SPLIT'] as const).map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setSettlementPaymentMethod(m)}
-                        style={{
-                          padding: '7px 8px',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          fontWeight: settlementPaymentMethod === m ? 800 : 600,
-                          backgroundColor: settlementPaymentMethod === m ? '#E11D48' : 'var(--bg-secondary)',
-                          color: settlementPaymentMethod === m ? '#FFFFFF' : 'var(--text-secondary)',
-                          border: `1px solid ${settlementPaymentMethod === m ? '#E11D48' : 'var(--border-color)'}`,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                  Final Settlement Channel
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                  {(['POS', 'TRANSFER', 'CASH', 'SPLIT'] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setSettlementPaymentMethod(m)}
+                      style={{
+                        padding: '8px',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: settlementPaymentMethod === m ? 800 : 600,
+                        backgroundColor: settlementPaymentMethod === m ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                        color: settlementPaymentMethod === m ? '#FFFFFF' : 'var(--text-secondary)',
+                        border: `1px solid ${settlementPaymentMethod === m ? 'var(--brand-primary)' : 'var(--border-color)'}`,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {m}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
-                <button type="button" onClick={() => setIsCheckOutModalOpen(false)} className="btn-secondary" disabled={isConcluding}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button type="button" onClick={() => setIsCheckOutModalOpen(false)} className="btn-secondary">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={isConcluding}
-                  style={{
-                    padding: '9px 16px',
-                    borderRadius: '6px',
-                    backgroundColor: '#E11D48',
-                    color: '#fff',
-                    fontWeight: 700,
-                    fontSize: '0.825rem',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {isConcluding ? 'Processing Settlement...' : 'Settle Bill & Release Venue to Turnaround'}
+                <button type="submit" className="btn-danger" style={{ backgroundColor: '#E11D48', borderColor: '#E11D48' }} disabled={isConcluding}>
+                  {isConcluding ? 'Reconciling Ledgers...' : 'Conclude Event & Send to Cleaning'}
                 </button>
               </div>
             </form>
@@ -1332,84 +1573,120 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
         </div>
       )}
 
-      {/* MODAL 3: View Event Folio */}
+      {/* MODAL 3: VIEW EVENT FOLIO DETAILS */}
       {viewingFolioVenue && viewingFolioVenue.currentEvent && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 130, padding: '20px' }}>
-          <div className="ent-card" style={{ width: '100%', maxWidth: '500px', padding: '26px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 125, padding: '20px' }}>
+          <div className="ent-card" style={{ width: '100%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto', padding: '28px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FileText size={20} color="var(--brand-primary)" />
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                <Receipt size={20} color="var(--brand-primary)" />
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                   Event Folio #{viewingFolioVenue.currentEvent.bookingId}
                 </h3>
               </div>
-              <button onClick={() => setViewingFolioVenue(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                <X size={18} />
+              <button type="button" onClick={() => setViewingFolioVenue(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                <X size={20} />
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.8rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: '6px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Event Title:</span>
-                <span style={{ fontWeight: 800 }}>{viewingFolioVenue.currentEvent.eventName}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
+                <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+                  {viewingFolioVenue.currentEvent.eventName}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  Venue: <strong>{viewingFolioVenue.name}</strong> • Client: <strong>{viewingFolioVenue.currentEvent.clientName}</strong> ({viewingFolioVenue.currentEvent.clientPhone})
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Schedule: {viewingFolioVenue.currentEvent.date} ({viewingFolioVenue.currentEvent.timeSlot})
+                </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: '6px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Client Name:</span>
-                <span style={{ fontWeight: 700 }}>{viewingFolioVenue.currentEvent.clientName}</span>
+
+              {/* Line Items Breakdown */}
+              <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '8px', overflow: 'hidden' }}>
+                <div style={{ padding: '8px 12px', backgroundColor: 'var(--bg-secondary)', fontWeight: 800, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  ITEMIZED CONTRACT & CATERING BILL
+                </div>
+                
+                <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                  <span>Venue Rental Contract ({viewingFolioVenue.name})</span>
+                  <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)' }}>{formatNaira(viewingFolioVenue.currentEvent.venueFee || viewingFolioVenue.price)}</span>
+                </div>
+
+                {viewingFolioVenue.currentEvent.cateringItems && viewingFolioVenue.currentEvent.cateringItems.map((item) => (
+                  <div key={item.id} style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                    <span>
+                      {item.category === 'FOOD' ? '🍲' : '🍾'} {item.name} ({item.quantity} @ {formatNaira(item.unitPrice)})
+                    </span>
+                    <span style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: item.category === 'FOOD' ? '#ea580c' : '#9333ea' }}>
+                      {formatNaira(item.total)}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: '6px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Phone Contact:</span>
-                <span style={{ fontFamily: 'var(--font-mono)' }}>{viewingFolioVenue.currentEvent.clientPhone}</span>
+
+              {/* Accounting Split Card */}
+              <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', fontSize: '0.78rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ fontWeight: 800, color: 'var(--brand-primary)', marginBottom: '4px' }}>
+                  Departmental Revenue Routing
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Banqueting & Venues:</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{formatNaira(viewingFolioVenue.currentEvent.venueFee || viewingFolioVenue.price)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ea580c' }}>
+                  <span>Kitchen & Meals:</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{formatNaira(viewingFolioVenue.currentEvent.foodTotal || 0)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#9333ea' }}>
+                  <span>Bar & Drinks:</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{formatNaira(viewingFolioVenue.currentEvent.drinksTotal || 0)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 900, borderTop: '1px solid var(--border-subtle)', paddingTop: '6px', marginTop: '4px' }}>
+                  <span>Contract Grand Total:</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--emerald-primary)' }}>{formatNaira(viewingFolioVenue.currentEvent.totalAmount)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
+                  <span>Deposit Paid:</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--emerald-primary)' }}>{formatNaira(viewingFolioVenue.currentEvent.depositPaid)} ({viewingFolioVenue.currentEvent.paymentMethod})</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, color: '#E11D48' }}>
+                  <span>Balance Due:</span>
+                  <span style={{ fontFamily: 'var(--font-mono)' }}>{formatNaira(viewingFolioVenue.currentEvent.balanceDue)}</span>
+                </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: '6px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Scheduled Date & Time:</span>
-                <span style={{ fontWeight: 700 }}>{viewingFolioVenue.currentEvent.date} ({viewingFolioVenue.currentEvent.timeSlot})</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: '6px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Total Amount:</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800 }}>{formatNaira(viewingFolioVenue.currentEvent.totalAmount)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#F0FDF4', borderRadius: '6px' }}>
-                <span style={{ color: '#166534' }}>Deposit Paid ({viewingFolioVenue.currentEvent.paymentMethod}):</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#166534' }}>{formatNaira(viewingFolioVenue.currentEvent.depositPaid)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#FFF1F2', borderRadius: '6px' }}>
-                <span style={{ color: '#9F1239' }}>Balance Due:</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#9F1239' }}>{formatNaira(viewingFolioVenue.currentEvent.balanceDue)}</span>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                <button type="button" onClick={() => setViewingFolioVenue(null)} className="btn-secondary">
+                  Close Folio
+                </button>
               </div>
             </div>
-
-            <button onClick={() => setViewingFolioVenue(null)} className="btn-primary" style={{ width: '100%', marginTop: '16px' }}>
-              Close Folio
-            </button>
           </div>
         </div>
       )}
 
-      {/* MODAL 4: Add / Edit Venue or Service Settings with Amenities Management */}
+      {/* MODAL 4: CREATE / EDIT VENUE (ADMIN) */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '20px' }}>
-          <div className="ent-card" style={{ width: '100%', maxWidth: '600px', padding: '28px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Building2 size={22} color="var(--brand-primary)" />
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                  {editingItem ? 'Edit Venue / Service Settings' : 'Add New Hall, Event Venue or Service'}
-                </h3>
-              </div>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '20px' }}>
+          <div className="ent-card" style={{ width: '100%', maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto', padding: '28px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                {editingItem ? 'Edit Venue Settings' : 'Create New Event Venue'}
+              </h3>
               <button type="button" onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveService} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleSaveVenue} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                  Venue / Service Name
+                  Venue Name
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Osieka Grand Ballroom, Royal VIP Suite, Suit Laundry Dry-Clean"
+                  placeholder="e.g. Osieka Grand Ballroom, Royal Diamond Conference Hall"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -1417,68 +1694,30 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                  Assign to Department Group
-                </label>
-                {!isCreatingNewGroup ? (
-                  <select
-                    value={group}
-                    onChange={(e) => {
-                      if (e.target.value === '__CREATE_NEW__') {
-                        setIsCreatingNewGroup(true);
-                      } else {
-                        setGroup(e.target.value);
-                      }
-                    }}
-                    style={{ width: '100%' }}
-                  >
-                    {groups.map((grp) => (
-                      <option key={grp} value={grp}>{grp}</option>
-                    ))}
-                    <option value="__CREATE_NEW__">+ Create a new custom group...</option>
-                  </select>
-                ) : (
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      type="text"
-                      placeholder="Type custom group name"
-                      value={customGroupName}
-                      onChange={(e) => setCustomGroupName(e.target.value)}
-                      required
-                      style={{ flex: 1 }}
-                      autoFocus
-                    />
-                    <button type="button" onClick={() => setIsCreatingNewGroup(false)} className="btn-secondary" style={{ fontSize: '0.75rem' }}>
-                      Use Existing
-                    </button>
-                  </div>
-                )}
-              </div>
-
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                    Standard Rate (₦ NGN)
+                    Standard Rental Fee (₦ NGN)
                   </label>
                   <input
                     type="number"
                     min={0}
                     value={price}
-                    onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                    onChange={(e) => setPrice(Number(e.target.value))}
                     required
                     style={{ width: '100%', fontFamily: 'var(--font-mono)' }}
                   />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                    Duration / Turnaround
+                    Guest Capacity
                   </label>
                   <input
-                    type="text"
-                    value={duration}
-                    onChange={(e) => setDuration(e.target.value)}
-                    required
+                    type="number"
+                    min={0}
+                    value={capacity}
+                    onChange={(e) => setCapacity(Number(e.target.value))}
+                    placeholder="e.g. 500"
                     style={{ width: '100%' }}
                   />
                 </div>
@@ -1486,72 +1725,59 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                  Capacity (Attendees - Optional for Halls)
+                  Standard Duration / Slot
                 </label>
                 <input
-                  type="number"
-                  min={0}
-                  value={capacity}
-                  onChange={(e) => setCapacity(e.target.value === '' ? '' : Number(e.target.value))}
+                  type="text"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  placeholder="e.g. Full Day (8:00 AM - 06:00 PM), Half Day (4 hrs)"
+                  required
                   style={{ width: '100%' }}
                 />
               </div>
 
-              {/* Amenities Management */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                  Venue Amenities & Equipment (Click to toggle)
-                </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
-                  {STANDARD_VENUE_AMENITIES.map((amenity) => {
-                    const isSelected = selectedAmenities.includes(amenity);
-                    return (
-                      <button
-                        key={amenity}
-                        type="button"
-                        onClick={() => toggleAmenity(amenity)}
-                        style={{
-                          padding: '4px 9px',
-                          borderRadius: '12px',
-                          fontSize: '0.7rem',
-                          fontWeight: isSelected ? 700 : 500,
-                          backgroundColor: isSelected ? 'var(--brand-primary)' : 'var(--bg-secondary)',
-                          color: isSelected ? '#FFFFFF' : 'var(--text-secondary)',
-                          border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-color)'}`,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {isSelected ? '✓ ' : '+ '} {amenity}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Add Custom Amenity Input */}
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    placeholder="Add custom amenity tag (e.g. Red Carpet, Video Drone)"
-                    value={customAmenityInput}
-                    onChange={(e) => setCustomAmenityInput(e.target.value)}
-                    style={{ flex: 1, fontSize: '0.78rem' }}
-                  />
-                  <button type="button" onClick={addCustomAmenity} className="btn-secondary" style={{ fontSize: '0.75rem' }}>
-                    + Add Tag
-                  </button>
-                </div>
-              </div>
-
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                  Description & Specifications
+                  Description / Features
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Acoustic sound setup, smart video screens, stage, lighting..."
                   rows={2}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.825rem' }}
+                  style={{ width: '100%', fontSize: '0.8rem' }}
                 />
+              </div>
+
+              {/* Standard Amenities Selection */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                  Venue Amenities & Equipment
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '120px', overflowY: 'auto', padding: '6px', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px' }}>
+                  {STANDARD_VENUE_AMENITIES.map((am) => {
+                    const isSelected = selectedAmenities.includes(am);
+                    return (
+                      <button
+                        key={am}
+                        type="button"
+                        onClick={() => toggleAmenity(am)}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '0.7rem',
+                          borderRadius: '4px',
+                          backgroundColor: isSelected ? 'var(--brand-primary)' : 'var(--bg-card)',
+                          color: isSelected ? '#FFFFFF' : 'var(--text-secondary)',
+                          border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-subtle)'}`,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {isSelected ? '✓ ' : '+ '} {am}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
@@ -1559,7 +1785,7 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary" disabled={isSaving}>
-                  {isSaving ? 'Saving...' : editingItem ? 'Save Updates' : 'Create Venue'}
+                  {isSaving ? 'Saving...' : editingItem ? 'Save Changes' : 'Create Venue'}
                 </button>
               </div>
             </form>
