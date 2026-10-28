@@ -618,11 +618,17 @@ function HosOSAppInner() {
     );
   }
 
+  const isSuperOrAdmin =
+    currentUser.role === 'SUPERADMIN' ||
+    currentUser.role === 'OWNER' ||
+    (currentUser.role as any) === 'ADMIN' ||
+    currentUser.role === 'GENERAL_MANAGER';
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
       
-      {/* 1. Full Department Sections Sidebar with Submenus (Toggled in Permissions) */}
-      {isSidebarVisible && (
+      {/* 1. Full Department Sections Sidebar (Always visible for Superadmin/Admin/Owner; toggle applies to other staff) */}
+      {(isSuperOrAdmin || isSidebarVisible) && (
         <Sidebar
           currentView={currentView}
           onNavigate={(view) => {

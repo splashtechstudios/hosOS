@@ -29,8 +29,49 @@ export async function syncPaymentToAccounting(params: {
     }
 
     if (!sheet) {
-      console.warn('[Accounting Sync] No operational sheet found to update.');
-      return null;
+      sheet = await DailyOperationSheet.create({
+        sheetId: `DOS-${targetDate.replace(/-/g, '')}`,
+        date: targetDate,
+        resortProperty: 'Osieka Resort & Luxury Suites',
+        managerId: 'mgr-01',
+        managerName: 'Duty Operations Manager',
+        rooms: {
+          occupiedCount: 0,
+          vacantCleanCount: 0,
+          vacantDirtyCount: 0,
+          outOfOrderCount: 0,
+          totalRooms: 12,
+          roomRevenueCash: 0,
+          roomRevenuePOS: 0,
+          roomRevenueTransfer: 0,
+          roomRevenueTotal: 0,
+        },
+        fbSales: {
+          foodSalesAmount: 0,
+          drinksSalesAmount: 0,
+          totalSalesAmount: 0,
+          cashReceived: 0,
+          posTerminalReceived: 0,
+          bankTransferReceived: 0,
+        },
+        energyExpenses: {
+          generatorRunHours: 0,
+          dieselLitresPurchased: 0,
+          dieselPricePerLitre: 1200,
+          totalDieselCost: 0,
+          otherPettyExpenses: [],
+          totalExpenses: 0,
+        },
+        reconciliation: {
+          totalPhysicalCashHandover: 0,
+          expectedCashOnHand: 0,
+          cashDiscrepancy: 0,
+        },
+        audit: {
+          status: 'PENDING_REVIEW',
+          auditNotes: 'Auto-initialized for payment inflow recording',
+        },
+      });
     }
 
     let cashDelta = 0;

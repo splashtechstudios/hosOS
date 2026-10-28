@@ -4,6 +4,9 @@ export interface IRoom {
   _id?: string;
   roomNumber: string;
   roomTypeName: string;
+  customName?: string;
+  colorTag?: string;
+  colorBg?: string;
   floor: number;
   rackRatePerNight: number;
   status: 'VACANT_CLEAN' | 'VACANT_DIRTY' | 'OCCUPIED' | 'OUT_OF_ORDER' | 'MAINTENANCE';
@@ -22,6 +25,9 @@ const RoomSchema = new Schema<IRoom>(
   {
     roomNumber: { type: String, required: true, unique: true, index: true },
     roomTypeName: { type: String, required: true, default: 'Standard Deluxe' },
+    customName: { type: String },
+    colorTag: { type: String },
+    colorBg: { type: String },
     floor: { type: Number, required: true, default: 1 },
     rackRatePerNight: { type: Number, required: true, default: 45000 },
     status: {

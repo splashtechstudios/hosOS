@@ -112,6 +112,9 @@ export interface Room {
   floor: number;
   rackRatePerNight: number;
   status: RoomStatus;
+  customName?: string;
+  colorTag?: string;
+  colorBg?: string;
   currentGuestName?: string;
   currentReservationId?: string;
   currentFolioId?: string;
@@ -496,6 +499,7 @@ export type AppPermission =
   | 'audit.stamp'
   | 'daily.submit'
   | 'daily.audit_update'
+  | 'payment.split'
   | 'sidebar.toggle'
   | 'rbac.manage';
 

@@ -98,8 +98,10 @@ export default function RBACView({
     }
     showToast({
       type: 'success',
-      title: newVal ? 'Sidebar Enabled' : 'Sidebar Hidden',
-      message: newVal ? 'Navigation sidebar is now visible.' : 'Navigation sidebar is now hidden.',
+      title: newVal ? 'Staff Sidebar Enabled' : 'Staff Sidebar Disabled (Hub Only)',
+      message: newVal
+        ? 'Navigation sidebar is now visible for other staff users. Superadmins/Owners always retain sidebar access.'
+        : 'Navigation sidebar is now hidden for other staff users (Waiters, Receptionists, Cashiers). Superadmins/Owners still retain full sidebar access.',
     });
   };
 
@@ -161,6 +163,7 @@ export default function RBACView({
       icon: DollarSign,
       permissions: [
         { key: 'cash.receive', label: 'Receive Cash & POS Payments', desc: 'Collect payments and post to resort registers' },
+        { key: 'payment.split', label: 'Execute Split Multi-Channel Settlements', desc: 'Settle transactions across two combined payment methods (POS, Transfer, Cash)' },
         { key: 'audit.stamp', label: 'Apply Audit Verification Stamp', desc: 'Certify daily sheets as Reconciled or Flagged' },
         { key: 'daily.submit', label: 'Submit Daily Closing Sheet', desc: 'Lock and send daily operational report to accountant' },
         { key: 'daily.audit_update', label: 'Modify Submitted Records', desc: 'Super Admin/Accountant privilege to adjust logs' },
@@ -374,7 +377,7 @@ export default function RBACView({
         </div>
       </div>
 
-      {/* Main Navigation Sidebar Visibility Toggle */}
+      {/* Main Navigation Sidebar Visibility Toggle for Other Users */}
       <div className="ent-card" style={{ padding: '16px 20px', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{
@@ -391,13 +394,13 @@ export default function RBACView({
           </div>
           <div>
             <div style={{ fontSize: '0.925rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>Main Navigation Sidebar</span>
+              <span>Staff Navigation Sidebar (Other Users)</span>
               <span className={`badge ${isSidebarEnabled ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '0.7rem' }}>
-                {isSidebarEnabled ? 'ON / VISIBLE' : 'OFF / HIDDEN'}
+                {isSidebarEnabled ? 'ENABLED FOR OTHER USERS' : 'DISABLED FOR OTHER USERS (HUB-ONLY)'}
               </span>
             </div>
             <div style={{ fontSize: '0.775rem', color: 'var(--text-muted)' }}>
-              Toggle the left navigation sidebar on or off. State is synced live across the application.
+              Controls sidebar visibility for operational staff (Waiters, Receptionists, Cashiers, Chefs). When disabled, other users operate solely within the lean Hospitality Hub. <strong>Superadmins, Owners, and GMs always retain their sidebar.</strong>
             </div>
           </div>
         </div>
@@ -421,7 +424,7 @@ export default function RBACView({
           }}
         >
           <Power size={14} />
-          <span>{isSidebarEnabled ? 'Turn OFF Sidebar' : 'Turn ON Sidebar'}</span>
+          <span>{isSidebarEnabled ? 'Disable Sidebar for Other Users' : 'Enable Sidebar for Other Users'}</span>
         </button>
       </div>
 

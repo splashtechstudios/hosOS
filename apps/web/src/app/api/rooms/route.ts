@@ -33,11 +33,14 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      rooms: rooms.map((r) => ({
+      rooms: rooms.map((r: any) => ({
         id: String(r._id),
         roomNumber: r.roomNumber,
         roomTypeId: `type-${r.roomNumber}`,
         roomTypeName: r.roomTypeName,
+        customName: r.customName,
+        colorTag: r.colorTag,
+        colorBg: r.colorBg,
         floor: r.floor,
         rackRatePerNight: r.rackRatePerNight,
         status: r.status,
@@ -63,11 +66,20 @@ export async function PATCH(req: NextRequest) {
   try {
     await connectToDatabase();
     const body = await req.json();
-    const { roomNumber, newStatus, notes, staff } = body;
+    const {
+      roomNumber,
+      newStatus,
+      rackRatePerNight,
+      customName,
+      colorTag,
+      colorBg,
+      notes,
+      staff,
+    } = body;
 
-    if (!roomNumber || !newStatus) {
+    if (!roomNumber) {
       return NextResponse.json(
-        { success: false, error: 'roomNumber and newStatus are required' },
+        { success: false, error: 'roomNumber is required' },
         { status: 400 }
       );
     }
@@ -78,36 +90,73 @@ export async function PATCH(req: NextRequest) {
     }
 
     const previousStatus = room.status;
-    room.status = newStatus;
+    let statusChanged = false;
 
-    if (newStatus === 'VACANT_CLEAN') {
-      room.lastCleanedAt = new Date().toISOString();
-      room.lastCleanedByStaffName = staff?.name || 'Housekeeping Staff';
-    } else if (newStatus === 'VACANT_DIRTY') {
-      room.currentGuestName = undefined;
-      room.currentFolioId = undefined;
+    if (newStatus && newStatus !== previousStatus) {
+      room.status = newStatus;
+      statusChanged = true;
+      if (newStatus === 'VACANT_CLEAN') {
+        room.lastCleanedAt = new Date().toISOString();
+        room.lastCleanedByStaffName = staff?.name || 'Housekeeping Staff';
+      } else if (newStatus === 'VACANT_DIRTY') {
+        room.currentGuestName = undefined;
+        room.currentFolioId = undefined;
+      }
+    }
+
+    if (rackRatePerNight !== undefined) {
+      room.rackRatePerNight = Number(rackRatePerNight);
+    }
+    if (customName !== undefined) {
+      room.customName = customName;
+    }
+    if (colorTag !== undefined) {
+      room.colorTag = colorTag;
+    }
+    if (colorBg !== undefined) {
+      room.colorBg = colorBg;
     }
 
     await room.save();
 
-    // Append to immutable internal room audit log
-    const auditRecord = await AuditLog.create({
-      roomNumber,
-      category: 'OCCUPANCY',
-      headline: `Room Status Transitioned (${previousStatus} → ${newStatus})`,
-      details: notes || `Operational status updated from ${previousStatus} to ${newStatus}.`,
-      actor: {
-        staffId: staff?.id || 'staff-system',
-        staffName: staff?.name || 'Staff User',
-        role: staff?.role || 'FRONT_DESK',
-      },
-      meta: {
-        previousStatus,
-        newStatus,
-        notes,
-      },
-      timestamp: new Date().toISOString(),
-    });
+    let auditRecord = null;
+    if (statusChanged) {
+      auditRecord = await AuditLog.create({
+        roomNumber,
+        category: 'OCCUPANCY',
+        headline: `Room Status Transitioned (${previousStatus} → ${newStatus})`,
+        details: notes || `Operational status updated from ${previousStatus} to ${newStatus}.`,
+        actor: {
+          staffId: staff?.id || 'staff-system',
+          staffName: staff?.name || 'Staff User',
+          role: staff?.role || 'FRONT_DESK',
+        },
+        meta: {
+          previousStatus,
+          newStatus,
+          notes,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } else if (rackRatePerNight !== undefined || customName !== undefined) {
+      auditRecord = await AuditLog.create({
+        roomNumber,
+        category: 'SERVICE',
+        headline: `Room Metadata Updated (Room #${roomNumber})`,
+        details: notes || `Room settings updated: Name="${customName || room.roomTypeName}", Rate=₦${room.rackRatePerNight.toLocaleString()}.`,
+        actor: {
+          staffId: staff?.id || 'staff-system',
+          staffName: staff?.name || 'Staff User',
+          role: staff?.role || 'FRONT_DESK',
+        },
+        meta: {
+          rackRatePerNight: room.rackRatePerNight,
+          customName: room.customName,
+          colorTag: room.colorTag,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     return NextResponse.json({
       success: true,

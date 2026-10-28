@@ -106,8 +106,19 @@ export default function FrontDeskView({
   const canExportReports = isSuperAdmin || hasPermission(activeStaff.role, 'reports.export', activeStaff.id);
 
   useEffect(() => {
-    setRoomMeta(getRoomMeta());
-  }, []);
+    const local = getRoomMeta();
+    const merged: Record<string, { displayName?: string; colorTag?: string; colorBg?: string }> = { ...local };
+    rooms.forEach(r => {
+      if (r.customName || r.colorTag || r.colorBg) {
+        merged[r.roomNumber] = {
+          displayName: r.customName || merged[r.roomNumber]?.displayName,
+          colorTag: r.colorTag || merged[r.roomNumber]?.colorTag,
+          colorBg: r.colorBg || merged[r.roomNumber]?.colorBg,
+        };
+      }
+    });
+    setRoomMeta(merged);
+  }, [rooms]);
 
   const tabs: Array<{ id: RoomTab; label: string; emoji: string; color: string; border: string; bg: string }> = [
     { id: 'VACANT_CLEAN', label: 'Vacant Clean', emoji: '✓', color: '#059669', border: '#BBF7D0', bg: '#F0FDF4' },
@@ -194,32 +205,40 @@ export default function FrontDeskView({
     setRoomMeta(updated);
     saveRoomMeta(updated);
 
-    // Attempt to save price to backend
-    if (editPrice !== editingRoom.rackRatePerNight) {
-      setIsSavingPrice(true);
-      try {
-        const res = await fetch('/api/rooms', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomNumber: editingRoom.roomNumber, rackRatePerNight: editPrice, staff: activeStaff, notes: `Rack rate updated to ${formatNaira(editPrice)} by ${activeStaff.name}` }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setPriceEdits(prev => ({ ...prev, [editingRoom.roomNumber]: editPrice }));
-          showSuccess('Room Settings Saved', `Room #${editingRoom.roomNumber} name, color tag, and price updated successfully.`);
-        } else {
-          showToast({ type: 'warning', title: 'Name/Color Saved', message: 'Price update could not be saved to server. Try again.' });
-        }
-      } catch {
-        showToast({ type: 'warning', title: 'Name/Color Saved', message: 'Could not reach server for price update.' });
-      } finally {
-        setIsSavingPrice(false);
+    setIsSavingPrice(true);
+    try {
+      const res = await fetch('/api/rooms', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomNumber: editingRoom.roomNumber,
+          customName: editName,
+          colorTag: editColor,
+          colorBg: editColorBg,
+          rackRatePerNight: editPrice,
+          staff: activeStaff,
+          notes: `Room settings updated by ${activeStaff.name}: Name="${editName}", Rate=${formatNaira(editPrice)}`,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPriceEdits(prev => ({ ...prev, [editingRoom.roomNumber]: editPrice }));
+        showSuccess(
+          'Room Customization Saved to MongoDB Atlas!',
+          `Room #${editingRoom.roomNumber} custom name ("${editName}"), color tag, and rate (${formatNaira(editPrice)}) saved.`,
+          `Actor: ${activeStaff.name} (${activeStaff.role})`
+        );
+        onRefreshRooms();
+      } else {
+        showSuccess('Room Settings Saved Locally', `Room #${editingRoom.roomNumber} name and color tag updated.`);
       }
-    } else {
-      showSuccess('Room Settings Saved', `Room #${editingRoom.roomNumber} name and color tag updated.`);
+    } catch {
+      showSuccess('Room Settings Saved Locally', `Room #${editingRoom.roomNumber} name and color tag updated.`);
+    } finally {
+      setIsSavingPrice(false);
+      setIsAdminModalOpen(false);
+      setEditingRoom(null);
     }
-    setIsAdminModalOpen(false);
-    setEditingRoom(null);
   };
 
   const activeTabConfig = tabs.find(t => t.id === activeTab)!;
