@@ -84,15 +84,45 @@ export default function RBACView({
   const [configTab, setConfigTab] = useState<ConfigTab>('ROLES');
 
   // == Master Database Purge (Superadmin Only) ==
+  const CLEAR_PAGE_MODULES = [
+    { id: 'ROOMS_FOLIOS', label: 'Hospitality Command Hub & Front Desk', desc: 'Guest folios, active check-ins, room stay history (resets rooms to clean)' },
+    { id: 'ORDERS_POS', label: 'Kitchen & Bar POS Outlets', desc: 'Food tickets, bar tabs, kitchen orders, drink dispense logs' },
+    { id: 'HALLS_EVENTS', label: 'Halls, Banqueting & Event Venues', desc: 'Event hall reservations, active event folios, booking histories' },
+    { id: 'SERVICES_ANCILLARY', label: 'Laundry & Ancillary Services', desc: 'Ancillary services catalog and guest laundry orders' },
+    { id: 'DAILY_SHEETS', label: 'Daily Operational Sheets', desc: 'Manager daily shift closing sheets and cash drawer reconciliations' },
+    { id: 'MAINTENANCE_TICKETS', label: 'Facilities & Engineering Tickets', desc: 'Asset fault tickets, repair history, and maintenance logs' },
+    { id: 'NIGHT_AUDITS', label: 'Night Audit & Flash Rollover Engine', desc: 'End-of-day night audit logs and historical flash records' },
+    { id: 'AUDIT_TRAILS', label: '360° Internal Room Audit Trails', desc: 'Immutable internal room audit histories and telemetry records' },
+  ];
+
   const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
   const [purgeConfirmationCode, setPurgeConfirmationCode] = useState('');
   const [purgeResetType, setPurgeResetType] = useState<'OPERATIONAL_TRANSACTIONS' | 'FULL_FACTORY_RESET'>('OPERATIONAL_TRANSACTIONS');
+  const [selectedPurgeModules, setSelectedPurgeModules] = useState<string[]>(CLEAR_PAGE_MODULES.map(m => m.id));
   const [isPurging, setIsPurging] = useState(false);
   const [purgeSummary, setPurgeSummary] = useState<any | null>(null);
 
+  const togglePurgeModule = (id: string) => {
+    setSelectedPurgeModules(prev =>
+      prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllModules = () => {
+    if (selectedPurgeModules.length === CLEAR_PAGE_MODULES.length) {
+      setSelectedPurgeModules([]);
+    } else {
+      setSelectedPurgeModules(CLEAR_PAGE_MODULES.map(m => m.id));
+    }
+  };
+
   const handleExecutePurge = async () => {
-    if (purgeConfirmationCode !== 'CLEAR_ALL_DATA') {
-      showToast({ type: 'error', title: 'Confirmation Mismatch', message: 'You must type CLEAR_ALL_DATA in capital letters to authorize.' });
+    if (purgeConfirmationCode !== 'CLEAR_ALL_DATA' && purgeConfirmationCode !== 'CLEAR_DATA') {
+      showToast({ type: 'error', title: 'Confirmation Mismatch', message: 'You must type CLEAR_ALL_DATA or CLEAR_DATA in capital letters to authorize.' });
+      return;
+    }
+    if (selectedPurgeModules.length === 0) {
+      showToast({ type: 'error', title: 'No Modules Selected', message: 'Please toggle at least one page module to clear.' });
       return;
     }
     setIsPurging(true);
@@ -104,6 +134,7 @@ export default function RBACView({
           confirmationCode: purgeConfirmationCode,
           requestedBy: activeStaff.name,
           resetType: purgeResetType,
+          targets: selectedPurgeModules,
         }),
       });
       const data = await res.json();
@@ -112,7 +143,7 @@ export default function RBACView({
         showToast({
           type: 'success',
           title: 'Database Reset Executed',
-          message: 'All specified operational data points and transactions have been completely purged from MongoDB Atlas.',
+          message: 'Selected page modules and data points have been completely purged from MongoDB Atlas.',
         });
       } else {
         showToast({ type: 'error', title: 'Purge Failed', message: data.error || 'Could not clear database.' });
@@ -502,8 +533,6 @@ export default function RBACView({
               )}
             </div>
           </div>
-            </div>
-          </div>
 
           {/* Sub-Page View Access */}
           <div className="ent-card" style={{ padding: '24px' }}>
@@ -872,6 +901,74 @@ export default function RBACView({
                 </div>
 
                 <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      Select Pages & Data Models to Clear:
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleSelectAllModules}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--brand-primary)',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        padding: 0,
+                      }}
+                    >
+                      {selectedPurgeModules.length === CLEAR_PAGE_MODULES.length ? 'Deselect All' : 'Select All Pages (Full Wipe)'}
+                    </button>
+                  </div>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                    gap: '8px',
+                    maxHeight: '260px',
+                    overflowY: 'auto',
+                    padding: '8px',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    backgroundColor: '#F8FAFC',
+                  }}>
+                    {CLEAR_PAGE_MODULES.map(mod => {
+                      const isChecked = selectedPurgeModules.includes(mod.id);
+                      return (
+                        <div
+                          key={mod.id}
+                          onClick={() => togglePurgeModule(mod.id)}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: '6px',
+                            border: isChecked ? '1.5px solid var(--rose-primary)' : '1px solid var(--border-color)',
+                            backgroundColor: isChecked ? '#FFF1F2' : '#FFFFFF',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: isChecked ? '#9F1239' : 'var(--text-primary)' }}>
+                              {mod.label}
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {}}
+                              style={{ cursor: 'pointer' }}
+                            />
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.3 }}>
+                            {mod.desc}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                     Select Reset Scope
                   </label>
@@ -880,14 +977,14 @@ export default function RBACView({
                     onChange={(e) => setPurgeResetType(e.target.value as any)}
                     style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.825rem' }}
                   >
-                    <option value="OPERATIONAL_TRANSACTIONS">Operational Transactions (Orders, Folios, Daily Sheets, Room Occupancy)</option>
-                    <option value="FULL_FACTORY_RESET">Full Factory Reset (Transactions + Dynamic Menu + Custom Services)</option>
+                    <option value="OPERATIONAL_TRANSACTIONS">Operational Transactions (Folios, Orders, Shift Closures)</option>
+                    <option value="FULL_FACTORY_RESET">Full Factory Reset (Transactions + Dynamic Menu Items + Ancillary Services)</option>
                   </select>
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
-                    Type <code style={{ color: '#E11D48', backgroundColor: '#FFF1F2', padding: '2px 6px', borderRadius: '4px' }}>CLEAR_ALL_DATA</code> to authorize:
+                    Type <code style={{ color: '#E11D48', backgroundColor: '#FFF1F2', padding: '2px 6px', borderRadius: '4px' }}>CLEAR_ALL_DATA</code> or <code style={{ color: '#E11D48', backgroundColor: '#FFF1F2', padding: '2px 6px', borderRadius: '4px' }}>CLEAR_DATA</code> to authorize:
                   </label>
                   <input
                     type="text"
@@ -918,23 +1015,29 @@ export default function RBACView({
                   <button
                     type="button"
                     onClick={handleExecutePurge}
-                    disabled={purgeConfirmationCode !== 'CLEAR_ALL_DATA' || isPurging}
+                    disabled={(purgeConfirmationCode !== 'CLEAR_ALL_DATA' && purgeConfirmationCode !== 'CLEAR_DATA') || selectedPurgeModules.length === 0 || isPurging}
                     style={{
                       padding: '10px 18px',
                       borderRadius: '6px',
                       border: 'none',
-                      backgroundColor: purgeConfirmationCode === 'CLEAR_ALL_DATA' ? '#E11D48' : '#94A3B8',
+                      backgroundColor: (purgeConfirmationCode === 'CLEAR_ALL_DATA' || purgeConfirmationCode === 'CLEAR_DATA') && selectedPurgeModules.length > 0 ? '#E11D48' : '#94A3B8',
                       color: '#FFFFFF',
                       fontWeight: 700,
                       fontSize: '0.825rem',
-                      cursor: purgeConfirmationCode === 'CLEAR_ALL_DATA' ? 'pointer' : 'not-allowed',
+                      cursor: (purgeConfirmationCode === 'CLEAR_ALL_DATA' || purgeConfirmationCode === 'CLEAR_DATA') && selectedPurgeModules.length > 0 ? 'pointer' : 'not-allowed',
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '6px',
                     }}
                   >
                     <Trash2 size={14} />
-                    <span>{isPurging ? 'Purging All Data...' : 'Confirm & Wipe Entire Database'}</span>
+                    <span>
+                      {isPurging
+                        ? 'Purging Data...'
+                        : selectedPurgeModules.length === CLEAR_PAGE_MODULES.length
+                        ? 'Confirm & Wipe Entire Database (All Pages)'
+                        : `Confirm & Purge Selected (${selectedPurgeModules.length} Pages)`}
+                    </span>
                   </button>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StaffUser, UserRole } from '@hosos/types';
 import { ENTERPRISE_ORG, RBAC_ROLE_DEFINITIONS } from '@/lib/mockData';
 import { 

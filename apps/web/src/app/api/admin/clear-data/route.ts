@@ -15,14 +15,14 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { confirmationCode, requestedBy, resetType } = body;
+    const { confirmationCode, requestedBy, resetType, targets } = body;
 
-    // Strict safety check: confirmation code must be "CLEAR_ALL_DATA" or "PURGE_ALL"
-    if (confirmationCode !== 'CLEAR_ALL_DATA' && confirmationCode !== 'PURGE_ALL') {
+    // Strict safety check: confirmation code must be "CLEAR_ALL_DATA" or "CLEAR_DATA"
+    if (confirmationCode !== 'CLEAR_ALL_DATA' && confirmationCode !== 'CLEAR_DATA' && confirmationCode !== 'PURGE_ALL') {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid confirmation code. Please type CLEAR_ALL_DATA to authorize full wipe.',
+          error: 'Invalid confirmation code. Please type CLEAR_ALL_DATA or CLEAR_DATA to authorize.',
         },
         { status: 403 }
       );
@@ -30,52 +30,113 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
 
-    // 1. Purge operational transactions
-    const deletedOrders = await Order.deleteMany({});
-    const deletedFolios = await Folio.deleteMany({});
-    const deletedSheets = await DailyOperationSheet.deleteMany({});
-    const deletedTickets = await MaintenanceTicket.deleteMany({});
-    const deletedNightAudits = await NightAuditRecord.deleteMany({});
+    const targetList: string[] = Array.isArray(targets) && targets.length > 0 ? targets : ['ALL'];
+    const isTarget = (key: string) => targetList.includes('ALL') || targetList.includes(key);
 
-    // 2. Reset Rooms to pristine clean vacant state with no current guests
-    const resetRooms = await Room.updateMany(
-      {},
-      {
-        $set: {
-          status: 'VACANT_CLEAN',
-          currentGuestName: '',
-          currentReservationId: '',
-          currentFolioId: '',
-          occupancyHistory: [],
-        },
-      }
-    );
+    const summary: Record<string, number> = {
+      ordersPurged: 0,
+      foliosPurged: 0,
+      sheetsPurged: 0,
+      ticketsPurged: 0,
+      nightAuditsPurged: 0,
+      roomsReset: 0,
+      hallsReset: 0,
+      menuItemsPurged: 0,
+      servicesPurged: 0,
+      auditLogsPurged: 0,
+    };
 
-    // 3. If deep purge requested, clear dynamic menu items and services
-    let deletedMenu = { deletedCount: 0 };
-    let deletedServices = { deletedCount: 0 };
-    if (resetType === 'FULL_FACTORY_RESET') {
-      deletedMenu = await DynamicMenuItem.deleteMany({});
-      deletedServices = await ServiceItem.deleteMany({});
+    // 1. Orders / POS (Kitchen & Bar Outlets)
+    if (isTarget('ORDERS_POS')) {
+      const deletedOrders = await Order.deleteMany({});
+      summary.ordersPurged = deletedOrders.deletedCount || 0;
     }
 
-    // 4. Log the audit event for compliance
+    // 2. Room Stays & Guest Folios (Front Desk & Command Hub)
+    if (isTarget('ROOMS_FOLIOS')) {
+      const deletedFolios = await Folio.deleteMany({});
+      summary.foliosPurged = deletedFolios.deletedCount || 0;
+
+      const resetRooms = await Room.updateMany(
+        {},
+        {
+          $set: {
+            status: 'VACANT_CLEAN',
+            currentGuestName: '',
+            currentReservationId: '',
+            currentFolioId: '',
+            occupancyHistory: [],
+          },
+        }
+      );
+      summary.roomsReset = resetRooms.modifiedCount || 0;
+    }
+
+    // 3. Daily Operational Sheets
+    if (isTarget('DAILY_SHEETS')) {
+      const deletedSheets = await DailyOperationSheet.deleteMany({});
+      summary.sheetsPurged = deletedSheets.deletedCount || 0;
+    }
+
+    // 4. Engineering & Maintenance Tickets
+    if (isTarget('MAINTENANCE_TICKETS')) {
+      const deletedTickets = await MaintenanceTicket.deleteMany({});
+      summary.ticketsPurged = deletedTickets.deletedCount || 0;
+    }
+
+    // 5. Night Audit Rollover Records
+    if (isTarget('NIGHT_AUDITS')) {
+      const deletedNightAudits = await NightAuditRecord.deleteMany({});
+      summary.nightAuditsPurged = deletedNightAudits.deletedCount || 0;
+    }
+
+    // 6. Halls, Banqueting & Event Venues
+    if (isTarget('HALLS_EVENTS')) {
+      const resetHalls = await ServiceItem.updateMany(
+        { category: 'HALLS' },
+        {
+          $set: {
+            status: 'AVAILABLE',
+            currentEvent: undefined,
+            bookingHistory: [],
+          },
+        }
+      );
+      summary.hallsReset = resetHalls.modifiedCount || 0;
+    }
+
+    // 7. Ancillary Services & Custom Menu Items
+    if (isTarget('SERVICES_ANCILLARY') || resetType === 'FULL_FACTORY_RESET') {
+      const deletedServices = await ServiceItem.deleteMany({ category: { $ne: 'HALLS' } });
+      summary.servicesPurged = deletedServices.deletedCount || 0;
+    }
+
+    if (resetType === 'FULL_FACTORY_RESET') {
+      const deletedMenu = await DynamicMenuItem.deleteMany({});
+      summary.menuItemsPurged = deletedMenu.deletedCount || 0;
+    }
+
+    // 8. Audit Logs (Optional specific target)
+    if (isTarget('AUDIT_TRAILS')) {
+      const deletedLogs = await AuditLog.deleteMany({});
+      summary.auditLogsPurged = deletedLogs.deletedCount || 0;
+    }
+
+    // Log the reset event to immutable audit log
     try {
       await AuditLog.create({
         roomNumber: 'RESORT',
         category: 'SYSTEM',
         actor: {
           staffId: 'superadmin-master',
-          staffName: requestedBy || 'Super Admin',
+          staffName: requestedBy || 'Engnr Omole',
           role: 'SUPERADMIN',
         },
-        headline: 'DATABASE MASTER RESET EXECUTED',
-        details: `Deleted ${deletedOrders.deletedCount} orders, ${deletedFolios.deletedCount} folios, ${deletedSheets.deletedCount} daily sheets, ${deletedTickets.deletedCount} maintenance tickets. Reset ${resetRooms.modifiedCount} rooms.`,
+        headline: 'DATABASE DATA PURGE EXECUTED FROM SOURCE',
+        details: `Purged targets [${targetList.join(', ')}]. Cleared ${summary.ordersPurged} orders, ${summary.foliosPurged} folios, reset ${summary.roomsReset} rooms & ${summary.hallsReset} halls.`,
         meta: {
-          ordersPurged: deletedOrders.deletedCount,
-          foliosPurged: deletedFolios.deletedCount,
-          sheetsPurged: deletedSheets.deletedCount,
-          roomsReset: resetRooms.modifiedCount,
+          ...summary,
+          targets: targetList,
           resetType: resetType || 'OPERATIONAL_TRANSACTIONS',
         },
         timestamp: new Date().toISOString(),
@@ -84,22 +145,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'All resort operational data points and transaction entries have been completely cleared.',
-      summary: {
-        ordersPurged: deletedOrders.deletedCount,
-        foliosPurged: deletedFolios.deletedCount,
-        sheetsPurged: deletedSheets.deletedCount,
-        ticketsPurged: deletedTickets.deletedCount,
-        nightAuditsPurged: deletedNightAudits.deletedCount,
-        roomsReset: resetRooms.modifiedCount,
-        menuItemsPurged: deletedMenu.deletedCount,
-        servicesPurged: deletedServices.deletedCount,
-      },
+      message: 'Specified database modules have been completely cleared and reset in MongoDB Atlas.',
+      summary,
     });
   } catch (err: any) {
     console.error('Error in /api/admin/clear-data:', err);
     return NextResponse.json(
-      { success: false, error: err.message || 'Failed to clear data' },
+      { success: false, error: err.message || 'Database purge failed.' },
       { status: 500 }
     );
   }

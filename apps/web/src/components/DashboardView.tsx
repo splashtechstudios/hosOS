@@ -461,14 +461,14 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
 
             <div style={{ padding: '12px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="badge badge-clean">Generator Benchmark</span>
+                <span className="badge badge-clean">Pure Solar Telemetry</span>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>06:00 PM WAT</span>
               </div>
               <div style={{ fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '4px' }}>
-                Perkins 250kVA Burn Rate: 27.5 L/hr (Normal)
+                Solar Array Harvest: 412.5 kWh • BESS SoC: 84% (Optimal)
               </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                Engr. Tunde Bakare logged 8.0 run hours and 220L diesel added. Zero siphoning flag.
+                100% off-grid clean energy. Zero diesel generator required across all hotel suites and outlets.
               </div>
             </div>
           </div>

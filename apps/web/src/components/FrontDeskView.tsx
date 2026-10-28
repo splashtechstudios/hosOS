@@ -103,7 +103,87 @@ export default function FrontDeskView({
   const canCheckOut = hasPermission(activeStaff.role, 'rooms.checkout', activeStaff.id);
   const canStatusOverride = hasPermission(activeStaff.role, 'rooms.status.override', activeStaff.id);
   const canCustomizeRooms = isSuperAdmin || hasPermission(activeStaff.role, 'rooms.customize' as any, activeStaff.id) || hasPermission(activeStaff.role, 'prices.override', activeStaff.id);
+  const canCreateRoom = isSuperAdmin || hasPermission(activeStaff.role, 'rooms.create' as any, activeStaff.id);
+  const canManageAmenities = isSuperAdmin || hasPermission(activeStaff.role, 'rooms.manage_amenities' as any, activeStaff.id);
   const canExportReports = isSuperAdmin || hasPermission(activeStaff.role, 'reports.export', activeStaff.id);
+
+  // Create Room state
+  const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
+  const [newRoomNumber, setNewRoomNumber] = useState('');
+  const [newRoomTypeName, setNewRoomTypeName] = useState('Standard Garden View');
+  const [newCustomName, setNewCustomName] = useState('');
+  const [newFloor, setNewFloor] = useState(1);
+  const [newRackRate, setNewRackRate] = useState(65000);
+  const [newColorTag, setNewColorTag] = useState('#2563eb');
+  const [newColorBg, setNewColorBg] = useState('#EFF6FF');
+  const [newAmenities, setNewAmenities] = useState<string[]>([
+    'Climate Inverter AC', 'High Speed Wi-Fi', 'Smart TV'
+  ]);
+  const [customAmenityInput, setCustomAmenityInput] = useState('');
+  const [isSubmittingRoom, setIsSubmittingRoom] = useState(false);
+
+  const STANDARD_AMENITIES_OPTIONS = [
+    'Climate Inverter AC', 'High Speed Wi-Fi', 'Smart TV', 'Balcony',
+    'En-suite Jacuzzi', 'Digital Safe Box', 'Mini Bar Refrigerator', 'Coffee & Tea Maker',
+    'Executive Work Desk', 'Bathrobes & Slippers', 'Garden / Ocean View'
+  ];
+
+  const toggleNewAmenity = (name: string) => {
+    setNewAmenities(prev =>
+      prev.includes(name) ? prev.filter(a => a !== name) : [...prev, name]
+    );
+  };
+
+  const handleAddCustomAmenity = () => {
+    if (!customAmenityInput.trim()) return;
+    if (!newAmenities.includes(customAmenityInput.trim())) {
+      setNewAmenities(prev => [...prev, customAmenityInput.trim()]);
+    }
+    setCustomAmenityInput('');
+  };
+
+  const handleCreateRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRoomNumber) {
+      showToast({ type: 'error', title: 'Room Number Required', message: 'Please specify the room number.' });
+      return;
+    }
+    setIsSubmittingRoom(true);
+    try {
+      const res = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomNumber: newRoomNumber,
+          roomTypeName: newRoomTypeName,
+          customName: newCustomName || newRoomTypeName,
+          floor: Number(newFloor),
+          rackRatePerNight: Number(newRackRate),
+          colorTag: newColorTag,
+          colorBg: newColorBg,
+          amenities: newAmenities,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showSuccess(
+          'Room Created Successfully!',
+          `Room #${newRoomNumber} (${newCustomName || newRoomTypeName}) added to Osieka Resort inventory.`,
+          `Rack Rate: ₦${Number(newRackRate).toLocaleString()} | Floor ${newFloor} | Amenities: ${newAmenities.join(', ')}`
+        );
+        setIsCreateRoomModalOpen(false);
+        setNewRoomNumber('');
+        setNewCustomName('');
+        if (onRefreshRooms) onRefreshRooms();
+      } else {
+        showFailed('Failed to Create Room', data.error || 'Server error creating room');
+      }
+    } catch (err: any) {
+      showFailed('Network Error', err.message);
+    } finally {
+      setIsSubmittingRoom(false);
+    }
+  };
 
   useEffect(() => {
     const local = getRoomMeta();
@@ -289,6 +369,16 @@ export default function FrontDeskView({
               </button>
             )}
 
+            {canCreateRoom && (
+              <button
+                onClick={() => setIsCreateRoomModalOpen(true)}
+                className="btn-secondary"
+                style={{ fontSize: '0.85rem', gap: '6px' }}
+              >
+                <Plus size={15} /> <span>Create Room & Amenities</span>
+              </button>
+            )}
+
             {canExportReports && (
               <button onClick={() => window.open('/api/reports/export?type=TAX_SCHEDULE', '_blank')} className="btn-secondary" style={{ fontSize: '0.85rem' }}>
                 <Download size={15} color="var(--brand-primary)" /> <span>Export Report</span>
@@ -422,6 +512,20 @@ export default function FrontDeskView({
                         </span>
                       </div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>Floor {room.floor}</div>
+                      {room.amenities && room.amenities.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                          {room.amenities.slice(0, 3).map((a, i) => (
+                            <span key={i} style={{ fontSize: '0.625rem', padding: '1px 6px', borderRadius: '4px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', fontWeight: 600 }}>
+                              {a}
+                            </span>
+                          ))}
+                          {room.amenities.length > 3 && (
+                            <span style={{ fontSize: '0.625rem', padding: '1px 4px', borderRadius: '4px', color: 'var(--text-muted)' }}>
+                              +{room.amenities.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{
@@ -676,6 +780,226 @@ export default function FrontDeskView({
                 <Save size={14} /> {isSavingPrice ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Room & Amenities Modal */}
+      {isCreateRoomModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.7)', zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div className="ent-card" style={{ width: '100%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto', padding: '28px', backgroundColor: '#FFFFFF', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Hotel size={22} color="var(--brand-primary)" />
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                    Create New Room & Configure Amenities
+                  </h3>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
+                    Add room to Osieka Resort inventory with custom branding & amenities
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateRoomModalOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateRoom} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                    Room Number *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newRoomNumber}
+                    onChange={(e) => setNewRoomNumber(e.target.value)}
+                    placeholder="e.g. 301"
+                    className="ent-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                    Floor Level
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={newFloor}
+                    onChange={(e) => setNewFloor(Number(e.target.value))}
+                    className="ent-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                    Room Type Tier
+                  </label>
+                  <select
+                    value={newRoomTypeName}
+                    onChange={(e) => setNewRoomTypeName(e.target.value)}
+                    className="ent-input"
+                    style={{ width: '100%' }}
+                  >
+                    <option value="Standard Garden View">Standard Garden View</option>
+                    <option value="Deluxe Ocean View">Deluxe Ocean View</option>
+                    <option value="Executive Suite">Executive Suite</option>
+                    <option value="Presidential Chalet">Presidential Chalet</option>
+                    <option value="Diplomatic Penthouse">Diplomatic Penthouse</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                    Custom Display Name / Tag
+                  </label>
+                  <input
+                    type="text"
+                    value={newCustomName}
+                    onChange={(e) => setNewCustomName(e.target.value)}
+                    placeholder="e.g. Royal Palm Suite"
+                    className="ent-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                  Rack Rate Per Night (₦) *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)' }}>₦</span>
+                  <input
+                    type="number"
+                    required
+                    min={1000}
+                    step={1000}
+                    value={newRackRate}
+                    onChange={(e) => setNewRackRate(Number(e.target.value))}
+                    className="ent-input"
+                    style={{ width: '100%', paddingLeft: '28px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Color Tag Presets */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                  Room Color Tag
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                  {COLOR_PRESETS.map(preset => (
+                    <button
+                      type="button"
+                      key={preset.value}
+                      onClick={() => { setNewColorTag(preset.value); setNewColorBg(preset.bg); }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 8px',
+                        borderRadius: '6px',
+                        border: newColorTag === preset.value ? `2px solid ${preset.value}` : '1px solid var(--border-color)',
+                        backgroundColor: preset.bg,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: preset.value, flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: preset.value }}>{preset.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Amenities Selector */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    Room Amenities & Features ({newAmenities.length} selected)
+                  </label>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '120px', overflowY: 'auto', padding: '6px', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: '#F8FAFC' }}>
+                  {STANDARD_AMENITIES_OPTIONS.map(amenity => {
+                    const isSelected = newAmenities.includes(amenity);
+                    return (
+                      <button
+                        type="button"
+                        key={amenity}
+                        onClick={() => toggleNewAmenity(amenity)}
+                        style={{
+                          fontSize: '0.7rem',
+                          padding: '3px 8px',
+                          borderRadius: '20px',
+                          border: isSelected ? '1.5px solid var(--brand-primary)' : '1px solid var(--border-color)',
+                          backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.1)' : '#FFFFFF',
+                          color: isSelected ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                          fontWeight: isSelected ? 700 : 500,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {isSelected ? '✓ ' : '+ '}{amenity}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Add Custom Amenity */}
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                  <input
+                    type="text"
+                    value={customAmenityInput}
+                    onChange={(e) => setCustomAmenityInput(e.target.value)}
+                    placeholder="Add bespoke amenity (e.g. Espresso Machine)"
+                    className="ent-input"
+                    style={{ flex: 1, fontSize: '0.75rem', padding: '6px 10px' }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCustomAmenity();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCustomAmenity}
+                    className="btn-secondary"
+                    style={{ fontSize: '0.75rem', padding: '6px 12px' }}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '14px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateRoomModalOpen(false)}
+                  className="btn-secondary"
+                  disabled={isSubmittingRoom}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingRoom}
+                  className="btn-primary"
+                >
+                  <Plus size={15} />
+                  <span>{isSubmittingRoom ? 'Creating Room...' : 'Save & Publish Room'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

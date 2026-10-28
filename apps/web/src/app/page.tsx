@@ -39,7 +39,7 @@ import {
 } from '@/lib/mockData';
 import { Room, StaffUser, RoomTimelineItem, RoomStatus, UserRole, PaymentMethod, SplitPaymentDetail } from '@hosos/types';
 import { Clock, ShieldCheck, Database, LogOut, Lock, ShieldAlert } from 'lucide-react';
-import { canAccessView, getDefaultViewForRole, VIEW_TITLES } from '@/lib/rbac';
+import { canAccessView, getDefaultViewForRole, VIEW_TITLES, isSidebarEnabledForRole } from '@/lib/rbac';
 
 import { FeedbackProvider, useFeedback } from '@/context/FeedbackContext';
 
@@ -629,8 +629,8 @@ function HosOSAppInner() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
       
-      {/* 1. Full Department Sections Sidebar (Always visible for Superadmin/Admin/Owner; toggle applies to other staff) */}
-      {(isSuperOrAdmin || isSidebarVisible) && (
+      {/* 1. Full Department Sections Sidebar (Controlled by Role RBAC Matrix: Manager is Hub-only; Superadmin and Accountant have multi-menu access) */}
+      {isSidebarEnabledForRole(currentUser.role) && (
         <Sidebar
           currentView={currentView}
           onNavigate={(view) => {
