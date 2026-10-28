@@ -38,13 +38,13 @@ export async function POST(req: NextRequest) {
     }
 
     const checkOutTimestamp = new Date().toISOString();
-    const isSplit = Array.isArray(split) && split.length > 0;
+    const splitArr = Array.isArray(split) && split.length > 0 ? split : null;
 
     if (folio) {
       // If settlement payment provided, apply it
       if (settlementAmount > 0) {
-        if (isSplit) {
-          split.forEach((s, idx) => {
+        if (splitArr) {
+          splitArr.forEach((s, idx) => {
             folio!.payments.push({
               id: `pay-${Date.now()}-settle-${idx}`,
               method: s.method as any,
@@ -70,8 +70,8 @@ export async function POST(req: NextRequest) {
         // Sync settlement to accounting
         await syncPaymentToAccounting({
           channel: 'ROOMS',
-          payments: isSplit
-            ? split.map((s) => ({ method: s.method, amount: Number(s.amount) }))
+          payments: splitArr
+            ? splitArr.map((s) => ({ method: s.method, amount: Number(s.amount) }))
             : [{ method: settlementMethod as any, amount: settlementAmount }],
         });
       }

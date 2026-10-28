@@ -63,6 +63,15 @@ export default function AccountantAuditDeskView({ activeStaff }: AccountantAudit
 
   useEffect(() => {
     loadSheets();
+
+    const handleAccountingUpdate = () => {
+      loadSheets();
+    };
+
+    window.addEventListener('hosos_accounting_updated', handleAccountingUpdate);
+    return () => {
+      window.removeEventListener('hosos_accounting_updated', handleAccountingUpdate);
+    };
   }, []);
 
   // When selected sheet changes, update local audit notes input

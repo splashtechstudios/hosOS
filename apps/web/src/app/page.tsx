@@ -36,7 +36,7 @@ import {
   ROOM_204_CONSUMPTION_STATS,
   ENTERPRISE_ORG,
 } from '@/lib/mockData';
-import { Room, StaffUser, RoomTimelineItem, RoomStatus, UserRole } from '@hosos/types';
+import { Room, StaffUser, RoomTimelineItem, RoomStatus, UserRole, PaymentMethod, SplitPaymentDetail } from '@hosos/types';
 import { Clock, ShieldCheck, Database, LogOut, Lock, ShieldAlert } from 'lucide-react';
 import { canAccessView, getDefaultViewForRole, VIEW_TITLES } from '@/lib/rbac';
 
@@ -505,13 +505,15 @@ function HosOSAppInner() {
     }
   };
 
-  // 5. Handle POS Direct Charge to Room or Table Walk-In (Live MongoDB + Inventory Depletion + Audit Trail)
+  // 5. Handle POS Direct Charge to Room or Table Walk-In (Live MongoDB + Inventory Depletion + Audit Trail + Accounting Sync)
   const handlePostChargeToRoom = async (
     roomNumber: string,
     amount: number,
     itemsSummary: string,
     items?: Array<{ name: string; quantity: number; unitPrice: number }>,
-    chargeToRoom: boolean = true
+    chargeToRoom: boolean = true,
+    paymentMethod: PaymentMethod = 'POS_TERMINAL',
+    split?: SplitPaymentDetail[]
   ) => {
     try {
       const itemsList = items && items.length > 0 ? items : [{ name: itemsSummary, quantity: 1, unitPrice: amount }];
@@ -524,6 +526,8 @@ function HosOSAppInner() {
           roomNumber: isRoomCharge ? roomNumber : undefined,
           items: itemsList,
           chargeToRoom: isRoomCharge,
+          paymentMethod,
+          split,
           waiterName: currentUser ? currentUser.name : 'Staff Member',
           waiterId: currentUser ? currentUser.id : 'staff-01',
           waiterRole: currentUser ? currentUser.role : 'FRONT_DESK',
@@ -532,13 +536,19 @@ function HosOSAppInner() {
 
       const result = await res.json();
       if (result.success) {
+        const methodDesc = !isRoomCharge
+          ? split && split.length > 0
+            ? `Split (${split.map(s => `₦${Number(s.amount).toLocaleString()} via ${s.method.replace(/_/g, ' ')}`).join(' + ')})`
+            : paymentMethod.replace(/_/g, ' ')
+          : 'Room Folio';
+
         showSuccess(
           isRoomCharge
             ? `POS Charge Posted to Room #${roomNumber} in MongoDB Atlas!`
-            : `POS Table Order Settled & Saved to MongoDB Atlas!`,
+            : `POS Table Order Settled & Logged to Accounting!`,
           isRoomCharge
             ? `Order total of ₦${amount.toLocaleString()} was successfully posted to guest folio. Kitchen & Bar KDS notified.`
-            : `Direct order of ₦${amount.toLocaleString()} settled. Receipt #${result.order?.orderNumber || 'ORD-NEW'} issued and logged to ledger.`,
+            : `Direct payment of ₦${amount.toLocaleString()} (${methodDesc}) collected and synchronized with accounting. Receipt #${result.order?.orderNumber || 'ORD-NEW'} issued.`,
           `Items: ${itemsSummary} • Acting Staff: ${currentUser ? currentUser.name : 'Staff'} • Stock deducted from warehouse.`
         );
         if (isRoomCharge) {

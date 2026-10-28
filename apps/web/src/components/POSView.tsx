@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { StaffUser, Room, DynamicMenuItem } from '@hosos/types';
+import { StaffUser, Room, DynamicMenuItem, PaymentMethod, SplitPaymentDetail } from '@hosos/types';
 import { useFeedback } from '@/context/FeedbackContext';
 import { getItemImageUrl } from '@/lib/menuImages';
+import PaymentMethodSelector from './PaymentMethodSelector';
 import { 
   UtensilsCrossed, 
   Plus, 
@@ -27,6 +28,7 @@ import {
   ShoppingBag,
   ArrowLeft,
   Wine,
+  X,
 } from 'lucide-react';
 import { hasPermission } from '@/lib/rbac';
 
@@ -38,7 +40,9 @@ interface POSViewProps {
     amount: number,
     itemsSummary: string,
     items?: Array<{ name: string; quantity: number; unitPrice: number }>,
-    chargeToRoom?: boolean
+    chargeToRoom?: boolean,
+    paymentMethod?: PaymentMethod,
+    split?: SplitPaymentDetail[]
   ) => void;
   initialCategory?: 'Kitchen' | 'Bar';
   onBack?: () => void;
@@ -68,6 +72,20 @@ export default function POSView({
   const [selectedCategory, setSelectedCategory] = useState<string>(
     initialCategory === 'Bar' ? 'BEERS' : 'SWALLOW'
   );
+
+  // Direct Settlement Modal State (POS, Transfer, Cash, Split)
+  const [isDirectSettleModalOpen, setIsDirectSettleModalOpen] = useState(false);
+  const [directPaymentSelection, setDirectPaymentSelection] = useState<{
+    method: PaymentMethod;
+    reference: string;
+    split?: SplitPaymentDetail[];
+    isValid: boolean;
+  }>({
+    method: 'POS_TERMINAL',
+    reference: '',
+    isValid: true,
+  });
+  const [isSubmittingDirect, setIsSubmittingDirect] = useState(false);
 
   useEffect(() => {
     setSelectedCategory(initialCategory === 'Bar' ? 'BEERS' : 'SWALLOW');
@@ -1273,13 +1291,7 @@ export default function POSView({
         ) : (
           <button
             onClick={() => {
-              showSuccess(
-                'Order Settled Direct',
-                `Payment of ${formatNaira(total)} collected via POS / Cash.`,
-                `Items: ${cart.map((c) => c.name).join(', ')}`
-              );
-              setCart([]);
-              if (isDrawerModal) setMobileDrawerOpen(false);
+              setIsDirectSettleModalOpen(true);
             }}
             disabled={cart.length === 0 || !canDirectSettle}
             className="btn-primary"
@@ -2067,6 +2079,190 @@ export default function POSView({
             }} />
 
             {renderTicketContent(true)}
+          </div>
+        </div>
+      )}
+
+      {/* DIRECT BILL SETTLEMENT MODAL (POS, TRANSFER, CASH, SPLIT) */}
+      {isDirectSettleModalOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '16px',
+            width: '100%',
+            maxWidth: '560px',
+            maxHeight: '92vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid var(--border-color)',
+            overflow: 'hidden',
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--border-color)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              backgroundColor: 'var(--bg-secondary)',
+            }}>
+              <div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Receipt size={18} color="var(--brand-primary)" /> Settle Bill Direct
+                </h3>
+                <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
+                  {initialCategory === 'Bar' ? 'Main Bar Outlet' : 'Restaurant & Kitchen Outlet'} • Cashier: <strong>{activeStaff.name}</strong>
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDirectSettleModalOpen(false)}
+                disabled={isSubmittingDirect}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  borderRadius: '6px',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Order Amount Highlight Card */}
+              <div style={{
+                backgroundColor: 'rgba(37, 99, 235, 0.05)',
+                border: '1px solid rgba(37, 99, 235, 0.15)',
+                borderRadius: '10px',
+                padding: '14px 16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}>
+                <div>
+                  <span style={{ fontSize: '0.725rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Total Payable Amount
+                  </span>
+                  <div style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)' }}>
+                    {formatNaira(total)}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    {cart.length} item{cart.length > 1 ? 's' : ''} (Subtotal: {formatNaira(subtotal)} + VAT: {formatNaira(vat)} + Service: {formatNaira(serviceCharge)})
+                  </div>
+                </div>
+
+                <span className="badge badge-emerald" style={{ fontSize: '0.7rem', fontWeight: 700 }}>
+                  ✓ Inflow Sync Ready
+                </span>
+              </div>
+
+              {/* Items Summary Strip */}
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)',
+                backgroundColor: 'var(--bg-secondary)',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-subtle)',
+                maxHeight: '90px',
+                overflowY: 'auto',
+              }}>
+                <div style={{ fontWeight: 700, marginBottom: '4px', color: 'var(--text-primary)' }}>Order Items:</div>
+                {cart.map((c, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>{c.quantity}x {c.name}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)' }}>{formatNaira(c.price * c.quantity)}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* 4 Payment Options & Split Payment Selector */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                  Select Settlement Method
+                </label>
+                <PaymentMethodSelector
+                  totalAmount={total}
+                  initialMethod="POS_TERMINAL"
+                  onChange={setDirectPaymentSelection}
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '14px 20px',
+              borderTop: '1px solid var(--border-color)',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px',
+              backgroundColor: 'var(--bg-secondary)',
+            }}>
+              <button
+                type="button"
+                onClick={() => setIsDirectSettleModalOpen(false)}
+                disabled={isSubmittingDirect}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!directPaymentSelection.isValid || cart.length === 0) return;
+                  setIsSubmittingDirect(true);
+                  try {
+                    const summary = cart.map((c) => `${c.quantity}x ${c.name} (@ ₦${c.price.toLocaleString()})`).join(', ');
+                    const itemsPayload = cart.map((c) => ({ name: c.name, quantity: c.quantity, unitPrice: c.price }));
+
+                    await onPostChargeToRoom(
+                      '',
+                      total,
+                      summary,
+                      itemsPayload,
+                      false,
+                      directPaymentSelection.method,
+                      directPaymentSelection.method === 'SPLIT' ? directPaymentSelection.split : undefined
+                    );
+
+                    if (typeof window !== 'undefined') {
+                      window.dispatchEvent(new CustomEvent('hosos_accounting_updated'));
+                    }
+
+                    setCart([]);
+                    setIsDirectSettleModalOpen(false);
+                    setMobileDrawerOpen(false);
+                  } finally {
+                    setIsSubmittingDirect(false);
+                  }
+                }}
+                disabled={isSubmittingDirect || !directPaymentSelection.isValid}
+                className="btn-primary"
+                style={{ backgroundColor: 'var(--emerald-primary)', fontWeight: 800 }}
+              >
+                <Banknote size={16} />
+                <span>
+                  {isSubmittingDirect
+                    ? 'Processing Settlement...'
+                    : `Confirm Settle ${formatNaira(total)}`}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       )}

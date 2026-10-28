@@ -43,9 +43,16 @@ export default function CheckInModal({
   const [nightsCount, setNightsCount] = useState(2);
   const [ratePerNight, setRatePerNight] = useState(room.rackRatePerNight || 65000);
   const [advancePayment, setAdvancePayment] = useState(ratePerNight);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('POS_TERMINAL');
-  const [splitDetails, setSplitDetails] = useState<SplitPaymentDetail[] | undefined>();
-  const [isPaymentValid, setIsPaymentValid] = useState(true);
+  const [paymentSelection, setPaymentSelection] = useState<{
+    method: PaymentMethod;
+    reference: string;
+    split?: SplitPaymentDetail[];
+    isValid: boolean;
+  }>({
+    method: 'POS_TERMINAL',
+    reference: '',
+    isValid: true,
+  });
   const [keycardNumber, setKeycardNumber] = useState(`KC-${room.roomNumber}-A`);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -91,8 +98,9 @@ export default function CheckInModal({
               nightsCount,
               ratePerNight,
               advancePayment,
-              paymentMethod,
-              split: paymentMethod === 'SPLIT' ? splitDetails : undefined,
+              paymentMethod: paymentSelection.method,
+              paymentReference: paymentSelection.reference,
+              split: paymentSelection.method === 'SPLIT' ? paymentSelection.split : undefined,
               staff: activeStaff,
             }),
           });
@@ -119,7 +127,7 @@ export default function CheckInModal({
       {
         confirmText: 'Activate Check-In & Issue Key',
         variant: 'emerald',
-        details: `Guest: ${guestName} | Room: #${room.roomNumber} (${room.roomTypeName}) | Advance Deposit: ${formatNaira(advancePayment)} (${paymentMethod === 'SPLIT' && splitDetails ? splitDetails.map(s => `${s.method.replace(/_/g, ' ')}: ${formatNaira(s.amount)}`).join(' + ') : paymentMethod.replace(/_/g, ' ')}) | Receptionist: ${activeStaff.name}`
+        details: `Guest: ${guestName} | Room: #${room.roomNumber} (${room.roomTypeName}) | Advance Deposit: ${formatNaira(advancePayment)} (${paymentSelection.method === 'SPLIT' && paymentSelection.split ? paymentSelection.split.map(s => `${s.method.replace(/_/g, ' ')}: ${formatNaira(s.amount)}`).join(' + ') : paymentSelection.method.replace(/_/g, ' ')}) | Receptionist: ${activeStaff.name}`
       }
     );
   };
@@ -303,10 +311,8 @@ export default function CheckInModal({
             {advancePayment > 0 && (
               <PaymentMethodSelector
                 totalAmount={advancePayment}
-                selectedMethod={paymentMethod}
-                onMethodChange={setPaymentMethod}
-                onSplitChange={setSplitDetails}
-                onValidityChange={setIsPaymentValid}
+                initialMethod="POS_TERMINAL"
+                onChange={setPaymentSelection}
               />
             )}
           </div>
@@ -325,7 +331,7 @@ export default function CheckInModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || (advancePayment > 0 && !isPaymentValid)}
+              disabled={isSubmitting || (advancePayment > 0 && !paymentSelection.isValid)}
               className="btn-primary"
               style={{ backgroundColor: 'var(--emerald-primary)' }}
             >

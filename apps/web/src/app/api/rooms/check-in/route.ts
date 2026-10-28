@@ -75,10 +75,10 @@ export async function POST(req: NextRequest) {
       },
     ];
 
-    const isSplit = Array.isArray(split) && split.length > 0;
+    const splitArr = Array.isArray(split) && split.length > 0 ? split : null;
     const initialPayments = advancePayment > 0
-      ? isSplit
-        ? split.map((s, idx) => ({
+      ? splitArr
+        ? splitArr.map((s, idx) => ({
             id: `pay-${Date.now()}-${idx}`,
             method: s.method as any,
             amount: Number(s.amount),
@@ -102,8 +102,8 @@ export async function POST(req: NextRequest) {
     if (advancePayment > 0) {
       await syncPaymentToAccounting({
         channel: 'ROOMS',
-        payments: isSplit
-          ? split.map((s) => ({ method: s.method, amount: Number(s.amount) }))
+        payments: splitArr
+          ? splitArr.map((s) => ({ method: s.method, amount: Number(s.amount) }))
           : [{ method: paymentMethod as any, amount: advancePayment }],
       });
     }

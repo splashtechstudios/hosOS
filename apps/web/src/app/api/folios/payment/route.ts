@@ -47,9 +47,9 @@ export async function POST(req: NextRequest) {
     }
 
     const timestamp = new Date().toISOString();
-    const isSplit = Array.isArray(split) && split.length > 0;
-    const paymentItemsToRecord = isSplit
-      ? split.map((s, idx) => ({
+    const splitArr = Array.isArray(split) && split.length > 0 ? split : null;
+    const paymentItemsToRecord = splitArr
+      ? splitArr.map((s, idx) => ({
           id: `pay-${Date.now()}-${idx}`,
           method: s.method as any,
           amount: Number(s.amount),
@@ -78,13 +78,13 @@ export async function POST(req: NextRequest) {
     // Automatically sync to accounting (DailyOperationSheet)
     await syncPaymentToAccounting({
       channel: 'ROOMS',
-      payments: isSplit
-        ? split.map((s) => ({ method: s.method, amount: Number(s.amount) }))
+      payments: splitArr
+        ? splitArr.map((s) => ({ method: s.method, amount: Number(s.amount) }))
         : [{ method: method as any, amount: Number(amount) }],
     });
 
-    const splitSummary = isSplit
-      ? split.map((s) => `₦${Number(s.amount).toLocaleString()} via ${s.method.replace(/_/g, ' ')}`).join(' + ')
+    const splitSummary = splitArr
+      ? splitArr.map((s) => `₦${Number(s.amount).toLocaleString()} via ${s.method.replace(/_/g, ' ')}`).join(' + ')
       : `${method.replace(/_/g, ' ')}`;
 
     // Append to immutable internal room audit log
@@ -101,8 +101,8 @@ export async function POST(req: NextRequest) {
       },
       meta: {
         receiptNumber: reference,
-        method: isSplit ? 'SPLIT' : method,
-        splitBreakdown: isSplit ? split : undefined,
+        method: splitArr ? 'SPLIT' : method,
+        splitBreakdown: splitArr || undefined,
         remainingBalance: folio.balance,
       },
       timestamp,
