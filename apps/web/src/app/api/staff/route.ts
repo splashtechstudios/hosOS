@@ -179,3 +179,91 @@ export async function DELETE(req: Request) {
   }
 }
 
+// Superadmin / HR Staff User Update Handler
+export async function PATCH(req: Request) {
+  try {
+    await connectToDatabase();
+    const data = await req.json();
+    const {
+      id,
+      email,
+      name,
+      role,
+      department,
+      pinCode,
+      phone,
+      nin,
+      salaryTier,
+      bankName,
+      bankAccountNumber,
+      isActive,
+      password,
+    } = data;
+
+    if (!id && !email) {
+      return NextResponse.json(
+        { success: false, error: 'Staff User ID or Email is required for update.' },
+        { status: 400 }
+      );
+    }
+
+    let user = null;
+    if (id) {
+      try {
+        user = await User.findById(id);
+      } catch (_) {}
+    }
+    if (!user && email) {
+      user = await User.findOne({ email: email.toLowerCase().trim() });
+    }
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Staff user not found in database.' },
+        { status: 404 }
+      );
+    }
+
+    if (name) user.name = name;
+    if (role) user.role = role;
+    if (department) user.department = department;
+    if (pinCode) user.pinCode = pinCode;
+    if (phone) user.phone = phone;
+    if (nin) user.nin = nin;
+    if (salaryTier) user.salaryTier = salaryTier;
+    if (bankName) user.bankName = bankName;
+    if (bankAccountNumber) user.bankAccountNumber = bankAccountNumber;
+    if (typeof isActive === 'boolean') user.isActive = isActive;
+    if (password) {
+      user.password = await hashPassword(password);
+    }
+
+    await user.save();
+
+    return NextResponse.json({
+      success: true,
+      message: `Staff member ${user.name} (${user.role}) details successfully updated!`,
+      staff: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        pinCode: user.pinCode,
+        phone: user.phone,
+        nin: user.nin,
+        salaryTier: user.salaryTier,
+        bankName: user.bankName,
+        bankAccountNumber: user.bankAccountNumber,
+        isActive: user.isActive,
+      },
+    });
+  } catch (error: any) {
+    console.error('Staff update API error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message || 'Server error' },
+      { status: 500 }
+    );
+  }
+}
+

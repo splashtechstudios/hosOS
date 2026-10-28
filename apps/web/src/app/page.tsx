@@ -19,6 +19,7 @@ import AccountantAuditDeskView from '@/components/AccountantAuditDeskView';
 import StaffOnboardingView from '@/components/StaffOnboardingView';
 import RBACView from '@/components/RBACView';
 import HospitalityHubView from '@/components/HospitalityHubView';
+import HallsAndServicesView from '@/components/HallsAndServicesView';
 import AddStaffModal from '@/components/AddStaffModal';
 import CheckInModal from '@/components/CheckInModal';
 import CheckOutModal from '@/components/CheckOutModal';
@@ -60,7 +61,8 @@ function HosOSAppInner() {
   // Active View in Department Submenus
   const [currentView, setCurrentView] = useState<string>('dashboard');
   // Hub sub-view: which department was clicked in the Hub
-  const [hubSubView, setHubSubView] = useState<'rooms' | 'kitchen' | 'bar' | null>(null);
+  const [hubSubView, setHubSubView] = useState<'rooms' | 'kitchen' | 'bar' | 'halls' | null>(null);
+  const [hallsDefaultGroup, setHallsDefaultGroup] = useState<string>('Halls and Events');
   // POS sub-view: 'kitchen' or 'bar' to pre-select category
   const [posInitialCategory, setPosInitialCategory] = useState<'kitchen' | 'bar'>('kitchen');
 
@@ -751,7 +753,7 @@ function HosOSAppInner() {
             <HospitalityHubView
               activeStaff={currentUser}
               rooms={rooms}
-              onNavigate={(view: 'rooms' | 'kitchen' | 'bar') => {
+              onNavigate={(view: 'rooms' | 'kitchen' | 'bar' | 'halls', group?: string) => {
                 if (view === 'rooms') {
                   setHubSubView('rooms');
                 } else if (view === 'kitchen') {
@@ -760,6 +762,9 @@ function HosOSAppInner() {
                 } else if (view === 'bar') {
                   setHubSubView('bar');
                   setPosInitialCategory('bar');
+                } else if (view === 'halls') {
+                  setHubSubView('halls');
+                  if (group) setHallsDefaultGroup(group);
                 }
               }}
             />
@@ -789,6 +794,14 @@ function HosOSAppInner() {
               onPostChargeToRoom={handlePostChargeToRoom}
               initialCategory={posInitialCategory === 'kitchen' ? 'Kitchen' : 'Bar'}
               onBack={() => setHubSubView(null)}
+            />
+          )}
+
+          {currentView === 'front-desk' && hubSubView === 'halls' && (
+            <HallsAndServicesView
+              activeStaff={currentUser}
+              onBack={() => setHubSubView(null)}
+              defaultGroup={hallsDefaultGroup}
             />
           )}
 

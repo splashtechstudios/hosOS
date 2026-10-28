@@ -353,7 +353,18 @@ export interface StaffOnboardingRecord {
     createdAt: string;
     completedAt?: string;
 }
-export type AppPermission = 'rooms.audit.view' | 'rooms.status.override' | 'rooms.checkin' | 'rooms.checkout' | 'rooms.customize' | 'orders.create' | 'orders.increment' | 'prices.override' | 'discounts.approve' | 'voids.execute' | 'menu.manage' | 'cash.receive' | 'maintenance.raise' | 'maintenance.signoff' | 'reports.export' | 'users.onboard' | 'crm.manage' | 'solar.log' | 'solar.powersaver_toggle' | 'diesel.log' | 'audit.stamp' | 'daily.submit' | 'daily.audit_update' | 'payment.split' | 'sidebar.toggle' | 'rbac.manage';
+export type AppPermission = 'rooms.audit.view' | 'rooms.status.override' | 'rooms.checkin' | 'rooms.checkout' | 'rooms.customize' | 'orders.create' | 'orders.increment' | 'prices.override' | 'discounts.approve' | 'voids.execute' | 'menu.manage' | 'cash.receive' | 'maintenance.raise' | 'maintenance.signoff' | 'reports.export' | 'users.onboard' | 'crm.manage' | 'solar.log' | 'solar.powersaver_toggle' | 'diesel.log' | 'audit.stamp' | 'daily.submit' | 'daily.audit_update' | 'payment.split' | 'sidebar.toggle' | 'users.manage' | 'users.delete' | 'services.manage' | 'database.clear' | 'rbac.manage';
+export interface ServiceItem {
+    id: string;
+    name: string;
+    group: string;
+    price: number;
+    duration: string;
+    capacity?: number;
+    description?: string;
+    isAvailable: boolean;
+    createdAt?: string;
+}
 export interface RoleRBACDefinition {
     role: UserRole;
     displayName: string;

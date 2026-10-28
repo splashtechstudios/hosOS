@@ -26,6 +26,9 @@ import {
   Settings,
   Eye,
   EyeOff,
+  Database,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { StaffUser, UserRole, AppPermission, RoleRBACDefinition } from '@hosos/types';
 import { RBAC_ROLE_DEFINITIONS, INITIAL_STAFF } from '@/lib/mockData';
@@ -105,6 +108,47 @@ export default function RBACView({
     });
   };
 
+  // == Master Database Purge (Superadmin Only) ==
+  const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
+  const [purgeConfirmationCode, setPurgeConfirmationCode] = useState('');
+  const [purgeResetType, setPurgeResetType] = useState<'OPERATIONAL_TRANSACTIONS' | 'FULL_FACTORY_RESET'>('OPERATIONAL_TRANSACTIONS');
+  const [isPurging, setIsPurging] = useState(false);
+  const [purgeSummary, setPurgeSummary] = useState<any | null>(null);
+
+  const handleExecutePurge = async () => {
+    if (purgeConfirmationCode !== 'CLEAR_ALL_DATA') {
+      showToast({ type: 'error', title: 'Confirmation Mismatch', message: 'You must type CLEAR_ALL_DATA in capital letters to authorize.' });
+      return;
+    }
+    setIsPurging(true);
+    try {
+      const res = await fetch('/api/admin/clear-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirmationCode: purgeConfirmationCode,
+          requestedBy: activeStaff.name,
+          resetType: purgeResetType,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPurgeSummary(data.summary);
+        showToast({
+          type: 'success',
+          title: 'Database Reset Executed',
+          message: 'All specified operational data points and transactions have been completely purged from MongoDB Atlas.',
+        });
+      } else {
+        showToast({ type: 'error', title: 'Purge Failed', message: data.error || 'Could not clear database.' });
+      }
+    } catch (err: any) {
+      showToast({ type: 'error', title: 'Network Error', message: err.message });
+    } finally {
+      setIsPurging(false);
+    }
+  };
+
   useEffect(() => {
     setUserOverrides(getUserOverrides());
     // Load live staff from API
@@ -154,6 +198,7 @@ export default function RBACView({
         { key: 'orders.increment', label: 'Add Extra Items to Bill', desc: 'Increment active table orders with attribution' },
         { key: 'prices.override', label: 'Enter Dynamic Custom Prices', desc: 'Input market/daily pricing for seafood and chef specials' },
         { key: 'menu.manage', label: 'Add & Manage Menu Catalog', desc: 'Add dishes and drinks to resort menu catalog' },
+        { key: 'services.manage', label: 'Manage Halls, Events & Ancillary Services', desc: 'Create and configure event halls, wedding grounds, laundry and ancillary offerings' },
         { key: 'discounts.approve', label: 'Approve Customer Discounts', desc: 'Apply percentage or fixed reductions to bills' },
         { key: 'voids.execute', label: 'Cancel / Void Fired Orders', desc: 'Remove items with mandatory audit reason code' },
       ],
@@ -186,9 +231,12 @@ export default function RBACView({
       icon: Lock,
       permissions: [
         { key: 'users.onboard', label: 'Onboard Staff & Issue PINs', desc: 'Create resort personnel and set access PINs' },
+        { key: 'users.manage', label: 'Edit & Update Staff Details', desc: 'Modify names, roles, departments, salaries, and PIN codes' },
+        { key: 'users.delete', label: 'Purge & Delete Staff Users', desc: 'Permanently remove staff members from Osieka Resort systems' },
         { key: 'rbac.manage', label: 'Manage RBAC Security Matrix', desc: 'Toggle role permissions and sub-page clearances' },
         { key: 'crm.manage', label: 'VIP CRM & Corporate Deals', desc: 'Access VIP profiles and banquet event pipeline' },
         { key: 'sidebar.toggle', label: 'Toggle Navigation Sidebar', desc: 'Permission to show, hide or collapse the main navigation sidebar' },
+        { key: 'database.clear', label: 'Superadmin Master Database Purge', desc: 'Wipe all operational transactions, folios, orders, and reset database' },
       ],
     },
   ];
@@ -740,6 +788,177 @@ export default function RBACView({
                       );
                     })}
                   </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      {/* ===== SUPERADMIN DANGER ZONE: MASTER DATABASE PURGE ===== */}
+      {isSuperAdmin && (
+        <div className="ent-card" style={{ padding: '24px', border: '1.5px solid #FDA4AF', backgroundColor: '#FFF1F2', borderRadius: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <AlertTriangle size={22} color="#E11D48" />
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#9F1239', margin: 0 }}>
+                  Master Database Purge & Hard Reset (Super Admin Only)
+                </h3>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: '#881337', marginTop: '6px', maxWidth: '750px', lineHeight: 1.5 }}>
+                Irreversible destructive operation. Allows Super Admin to wipe all orders, folios, receipts, daily operational sheets, and reset all rooms back to pristine clean vacant state.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setPurgeConfirmationCode('');
+                setPurgeSummary(null);
+                setIsPurgeModalOpen(true);
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 18px',
+                backgroundColor: '#E11D48',
+                color: '#FFFFFF',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(225, 29, 72, 0.25)',
+              }}
+            >
+              <Trash2 size={16} />
+              <span>Clear All Operational Data...</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Database Purge Confirmation Modal */}
+      {isPurgeModalOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 120,
+          padding: '20px',
+        }}>
+          <div className="ent-card" style={{ width: '100%', maxWidth: '580px', padding: '28px', border: '2px solid #E11D48' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <AlertTriangle size={24} color="#E11D48" />
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#9F1239', margin: 0 }}>
+                  Master Database Reset
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setIsPurgeModalOpen(false); setPurgeSummary(null); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {purgeSummary ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ padding: '14px', backgroundColor: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '8px' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#166534', margin: '0 0 6px' }}>
+                    ✓ Database Purge Completed Successfully!
+                  </h4>
+                  <ul style={{ fontSize: '0.8rem', color: '#14532D', margin: 0, paddingLeft: '18px', lineHeight: 1.6 }}>
+                    <li>Orders purged: <strong>{purgeSummary.ordersPurged}</strong></li>
+                    <li>Folios / invoices purged: <strong>{purgeSummary.foliosPurged}</strong></li>
+                    <li>Daily operational sheets purged: <strong>{purgeSummary.sheetsPurged}</strong></li>
+                    <li>Maintenance tickets purged: <strong>{purgeSummary.ticketsPurged}</strong></li>
+                    <li>Rooms reset to vacant clean: <strong>{purgeSummary.roomsReset}</strong></li>
+                  </ul>
+                </div>
+                <button
+                  onClick={() => { setIsPurgeModalOpen(false); setPurgeSummary(null); }}
+                  className="btn-primary"
+                  style={{ width: '100%' }}
+                >
+                  Done & Close
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ padding: '12px 14px', backgroundColor: '#FFF1F2', border: '1px solid #FECACA', borderRadius: '8px', fontSize: '0.8rem', color: '#9F1239', lineHeight: 1.5 }}>
+                  ⚠️ <strong>Warning:</strong> This will delete every single operational transaction, guest folio, order increment, and daily closure from MongoDB Atlas. All rooms will be reset to vacant clean.
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    Select Reset Scope
+                  </label>
+                  <select
+                    value={purgeResetType}
+                    onChange={(e) => setPurgeResetType(e.target.value as any)}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.825rem' }}
+                  >
+                    <option value="OPERATIONAL_TRANSACTIONS">Operational Transactions (Orders, Folios, Daily Sheets, Room Occupancy)</option>
+                    <option value="FULL_FACTORY_RESET">Full Factory Reset (Transactions + Dynamic Menu + Custom Services)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    Type <code style={{ color: '#E11D48', backgroundColor: '#FFF1F2', padding: '2px 6px', borderRadius: '4px' }}>CLEAR_ALL_DATA</code> to authorize:
+                  </label>
+                  <input
+                    type="text"
+                    value={purgeConfirmationCode}
+                    onChange={(e) => setPurgeConfirmationCode(e.target.value)}
+                    placeholder="CLEAR_ALL_DATA"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '6px',
+                      border: '1.5px solid #FDA4AF',
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: 700,
+                      fontSize: '0.9rem',
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsPurgeModalOpen(false)}
+                    className="btn-secondary"
+                    disabled={isPurging}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExecutePurge}
+                    disabled={purgeConfirmationCode !== 'CLEAR_ALL_DATA' || isPurging}
+                    style={{
+                      padding: '10px 18px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      backgroundColor: purgeConfirmationCode === 'CLEAR_ALL_DATA' ? '#E11D48' : '#94A3B8',
+                      color: '#FFFFFF',
+                      fontWeight: 700,
+                      fontSize: '0.825rem',
+                      cursor: purgeConfirmationCode === 'CLEAR_ALL_DATA' ? 'pointer' : 'not-allowed',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Trash2 size={14} />
+                    <span>{isPurging ? 'Purging All Data...' : 'Confirm & Wipe Entire Database'}</span>
+                  </button>
                 </div>
               </div>
             )}

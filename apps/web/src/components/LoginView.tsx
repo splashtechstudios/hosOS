@@ -42,6 +42,30 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
 
   // Seed status state
   const [seedStatus, setSeedStatus] = useState<string | null>(null);
+  const [liveAccounts, setLiveAccounts] = useState<any[]>(SEEDED_ACCOUNTS);
+
+  // Synchronize live staff from MongoDB Atlas API
+  React.useEffect(() => {
+    fetch('/api/staff')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.staff && data.staff.length > 0) {
+          const merged = data.staff.map((s: any) => {
+            const seedMatch = SEEDED_ACCOUNTS.find(a => a.email.toLowerCase() === s.email.toLowerCase());
+            return {
+              name: s.name,
+              email: s.email,
+              password: seedMatch?.password || 'Pass123!',
+              role: s.role,
+              department: s.department,
+              pinCode: s.pinCode || seedMatch?.pinCode || '1234',
+            };
+          });
+          setLiveAccounts(merged);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -465,7 +489,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
               gap: '6px',
               paddingRight: '4px',
             }}>
-              {SEEDED_ACCOUNTS.map((acc) => (
+              {liveAccounts.map((acc) => (
                 <div
                   key={acc.email}
                   onClick={() => handleQuickRoleFill(acc)}

@@ -14,11 +14,15 @@ import {
   BadgeCheck,
   Clock,
   Sparkles,
-  Trash2
+  Trash2,
+  Edit2,
+  X,
+  Lock
 } from 'lucide-react';
 import { StaffUser, StaffOnboardingRecord, DepartmentType, UserRole } from '@hosos/types';
 import { ENTERPRISE_ORG, INITIAL_STAFF_ONBOARDING, INITIAL_STAFF } from '@/lib/mockData';
 import { useFeedback } from '@/context/FeedbackContext';
+import { hasPermission } from '@/lib/rbac';
 
 export default function StaffOnboardingView({ activeStaff }: { activeStaff: StaffUser }) {
   const { showSuccess, showFailed, showConfirm } = useFeedback();
@@ -26,37 +30,21 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
   const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   const isSuperAdmin = activeStaff.role === 'SUPERADMIN' || activeStaff.role === 'OWNER' || (activeStaff.role as any) === 'ADMIN';
+  const canManageUsers = isSuperAdmin || hasPermission(activeStaff.role, 'users.manage', activeStaff.id);
+  const canDeleteUsers = isSuperAdmin || hasPermission(activeStaff.role, 'users.delete', activeStaff.id);
 
-  const handleDeleteUser = (userId: string, userEmail: string, userName: string) => {
-    showConfirm(
-      'Permanently Delete Staff User?',
-      `Are you sure you want to permanently delete "${userName}" (${userEmail})? This action cannot be undone and will purge their credentials from MongoDB Atlas and HosOS RBAC.`,
-      async () => {
-        try {
-          const res = await fetch(`/api/staff?id=${encodeURIComponent(userId)}&email=${encodeURIComponent(userEmail)}&role=${encodeURIComponent(activeStaff.role)}`, {
-            method: 'DELETE',
-          });
-          const data = await res.json();
-          if (data.success) {
-            setOnboardingList((prev) => prev.filter((emp) => emp.id !== userId && emp.email !== userEmail));
-            showSuccess(
-              'User Completely Purged',
-              `Staff member ${userName} (${userEmail}) has been permanently deleted from Osieka Resort systems.`
-            );
-          } else {
-            showFailed('Deletion Error', data.error || 'Failed to delete user.');
-          }
-        } catch (err: any) {
-          showFailed('Deletion Failed', err.message || 'Network error while deleting staff user.');
-        }
-      },
-      {
-        variant: 'danger',
-        confirmText: 'Yes, Delete Completely',
-        cancelText: 'Cancel',
-      }
-    );
-  };
+  // Edit Staff State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<StaffOnboardingRecord | null>(null);
+  const [editFullName, setEditFullName] = useState('');
+  const [editRoleAssigned, setEditRoleAssigned] = useState<UserRole>('WAITER');
+  const [editDepartment, setEditDepartment] = useState<DepartmentType>('FOOD_AND_BEVERAGE');
+  const [editPhoneNumber, setEditPhoneNumber] = useState('');
+  const [editPosQuickPin, setEditPosQuickPin] = useState('');
+  const [editSalaryTier, setEditSalaryTier] = useState('');
+  const [editBankName, setEditBankName] = useState('');
+  const [editBankAccountNumber, setEditBankAccountNumber] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Wizard form fields
   const [fullName, setFullName] = useState('');
@@ -105,6 +93,111 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
     loadDbStaff();
   }, []);
 
+  const openEditModal = (emp: StaffOnboardingRecord) => {
+    setEditingStaff(emp);
+    setEditFullName(emp.fullName);
+    setEditRoleAssigned(emp.roleAssigned);
+    setEditDepartment(emp.department);
+    setEditPhoneNumber(emp.phoneNumber);
+    setEditPosQuickPin(emp.posQuickPinIssued || '1234');
+    setEditSalaryTier(emp.salaryTier || 'Standard Personnel');
+    setEditBankName(emp.bankName || 'Zenith Bank PLC');
+    setEditBankAccountNumber(emp.bankAccountNumber || '');
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateStaffSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStaff) return;
+
+    setIsUpdating(true);
+    try {
+      const res = await fetch('/api/staff', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingStaff.id,
+          email: editingStaff.email,
+          name: editFullName.trim(),
+          role: editRoleAssigned,
+          department: editDepartment,
+          phone: editPhoneNumber.trim(),
+          pinCode: editPosQuickPin.trim(),
+          salaryTier: editSalaryTier.trim(),
+          bankName: editBankName.trim(),
+          bankAccountNumber: editBankAccountNumber.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        // Update local list
+        setOnboardingList((prev) =>
+          prev.map((emp) =>
+            emp.id === editingStaff.id || emp.email === editingStaff.email
+              ? {
+                  ...emp,
+                  fullName: editFullName.trim(),
+                  roleAssigned: editRoleAssigned,
+                  designation: editRoleAssigned.replace(/_/g, ' '),
+                  department: editDepartment,
+                  phoneNumber: editPhoneNumber.trim(),
+                  posQuickPinIssued: editPosQuickPin.trim(),
+                  salaryTier: editSalaryTier.trim(),
+                  bankName: editBankName.trim(),
+                  bankAccountNumber: editBankAccountNumber.trim(),
+                }
+              : emp
+          )
+        );
+
+        showSuccess(
+          'Staff Details Updated',
+          `Changes to ${editFullName} (${editRoleAssigned}) have been saved to MongoDB Atlas.`
+        );
+        setIsEditModalOpen(false);
+        setEditingStaff(null);
+      } else {
+        showFailed('Update Error', data.error || 'Failed to update staff user.');
+      }
+    } catch (err: any) {
+      showFailed('Update Failed', err.message || 'Network error updating staff user.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteUser = (userId: string, userEmail: string, userName: string) => {
+    showConfirm(
+      'Permanently Delete Staff User?',
+      `Are you sure you want to permanently delete "${userName}" (${userEmail})? This action cannot be undone and will purge their credentials from MongoDB Atlas and HosOS RBAC.`,
+      async () => {
+        try {
+          const res = await fetch(`/api/staff?id=${encodeURIComponent(userId)}&email=${encodeURIComponent(userEmail)}&role=${encodeURIComponent(activeStaff.role)}`, {
+            method: 'DELETE',
+          });
+          const data = await res.json();
+          if (data.success) {
+            setOnboardingList((prev) => prev.filter((emp) => emp.id !== userId && emp.email !== userEmail));
+            showSuccess(
+              'User Completely Purged',
+              `Staff member ${userName} (${userEmail}) has been permanently deleted from Osieka Resort systems.`
+            );
+          } else {
+            showFailed('Deletion Error', data.error || 'Failed to delete user.');
+          }
+        } catch (err: any) {
+          showFailed('Deletion Failed', err.message || 'Network error while deleting staff user.');
+        }
+      },
+      {
+        variant: 'danger',
+        confirmText: 'Yes, Delete Completely',
+        cancelText: 'Cancel',
+      }
+    );
+  };
+
   const handleOnboardSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName) return;
@@ -124,15 +217,10 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
       bankName,
       bankAccountNumber: bankAccountNumber || '0123456789',
       onboardingStatus: 'ACTIVE_CONFIRMED',
-      posQuickPinIssued: posQuickPin || '1234',
-      onboardedByStaffName: `${activeStaff.name} (${activeStaff.role})`,
-      onboardedByUserId: activeStaff.id,
+      posQuickPinIssued: posQuickPin,
+      onboardedByStaffName: activeStaff.name,
       createdAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
     };
-
-    setOnboardingList([newRecord, ...onboardingList]);
-    setIsWizardOpen(false);
 
     try {
       const res = await fetch('/api/staff', {
@@ -141,31 +229,31 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
         body: JSON.stringify({
           name: fullName,
           email: finalEmail,
-          password: 'Password123!',
+          password: 'Password@123',
           role: roleAssigned,
           department,
-          pinCode: posQuickPin || '1234',
+          pinCode: posQuickPin,
           phone: phoneNumber,
-          nin: newRecord.ninOrIdNumber,
+          nin: ninOrIdNumber,
           salaryTier,
           bankName,
-          bankAccountNumber: newRecord.bankAccountNumber,
-          onboardedBy: `${activeStaff.name} (${activeStaff.role})`,
+          bankAccountNumber,
+          onboardedBy: activeStaff.name,
         }),
       });
-
       const data = await res.json();
       if (data.success) {
+        setOnboardingList([newRecord, ...onboardingList]);
+        setIsWizardOpen(false);
         showSuccess(
-          'Staff Member Saved to MongoDB Atlas!',
-          `${fullName} successfully registered as ${roleAssigned.replace(/_/g, ' ')}.`,
-          `Initial Password: Password123! • Quick PIN: ${posQuickPin || '1234'} • Ready for immediate login.`
+          'Staff Member Onboarded & Active',
+          `${fullName} has been granted access as ${roleAssigned}. POS Quick-PIN ${posQuickPin} issued.`
         );
       } else {
-        showFailed('Staff Registration Warning', data.error || 'Saved locally in shift memory.');
+        showFailed('Onboarding Error', data.error || 'Failed to persist staff user to database.');
       }
     } catch (err: any) {
-      showFailed('Network Warning', 'Saved locally in shift memory. MongoDB sync will resume automatically.');
+      showFailed('Network Error', err.message || 'Could not reach server.');
     }
 
     setFullName('');
@@ -194,18 +282,20 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Users size={24} color="var(--brand-primary)" />
               <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                Organisation Hierarchy & Staff Onboarding Pipeline
+                Organisation Hierarchy & Staff Directory
               </h2>
             </div>
             <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              Official personnel directory, national identity registration, RBAC role presets, and payroll account linkage.
+              Official personnel directory, national identity registration, RBAC role presets, and live credential management.
             </p>
           </div>
 
-          <button onClick={() => setIsWizardOpen(true)} className="btn-primary">
-            <UserPlus size={16} />
-            <span>+ Onboard New Staff Member</span>
-          </button>
+          {canManageUsers && (
+            <button onClick={() => setIsWizardOpen(true)} className="btn-primary">
+              <UserPlus size={16} />
+              <span>+ Onboard New Staff Member</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -265,7 +355,7 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
                 <th>POS Quick PIN</th>
                 <th>Payroll Account</th>
                 <th>Onboarded By</th>
-                {isSuperAdmin && <th style={{ textAlign: 'right' }}>Actions</th>}
+                {(canManageUsers || canDeleteUsers) && <th style={{ textAlign: 'right' }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -300,24 +390,46 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
                   <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {emp.onboardedByStaffName}
                   </td>
-                  {isSuperAdmin && (
-                    <td style={{ textAlign: 'right' }}>
-                      <button
-                        onClick={() => handleDeleteUser(emp.id, emp.email, emp.fullName)}
-                        className="btn-danger"
-                        style={{
-                          padding: '6px 10px',
-                          fontSize: '0.725rem',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          borderRadius: '6px',
-                        }}
-                        title="Delete staff member permanently from database"
-                      >
-                        <Trash2 size={12} />
-                        <span>Delete User</span>
-                      </button>
+                  {(canManageUsers || canDeleteUsers) && (
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'inline-flex', gap: '6px' }}>
+                        {canManageUsers && (
+                          <button
+                            onClick={() => openEditModal(emp)}
+                            className="btn-secondary"
+                            style={{
+                              padding: '5px 9px',
+                              fontSize: '0.725rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              borderRadius: '6px',
+                            }}
+                            title="Edit user details, role, department, and PIN"
+                          >
+                            <Edit2 size={12} color="var(--brand-primary)" />
+                            <span>Edit</span>
+                          </button>
+                        )}
+                        {canDeleteUsers && (
+                          <button
+                            onClick={() => handleDeleteUser(emp.id, emp.email, emp.fullName)}
+                            className="btn-danger"
+                            style={{
+                              padding: '5px 9px',
+                              fontSize: '0.725rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              borderRadius: '6px',
+                            }}
+                            title="Delete staff member permanently from database"
+                          >
+                            <Trash2 size={12} />
+                            <span>Delete</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -326,6 +438,172 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
           </table>
         </div>
       </div>
+
+      {/* Edit Staff Modal */}
+      {isEditModalOpen && editingStaff && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 110,
+          padding: '20px',
+        }}>
+          <div className="ent-card" style={{ width: '100%', maxWidth: '580px', padding: '26px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Edit2 size={20} color="var(--brand-primary)" />
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Edit Staff Member Profile
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setIsEditModalOpen(false); setEditingStaff(null); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateStaffSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={editFullName}
+                  onChange={(e) => setEditFullName(e.target.value)}
+                  required
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
+                    Assigned Role
+                  </label>
+                  <select
+                    value={editRoleAssigned}
+                    onChange={(e) => setEditRoleAssigned(e.target.value as UserRole)}
+                    style={{ width: '100%' }}
+                  >
+                    <option value="SUPERADMIN">SUPERADMIN (Master Governance)</option>
+                    <option value="OWNER">OWNER (Executive Board)</option>
+                    <option value="MANAGER">MANAGER (Operations Manager)</option>
+                    <option value="ACCOUNTANT">ACCOUNTANT (Financial Controller)</option>
+                    <option value="FRONT_DESK">FRONT_DESK (Front Desk)</option>
+                    <option value="CASHIER">CASHIER (Cashier / POS)</option>
+                    <option value="WAITER">WAITER (Floor Server)</option>
+                    <option value="BARTENDER">BARTENDER (Main Bar)</option>
+                    <option value="CHEF">CHEF (Head Chef)</option>
+                    <option value="HOUSEKEEPING">HOUSEKEEPING (Lead)</option>
+                    <option value="MAINTENANCE">MAINTENANCE (Engineer)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
+                    Department
+                  </label>
+                  <select
+                    value={editDepartment}
+                    onChange={(e) => setEditDepartment(e.target.value as DepartmentType)}
+                    style={{ width: '100%' }}
+                  >
+                    <option value="FOOD_AND_BEVERAGE">Food & Beverage</option>
+                    <option value="ROOMS_DIVISION">Rooms Division</option>
+                    <option value="ACCOUNTS_FINANCE">Accounts & Finance</option>
+                    <option value="MAINTENANCE_ENGINEERING">Maintenance & Engineering</option>
+                    <option value="HUMAN_RESOURCES_SECURITY">HR & Security</option>
+                    <option value="EXECUTIVE">Executive Management</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    value={editPhoneNumber}
+                    onChange={(e) => setEditPhoneNumber(e.target.value)}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
+                    POS Quick PIN
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={4}
+                    value={editPosQuickPin}
+                    onChange={(e) => setEditPosQuickPin(e.target.value)}
+                    style={{ width: '100%', textAlign: 'center', fontFamily: 'var(--font-mono)', fontWeight: 700 }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
+                    Bank Name
+                  </label>
+                  <select
+                    value={editBankName}
+                    onChange={(e) => setEditBankName(e.target.value)}
+                    style={{ width: '100%' }}
+                  >
+                    <option value="Guaranty Trust Bank (GTB)">Guaranty Trust Bank (GTB)</option>
+                    <option value="Access Bank PLC">Access Bank PLC</option>
+                    <option value="Zenith Bank PLC">Zenith Bank PLC</option>
+                    <option value="First Bank of Nigeria">First Bank of Nigeria</option>
+                    <option value="Stanbic IBTC Bank">Stanbic IBTC Bank</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>
+                    NUBAN Account
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={10}
+                    value={editBankAccountNumber}
+                    onChange={(e) => setEditBankAccountNumber(e.target.value)}
+                    style={{ width: '100%', fontFamily: 'var(--font-mono)' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '14px' }}>
+                <button
+                  type="button"
+                  onClick={() => { setIsEditModalOpen(false); setEditingStaff(null); }}
+                  className="btn-secondary"
+                  disabled={isUpdating}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? 'Saving Changes...' : 'Save & Sync to Database'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Staff Onboarding Wizard Modal */}
       {isWizardOpen && (

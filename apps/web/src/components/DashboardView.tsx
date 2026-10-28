@@ -18,15 +18,123 @@ import {
   CheckCircle2,
   Building2,
   ChevronRight,
-  FileCheck
+  FileCheck,
+  Filter,
+  Layers
 } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
 import { useFeedback } from '@/context/FeedbackContext';
 import { ENTERPRISE_ORG } from '@/lib/mockData';
 
+type DateRangeKey = 'TODAY' | 'WEEK' | 'MTD' | 'QTD';
+
+interface RangeData {
+  label: string;
+  grossRevenue: number;
+  targetRevenue: number;
+  revenueGrowthPct: string;
+  occupancyPct: number;
+  occupancyGrowth: string;
+  occupiedRoomsDesc: string;
+  adr: number;
+  revPar: number;
+  dieselOpex: number;
+  dieselLitres: number;
+  departments: Array<{
+    name: string;
+    amount: number;
+    pct: number;
+    color: string;
+  }>;
+}
+
+const DASHBOARD_METRICS: Record<DateRangeKey, RangeData> = {
+  TODAY: {
+    label: 'Today (Live)',
+    grossRevenue: 1630000,
+    targetRevenue: 1500000,
+    revenueGrowthPct: '+8.7%',
+    occupancyPct: 71.4,
+    occupancyGrowth: '+4.2%',
+    occupiedRoomsDesc: '5 of 7 rooms occupied today',
+    adr: 150000,
+    revPar: 107142,
+    dieselOpex: 114000,
+    dieselLitres: 84.4,
+    departments: [
+      { name: 'Hotel Rooms & Suites', amount: 750000, pct: 46, color: 'var(--brand-primary)' },
+      { name: 'Kitchen & meals', amount: 410000, pct: 25, color: 'var(--emerald-primary)' },
+      { name: 'Corporate Events & Banqueting', amount: 275000, pct: 17, color: 'var(--purple-primary)' },
+      { name: 'Bar & Drinks', amount: 150000, pct: 9, color: 'var(--amber-primary)' },
+      { name: 'Laundry & Ancillary Services', amount: 45000, pct: 3, color: '#64748B' },
+    ],
+  },
+  WEEK: {
+    label: 'Week-to-Date (Trailing 7 Days)',
+    grossRevenue: 11400000,
+    targetRevenue: 10500000,
+    revenueGrowthPct: '+11.4%',
+    occupancyPct: 74.8,
+    occupancyGrowth: '+5.1%',
+    occupiedRoomsDesc: '5.2 avg rooms occupied daily',
+    adr: 145000,
+    revPar: 108460,
+    dieselOpex: 798000,
+    dieselLitres: 591,
+    departments: [
+      { name: 'Hotel Rooms & Suites', amount: 5244000, pct: 46, color: 'var(--brand-primary)' },
+      { name: 'Kitchen & meals', amount: 2850000, pct: 25, color: 'var(--emerald-primary)' },
+      { name: 'Corporate Events & Banqueting', amount: 1938000, pct: 17, color: 'var(--purple-primary)' },
+      { name: 'Bar & Drinks', amount: 1026000, pct: 9, color: 'var(--amber-primary)' },
+      { name: 'Laundry & Ancillary Services', amount: 342000, pct: 3, color: '#64748B' },
+    ],
+  },
+  MTD: {
+    label: 'Month-to-Date',
+    grossRevenue: 48920000,
+    targetRevenue: 45000000,
+    revenueGrowthPct: '+14.2%',
+    occupancyPct: 76.2,
+    occupancyGrowth: '+6.5%',
+    occupiedRoomsDesc: '5.3 avg rooms occupied daily',
+    adr: 142500,
+    revPar: 108585,
+    dieselOpex: 3420000,
+    dieselLitres: 2533,
+    departments: [
+      { name: 'Hotel Rooms & Suites', amount: 22500000, pct: 46, color: 'var(--brand-primary)' },
+      { name: 'Kitchen & meals', amount: 12400000, pct: 25, color: 'var(--emerald-primary)' },
+      { name: 'Corporate Events & Banqueting', amount: 8200000, pct: 17, color: 'var(--purple-primary)' },
+      { name: 'Bar & Drinks', amount: 4420000, pct: 9, color: 'var(--amber-primary)' },
+      { name: 'Laundry & Ancillary Services', amount: 1400000, pct: 3, color: '#64748B' },
+    ],
+  },
+  QTD: {
+    label: 'Quarter-to-Date',
+    grossRevenue: 144200000,
+    targetRevenue: 135000000,
+    revenueGrowthPct: '+16.8%',
+    occupancyPct: 78.5,
+    occupancyGrowth: '+8.3%',
+    occupiedRoomsDesc: '5.5 avg rooms occupied daily',
+    adr: 146000,
+    revPar: 114610,
+    dieselOpex: 10120000,
+    dieselLitres: 7496,
+    departments: [
+      { name: 'Hotel Rooms & Suites', amount: 66332000, pct: 46, color: 'var(--brand-primary)' },
+      { name: 'Kitchen & meals', amount: 36050000, pct: 25, color: 'var(--emerald-primary)' },
+      { name: 'Corporate Events & Banqueting', amount: 24514000, pct: 17, color: 'var(--purple-primary)' },
+      { name: 'Bar & Drinks', amount: 12978000, pct: 9, color: 'var(--amber-primary)' },
+      { name: 'Laundry & Ancillary Services', amount: 4326000, pct: 3, color: '#64748B' },
+    ],
+  },
+};
+
 export default function DashboardView({ activeStaff }: { activeStaff: StaffUser }) {
   const { showSuccess } = useFeedback();
-  const [dateRange, setDateRange] = useState<'TODAY' | 'WEEK' | 'MTD' | 'QTD'>('MTD');
+  const [dateRange, setDateRange] = useState<DateRangeKey>('MTD');
+  const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>('ALL');
   const [managerSheets, setManagerSheets] = useState<any[]>([]);
 
   useEffect(() => {
@@ -61,6 +169,14 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
     );
   };
 
+  const currentMetrics = DASHBOARD_METRICS[dateRange];
+
+  const filteredDepartments = selectedDeptFilter === 'ALL'
+    ? currentMetrics.departments
+    : currentMetrics.departments.filter(d => d.name === selectedDeptFilter);
+
+  const targetPctAchieved = ((currentMetrics.grossRevenue / currentMetrics.targetRevenue) * 100).toFixed(1);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 0' }}>
       
@@ -79,25 +195,57 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            {/* Date Range Selector */}
-            <div style={{ display: 'flex', backgroundColor: 'var(--bg-secondary)', padding: '3px', borderRadius: 'var(--radius-sm)' }}>
-              {(['TODAY', 'WEEK', 'MTD', 'QTD'] as const).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setDateRange(r)}
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    borderRadius: '4px',
-                    backgroundColor: dateRange === r ? '#FFFFFF' : 'transparent',
-                    color: dateRange === r ? 'var(--brand-primary)' : 'var(--text-secondary)',
-                    boxShadow: dateRange === r ? 'var(--shadow-subtle)' : 'none',
-                  }}
-                >
-                  {r === 'MTD' ? 'Month-to-Date' : r === 'QTD' ? 'Quarter-to-Date' : r}
-                </button>
-              ))}
+            {/* Active Date Range Selectors: TODAY, WEEK, Month-to-Date, Quarter-to-Date */}
+            <div style={{ display: 'flex', backgroundColor: 'var(--bg-secondary)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+              {(['TODAY', 'WEEK', 'MTD', 'QTD'] as const).map((r) => {
+                const label = r === 'TODAY' ? 'TODAY' : r === 'WEEK' ? 'WEEK' : r === 'MTD' ? 'Month-to-Date' : 'Quarter-to-Date';
+                const isActive = dateRange === r;
+                return (
+                  <button
+                    key={r}
+                    onClick={() => setDateRange(r)}
+                    style={{
+                      padding: '7px 14px',
+                      fontSize: '0.75rem',
+                      fontWeight: isActive ? 800 : 600,
+                      borderRadius: '6px',
+                      backgroundColor: isActive ? 'var(--brand-primary)' : 'transparent',
+                      color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
+                      boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.12)' : 'none',
+                      transition: 'all 0.15s ease',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Department Filter Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--bg-secondary)', padding: '4px 10px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+              <Filter size={14} color="var(--text-muted)" />
+              <select
+                value={selectedDeptFilter}
+                onChange={(e) => setSelectedDeptFilter(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              >
+                <option value="ALL">All Departments</option>
+                <option value="Hotel Rooms & Suites">Hotel Rooms & Suites</option>
+                <option value="Kitchen & meals">Kitchen & meals</option>
+                <option value="Corporate Events & Banqueting">Corporate Events & Banqueting</option>
+                <option value="Bar & Drinks">Bar & Drinks</option>
+                <option value="Laundry & Ancillary Services">Laundry & Ancillary Services</option>
+              </select>
             </div>
 
             {/* Export Reports Buttons */}
@@ -122,7 +270,7 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
         </div>
       </div>
 
-      {/* 2. Primary KPI Metric Cards */}
+      {/* 2. Primary KPI Metric Cards (Reactive to Date Selectors) */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -132,17 +280,17 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
         <div className="ent-card" style={{ padding: '20px', borderTop: '3px solid var(--brand-primary)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Gross Revenue (MTD)
+              Gross Revenue ({dateRange === 'MTD' ? 'Month-to-Date' : dateRange === 'QTD' ? 'Quarter-to-Date' : dateRange})
             </span>
             <span className="badge badge-clean">
-              <TrendingUp size={12} /> +14.2%
+              <TrendingUp size={12} /> {currentMetrics.revenueGrowthPct}
             </span>
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-            {formatNaira(48920000)}
+            {formatNaira(currentMetrics.grossRevenue)}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Target: ₦45,000,000 (108.7% achieved)
+            Target: {formatNaira(currentMetrics.targetRevenue)} ({targetPctAchieved}% achieved)
           </div>
         </div>
 
@@ -153,14 +301,14 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
               Average Occupancy
             </span>
             <span className="badge badge-clean">
-              <TrendingUp size={12} /> +6.5%
+              <TrendingUp size={12} /> {currentMetrics.occupancyGrowth}
             </span>
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--emerald-primary)', fontFamily: 'var(--font-mono)' }}>
-            76.2%
+            {currentMetrics.occupancyPct}%
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            5 of 7 rooms occupied today
+            {currentMetrics.occupiedRoomsDesc}
           </div>
         </div>
 
@@ -173,7 +321,7 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
             <span className="badge badge-neutral">Stable</span>
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-            {formatNaira(142500)}
+            {formatNaira(currentMetrics.adr)}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
             Rack rate premium maintained
@@ -191,7 +339,7 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
             </span>
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--purple-primary)', fontFamily: 'var(--font-mono)' }}>
-            {formatNaira(108585)}
+            {formatNaira(currentMetrics.revPar)}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
             Revenue per available room
@@ -204,13 +352,15 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
               Diesel Energy OPEX
             </span>
-            <span className="badge badge-dirty">7.0% of Rev</span>
+            <span className="badge badge-dirty">
+              {((currentMetrics.dieselOpex / currentMetrics.grossRevenue) * 100).toFixed(1)}% of Rev
+            </span>
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--rose-primary)', fontFamily: 'var(--font-mono)' }}>
-            {formatNaira(3420000)}
+            {formatNaira(currentMetrics.dieselOpex)}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            2,533 Litres burnt @ ₦1,350/L
+            {currentMetrics.dieselLitres.toLocaleString()} Litres burnt @ ₦1,350/L
           </div>
         </div>
       </div>
@@ -218,28 +368,22 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
       {/* 3. Revenue Breakdown by Department & Loss Prevention Alert Watchlist */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '20px' }}>
         
-        {/* Department Revenue Contribution */}
+        {/* Department Revenue Contribution (Cleaned up labels & verified values) */}
         <div className="ent-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '8px' }}>
             <div>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Departmental Revenue Distribution (MTD)
+                Departmental Revenue Distribution ({dateRange === 'MTD' ? 'Month-to-Date' : dateRange === 'QTD' ? 'Quarter-to-Date' : dateRange})
               </h3>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Verified cash, POS terminal, verified transfer, and corporate accounts.
+                Verified cash, POS terminal, verified transfer, and corporate event accounts.
               </p>
             </div>
             <span className="badge badge-neutral">Audited Ledgers</span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {[
-              { name: 'Hotel Rooms & Suites', amount: 22500000, pct: 46, color: 'var(--brand-primary)' },
-              { name: 'Restaurant & Room Service', amount: 12400000, pct: 25, color: 'var(--emerald-primary)' },
-              { name: 'Corporate Events & Banqueting', amount: 8200000, pct: 17, color: 'var(--purple-primary)' },
-              { name: 'Main Bar & Drinks', amount: 4420000, pct: 9, color: 'var(--amber-primary)' },
-              { name: 'Laundry & Ancillary Services', amount: 1400000, pct: 3, color: '#64748B' },
-            ].map((dept) => (
+            {filteredDepartments.map((dept) => (
               <div key={dept.name}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.825rem', marginBottom: '6px' }}>
                   <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{dept.name}</span>
@@ -251,11 +395,29 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
                   </div>
                 </div>
                 <div style={{ height: '8px', backgroundColor: 'var(--bg-secondary)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${dept.pct}%`, height: '100%', backgroundColor: dept.color, borderRadius: '4px' }}></div>
+                  <div style={{ width: `${dept.pct}%`, height: '100%', backgroundColor: dept.color, borderRadius: '4px', transition: 'width 0.4s ease' }}></div>
                 </div>
               </div>
             ))}
           </div>
+
+          {selectedDeptFilter !== 'ALL' && (
+            <button
+              onClick={() => setSelectedDeptFilter('ALL')}
+              style={{
+                marginTop: '16px',
+                fontSize: '0.75rem',
+                color: 'var(--brand-primary)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 600,
+                textDecoration: 'underline'
+              }}
+            >
+              Show all departmental breakdowns
+            </button>
+          )}
         </div>
 
         {/* Loss Prevention & Anti-Fraud Watchlist */}

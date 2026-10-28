@@ -501,7 +501,23 @@ export type AppPermission =
   | 'daily.audit_update'
   | 'payment.split'
   | 'sidebar.toggle'
+  | 'users.manage'
+  | 'users.delete'
+  | 'services.manage'
+  | 'database.clear'
   | 'rbac.manage';
+
+export interface ServiceItem {
+  id: string;
+  name: string;
+  group: string; // e.g., 'Rooms', 'Kitchen', 'Drinks', 'Halls and Events', 'Laundry & Ancillary Services', etc.
+  price: number;
+  duration: string; // e.g., "Full Day (8am-6pm)", "Per Hour", "Per Piece", "Per Event", "Per Session"
+  capacity?: number;
+  description?: string;
+  isAvailable: boolean;
+  createdAt?: string;
+}
 
 export interface RoleRBACDefinition {
   role: UserRole;
