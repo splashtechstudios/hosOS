@@ -64,6 +64,30 @@ function HosOSAppInner() {
   // POS sub-view: 'kitchen' or 'bar' to pre-select category
   const [posInitialCategory, setPosInitialCategory] = useState<'kitchen' | 'bar'>('kitchen');
 
+  // Sidebar Visibility State (controllable via Permissions)
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('hosos_sidebar_visible');
+      if (saved !== null) {
+        setIsSidebarVisible(saved !== 'false');
+      }
+    }
+
+    const handleSidebarToggle = (e: any) => {
+      if (e.detail?.visible !== undefined) {
+        setIsSidebarVisible(e.detail.visible);
+      } else {
+        const saved = localStorage.getItem('hosos_sidebar_visible');
+        setIsSidebarVisible(saved !== 'false');
+      }
+    };
+
+    window.addEventListener('hosos_sidebar_toggle', handleSidebarToggle);
+    return () => window.removeEventListener('hosos_sidebar_toggle', handleSidebarToggle);
+  }, []);
+
   // Staff and Data State
   const [staffList, setStaffList] = useState<StaffUser[]>(INITIAL_STAFF);
   const [rooms, setRooms] = useState<Room[]>(INITIAL_ROOMS);
@@ -581,15 +605,20 @@ function HosOSAppInner() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
       
-      {/* 1. Full Department Sections Sidebar with Submenus */}
-      <Sidebar
-        currentView={currentView}
-        onNavigate={setCurrentView}
-        activeStaff={currentUser}
-        onLogout={handleLogout}
-        onOpenAddStaffModal={() => setIsAddStaffModalOpen(true)}
-        onSeedDatabase={handleSeedDatabase}
-      />
+      {/* 1. Full Department Sections Sidebar with Submenus (Toggled in Permissions) */}
+      {isSidebarVisible && (
+        <Sidebar
+          currentView={currentView}
+          onNavigate={(view) => {
+            setHubSubView(null);
+            setCurrentView(view);
+          }}
+          activeStaff={currentUser}
+          onLogout={handleLogout}
+          onOpenAddStaffModal={() => setIsAddStaffModalOpen(true)}
+          onSeedDatabase={handleSeedDatabase}
+        />
+      )}
 
       {/* 2. Main Enterprise Content Body */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -597,7 +626,10 @@ function HosOSAppInner() {
         {/* Top Command Center Header Bar */}
         <CommandCenterHeader
           currentView={currentView}
-          onNavigate={setCurrentView}
+          onNavigate={(view) => {
+            setHubSubView(null);
+            setCurrentView(view);
+          }}
           currentUser={currentUser}
           onLogout={handleLogout}
           onOpenAddStaff={() => setIsAddStaffModalOpen(true)}

@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
         'FOL-2026-201,2026-10-15,Chief Adeyemi Thomas,Deluxe Ocean View (Night 2),95000,7125,4750,83125',
         'FOL-2026-204,2026-10-15,Chief Emeka Nwosu,Deluxe Ocean View (Night 2),95000,7125,4750,83125',
         'ORD-882910,2026-10-15,Room 204 Guest,Main Restaurant Food & Beverage,32500,2438,1625,28437',
-        'ORD-882918,2026-10-15,Table 04 Walk-in,Pool Bar Hennessy VSOP & Chapman,75000,5625,3750,65625',
+        'ORD-882918,2026-10-15,Table 04 Walk-in,Main Bar Hennessy VSOP & Chapman,75000,5625,3750,65625',
         'FOL-2026-301,2026-10-15,Senator Bello Yakubu,Presidential Penthouse Suite,250000,18750,12500,218750',
       ];
       const csvContent = csvHeader + sampleRows.join('\n');
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
         '2026-10-15,1030,Providus Bank Virtual Account Transfers,890000,0,BALANCED',
         '2026-10-15,4010,Rooms Division Rack Revenue,0,1850000,BALANCED',
         '2026-10-15,4020,F&B Restaurant & Room Service Sales,0,450000,BALANCED',
-        '2026-10-15,4030,Pool Bar & Lounge Beverage Sales,0,320000,BALANCED',
+        '2026-10-15,4030,Main Bar Beverage Sales,0,320000,BALANCED',
         '2026-10-15,2010,FIRS Value Added Tax Output (7.5%),0,196500,BALANCED',
         '2026-10-15,2020,State Hospitality Consumption Tax (5%),0,131000,BALANCED',
       ];

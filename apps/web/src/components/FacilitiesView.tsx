@@ -163,7 +163,7 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
       type: newState ? 'success' : 'info',
       title: newState ? 'Smart Power Saver Enabled' : 'Standard Full Power Enabled',
       message: newState
-        ? 'Chillers & pool circulation scheduled for peak solar hours. Night battery autonomy extended by 8 hours.'
+        ? 'Chillers & water treatment circulation scheduled for peak solar hours. Night battery autonomy extended by 8 hours.'
         : 'Full power mode active. All auxiliary resort circuits operating at standard load.',
     });
   };
@@ -339,7 +339,7 @@ export default function FacilitiesView({ activeStaff }: { activeStaff: StaffUser
 
             <div style={{ fontSize: '0.7rem', color: '#94A3B8', lineHeight: 1.4 }}>
               {powerSaverActive
-                ? '✓ High-load pool pumps scheduled for peak daylight. Night battery drain reduced by 21%.'
+                ? '✓ High-load borehole pumps scheduled for peak daylight. Night battery drain reduced by 21%.'
                 : 'Standard mode. No active microgrid load shedding.'}
             </div>
           </div>

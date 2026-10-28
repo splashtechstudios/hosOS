@@ -12,7 +12,7 @@ export interface IOrderItem {
 export interface IOrder {
   _id?: string;
   orderNumber: string;
-  outlet: 'MAIN_RESTAURANT' | 'POOL_BAR' | 'LOUNGE' | 'ROOM_SERVICE';
+  outlet: 'MAIN_RESTAURANT' | 'MAIN_BAR' | 'ROOM_SERVICE';
   roomNumber?: string;
   tableNumber?: string;
   guestFolioId?: string;
@@ -35,7 +35,7 @@ const OrderSchema = new Schema<IOrder>(
     outlet: {
       type: String,
       required: true,
-      enum: ['MAIN_RESTAURANT', 'POOL_BAR', 'LOUNGE', 'ROOM_SERVICE'],
+      enum: ['MAIN_RESTAURANT', 'MAIN_BAR', 'ROOM_SERVICE'],
       default: 'MAIN_RESTAURANT',
     },
     roomNumber: { type: String, index: true },

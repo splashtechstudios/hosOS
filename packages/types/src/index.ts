@@ -145,7 +145,7 @@ export interface RoomTimelineItem {
 // ------------------------------------------
 // Point of Sale & Order Increments
 // ------------------------------------------
-export type POSOutlet = 'MAIN_RESTAURANT' | 'POOL_BAR' | 'LOUNGE' | 'ROOM_SERVICE';
+export type POSOutlet = 'MAIN_RESTAURANT' | 'MAIN_BAR' | 'ROOM_SERVICE';
 
 export type POSOrderStatus =
   | 'DRAFT'
@@ -316,7 +316,7 @@ export interface GuestFolio {
 // ------------------------------------------
 // Inventory & Recipe BOM
 // ------------------------------------------
-export type StoreLocation = 'CENTRAL_STORE' | 'KITCHEN_STORE' | 'MAIN_BAR_STORE' | 'POOL_BAR_STORE';
+export type StoreLocation = 'CENTRAL_STORE' | 'KITCHEN_STORE' | 'MAIN_BAR_STORE';
 
 export interface InventoryItem {
   id: string;

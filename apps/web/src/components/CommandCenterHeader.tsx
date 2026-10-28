@@ -49,8 +49,6 @@ export default function CommandCenterHeader({
   onOpenQuickOrder,
   onOpenQuickMaintenance,
 }: CommandCenterHeaderProps) {
-  const [selectedProperty, setSelectedProperty] = useState('main');
-  const [isPropertyMenuOpen, setIsPropertyMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCmdPaletteOpen, setIsCmdPaletteOpen] = useState(false);
@@ -68,7 +66,6 @@ export default function CommandCenterHeader({
         setIsCmdPaletteOpen(false);
         setIsNotificationsOpen(false);
         setIsUserMenuOpen(false);
-        setIsPropertyMenuOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -169,110 +166,8 @@ export default function CommandCenterHeader({
         boxShadow: 'var(--shadow-xs)',
       }}>
         
-        {/* Left Section: Property Switcher & Breadcrumbs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          
-          {/* Property Dropdown */}
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setIsPropertyMenuOpen(!isPropertyMenuOpen)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '6px 10px',
-                backgroundColor: 'var(--bg-secondary)',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-color)',
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-              }}
-            >
-              <Building2 size={15} color="var(--brand-primary)" />
-              <span>
-                {selectedProperty === 'main' ? 'Osieka Resort (Main Complex)' : 'Phase 2 Beachfront Annex'}
-              </span>
-              <ChevronDown size={14} color="var(--text-muted)" />
-            </button>
-
-            {isPropertyMenuOpen && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                marginTop: '6px',
-                width: '280px',
-                backgroundColor: '#FFFFFF',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-md)',
-                boxShadow: 'var(--shadow-dropdown)',
-                padding: '6px',
-                zIndex: 60,
-              }}>
-                <div style={{ padding: '6px 10px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                  Select Operating Property
-                </div>
-                <div
-                  onClick={() => { setSelectedProperty('main'); setIsPropertyMenuOpen(false); }}
-                  style={{
-                    padding: '8px 10px',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    backgroundColor: selectedProperty === 'main' ? 'var(--brand-bg)' : 'transparent',
-                    color: selectedProperty === 'main' ? 'var(--brand-primary)' : 'var(--text-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    fontSize: '0.8125rem',
-                    fontWeight: 600,
-                  }}
-                >
-                  <div>
-                    <div>Osieka Luxury Resort & Convention</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>60 Rooms · 3 Convention Halls · 4 Outlets</div>
-                  </div>
-                  {selectedProperty === 'main' && <Check size={14} color="var(--brand-primary)" />}
-                </div>
-
-                <div
-                  onClick={() => { setSelectedProperty('beachfront'); setIsPropertyMenuOpen(false); }}
-                  style={{
-                    padding: '8px 10px',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    backgroundColor: selectedProperty === 'beachfront' ? 'var(--brand-bg)' : 'transparent',
-                    color: selectedProperty === 'beachfront' ? 'var(--brand-primary)' : 'var(--text-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    fontSize: '0.8125rem',
-                    fontWeight: 600,
-                  }}
-                >
-                  <div>
-                    <div>Osieka Beachfront Annex & Marina</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>24 Luxury Chalets · Waterfront Deck</div>
-                  </div>
-                  {selectedProperty === 'beachfront' && <Check size={14} color="var(--brand-primary)" />}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Divider */}
-          <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-color)' }}></div>
-
-          {/* Breadcrumb Path */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8125rem' }}>
-            <span style={{ color: 'var(--text-muted)' }}>Osieka HosOS</span>
-            <span style={{ color: 'var(--text-muted)' }}>/</span>
-            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{getBreadcrumbTitle()}</span>
-          </div>
-        </div>
-
-        {/* Center: Global Command Search Trigger (⌘K) */}
-        <div style={{ flex: 1, maxWidth: '420px', margin: '0 24px' }}>
+        {/* Search Field (Only Search Field on Left) */}
+        <div style={{ flex: 1, maxWidth: '460px' }}>
           <button
             onClick={() => setIsCmdPaletteOpen(true)}
             style={{
@@ -280,17 +175,18 @@ export default function CommandCenterHeader({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '6px 12px',
+              padding: '7px 14px',
               backgroundColor: 'var(--bg-secondary)',
               border: '1px solid var(--border-color)',
               borderRadius: 'var(--radius-sm)',
               color: 'var(--text-muted)',
               fontSize: '0.8125rem',
+              cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Search size={14} color="var(--text-muted)" />
+              <Search size={15} color="var(--text-muted)" />
               <span>Search rooms, guests, folios, staff...</span>
             </div>
             <kbd style={{
@@ -311,75 +207,9 @@ export default function CommandCenterHeader({
           </button>
         </div>
 
-        {/* Right Section: Status, Actions, Notifications & Profile */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Right Section: Only Notification & User */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           
-          {/* Live MongoDB Sync Badge */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            backgroundColor: 'var(--emerald-bg)',
-            border: '1px solid var(--emerald-border)',
-            padding: '4px 8px',
-            borderRadius: 'var(--radius-xs)',
-            fontSize: '0.7rem',
-            color: 'var(--emerald-text)',
-            fontWeight: 600,
-          }}>
-            <span style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--emerald-primary)',
-              boxShadow: '0 0 6px var(--emerald-primary)',
-            }}></span>
-            <span>Atlas MongoDB Active</span>
-          </div>
-
-          {/* Quick Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {currentUser?.role === 'ACCOUNTANT' && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-xs)',
-                fontSize: '0.725rem',
-                color: 'var(--emerald-primary)',
-                fontWeight: 700,
-              }}>
-                <ShieldCheck size={14} />
-                <span>Audit Mode (Mutations Blocked)</span>
-              </div>
-            )}
-
-            {hasPermission(currentUser?.role, 'users.onboard') && (
-              <button
-                onClick={onOpenAddStaff}
-                className="btn-primary"
-                style={{ padding: '5px 10px', fontSize: '0.75rem' }}
-              >
-                <UserPlus size={13} />
-                <span>Add Staff</span>
-              </button>
-            )}
-
-            {hasPermission(currentUser?.role, 'orders.create') && (
-              <button
-                onClick={() => onNavigate('pos')}
-                className="btn-secondary"
-                style={{ padding: '5px 10px', fontSize: '0.75rem' }}
-              >
-                <UtensilsCrossed size={13} color="var(--brand-primary)" />
-                <span>Quick POS</span>
-              </button>
-            )}
-          </div>
-
           {/* Notification Bell with Badge */}
           <div style={{ position: 'relative' }}>
             <button
@@ -397,6 +227,7 @@ export default function CommandCenterHeader({
                 justifyContent: 'center',
                 border: '1px solid var(--border-color)',
                 position: 'relative',
+                cursor: 'pointer',
               }}
             >
               <Bell size={16} color={isNotificationsOpen ? 'var(--brand-primary)' : 'var(--text-secondary)'} />
@@ -488,7 +319,7 @@ export default function CommandCenterHeader({
                 }}>
                   <button
                     onClick={() => { onNavigate('loss-prevention'); setIsNotificationsOpen(false); }}
-                    style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--brand-primary)', background: 'transparent' }}
+                    style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--brand-primary)', background: 'transparent', cursor: 'pointer' }}
                   >
                     View All Audit Trails →
                   </button>
@@ -509,6 +340,7 @@ export default function CommandCenterHeader({
                 borderRadius: 'var(--radius-sm)',
                 backgroundColor: isUserMenuOpen ? 'var(--bg-secondary)' : 'transparent',
                 border: '1px solid transparent',
+                cursor: 'pointer',
               }}
             >
               <div style={{
@@ -559,37 +391,14 @@ export default function CommandCenterHeader({
                   </div>
                 </div>
 
-                <div style={{ padding: '6px 0' }}>
-                  {canAccessView(currentUser?.role, 'onboarding-directory') && (
-                    <button
-                      onClick={() => { onNavigate('onboarding-directory'); setIsUserMenuOpen(false); }}
-                      className="btn-ghost"
-                      style={{ width: '100%', justifyContent: 'flex-start' }}
-                    >
-                      <UserPlus size={14} />
-                      <span>Staff Directory & Profile</span>
-                    </button>
-                  )}
-                  {canAccessView(currentUser?.role, 'rbac-matrix') && (
-                    <button
-                      onClick={() => { onNavigate('rbac-matrix'); setIsUserMenuOpen(false); }}
-                      className="btn-ghost"
-                      style={{ width: '100%', justifyContent: 'flex-start' }}
-                    >
-                      <ShieldCheck size={14} />
-                      <span>Role & Permissions</span>
-                    </button>
-                  )}
-                </div>
-
-                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '6px' }}>
+                <div style={{ paddingTop: '6px' }}>
                   <button
                     onClick={() => { setIsUserMenuOpen(false); onLogout(); }}
                     className="btn-ghost"
-                    style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--rose-primary)' }}
+                    style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--rose-primary)', cursor: 'pointer' }}
                   >
                     <LogOut size={14} color="var(--rose-primary)" />
-                    <span>Switch Role / Logout</span>
+                    <span>Logout</span>
                   </button>
                 </div>
               </div>

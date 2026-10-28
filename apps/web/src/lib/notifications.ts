@@ -44,7 +44,7 @@ export async function sendOwnerNightAuditWhatsapp(payload: OwnerNightAuditMessag
 
 💰 *DAILY REVENUE BREAKDOWN:*
 • Rooms Rack Intake: ₦${payload.roomRevenue.toLocaleString()}
-• F&B (Rest/Bar/Pool): ₦${payload.fAndBRevenue.toLocaleString()}
+• F&B (Restaurant & Bar): ₦${payload.fAndBRevenue.toLocaleString()}
 • FIRS 7.5% VAT: ₦${payload.vatCollected.toLocaleString()}
 • 5% Consumption Tax: ₦${payload.consumptionTax.toLocaleString()}
 ⭐ *Total Gross Turnover: ₦${payload.totalDailyRevenue.toLocaleString()}*

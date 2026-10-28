@@ -95,7 +95,7 @@ export interface RoomTimelineItem {
         }>;
     };
 }
-export type POSOutlet = 'MAIN_RESTAURANT' | 'POOL_BAR' | 'LOUNGE' | 'ROOM_SERVICE';
+export type POSOutlet = 'MAIN_RESTAURANT' | 'MAIN_BAR' | 'ROOM_SERVICE';
 export type POSOrderStatus = 'DRAFT' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'SERVED' | 'BILLED' | 'PAID' | 'VOIDED';
 export interface POSOrderItem {
     itemLineId: string;
@@ -236,7 +236,7 @@ export interface GuestFolio {
     closedAt?: string;
     closedByUserId?: string;
 }
-export type StoreLocation = 'CENTRAL_STORE' | 'KITCHEN_STORE' | 'MAIN_BAR_STORE' | 'POOL_BAR_STORE';
+export type StoreLocation = 'CENTRAL_STORE' | 'KITCHEN_STORE' | 'MAIN_BAR_STORE';
 export interface InventoryItem {
     id: string;
     sku: string;

@@ -80,6 +80,29 @@ export default function RBACView({
   // == Tab ==
   const [configTab, setConfigTab] = useState<ConfigTab>('ROLES');
 
+  // == Sidebar Visibility State ==
+  const [isSidebarEnabled, setIsSidebarEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const val = localStorage.getItem('hosos_sidebar_visible');
+      return val !== 'false';
+    }
+    return true;
+  });
+
+  const handleToggleSidebar = () => {
+    const newVal = !isSidebarEnabled;
+    setIsSidebarEnabled(newVal);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hosos_sidebar_visible', String(newVal));
+      window.dispatchEvent(new CustomEvent('hosos_sidebar_toggle', { detail: { visible: newVal } }));
+    }
+    showToast({
+      type: 'success',
+      title: newVal ? 'Sidebar Enabled' : 'Sidebar Hidden',
+      message: newVal ? 'Navigation sidebar is now visible.' : 'Navigation sidebar is now hidden.',
+    });
+  };
+
   useEffect(() => {
     setUserOverrides(getUserOverrides());
     // Load live staff from API
@@ -95,13 +118,10 @@ export default function RBACView({
   const selectedUser = staffList.find(s => s.id === selectedUserId);
   const selectedUserOverride = selectedUserId ? (userOverrides[selectedUserId] || { grantedPermissions: [], deniedPermissions: [], allowedViews: [] }) : null;
 
-  // Available Sub-Page Views
+  // Available Sub-Page Views (Streamlined: Hub replaces daily ops & pos)
   const availableViews: Array<{ id: string; label: string; icon: any; category: string }> = [
-    { id: 'daily-operations', label: 'Daily Operations Board', icon: Hotel, category: 'Operations' },
-    { id: 'front-desk', label: 'Tape Chart & Room Grid', icon: Hotel, category: 'Operations' },
+    { id: 'front-desk', label: 'Hospitality Command Hub', icon: Hotel, category: 'Operations' },
     { id: 'room-audit', label: 'Room 360° Internal Audit', icon: ShieldCheck, category: 'Operations' },
-    { id: 'pos', label: 'Restaurant & Bar POS', icon: UtensilsCrossed, category: 'Operations' },
-    { id: 'hospitality-hub', label: 'Hospitality Command Hub', icon: Building2, category: 'Operations' },
     { id: 'accountant-audit', label: 'Audit & Reconciliation Desk', icon: FileCheck, category: 'Finance' },
     { id: 'night-audit', label: 'Night Audit & Flash Rollover', icon: DollarSign, category: 'Finance' },
     { id: 'loss-prevention', label: 'Loss Prevention & Trail', icon: ShieldAlert, category: 'Finance' },
@@ -165,6 +185,7 @@ export default function RBACView({
         { key: 'users.onboard', label: 'Onboard Staff & Issue PINs', desc: 'Create resort personnel and set access PINs' },
         { key: 'rbac.manage', label: 'Manage RBAC Security Matrix', desc: 'Toggle role permissions and sub-page clearances' },
         { key: 'crm.manage', label: 'VIP CRM & Corporate Deals', desc: 'Access VIP profiles and banquet event pipeline' },
+        { key: 'sidebar.toggle', label: 'Toggle Navigation Sidebar', desc: 'Permission to show, hide or collapse the main navigation sidebar' },
       ],
     },
   ];
@@ -351,6 +372,57 @@ export default function RBACView({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Main Navigation Sidebar Visibility Toggle */}
+      <div className="ent-card" style={{ padding: '16px 20px', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
+            backgroundColor: isSidebarEnabled ? 'rgba(37, 99, 235, 0.1)' : 'var(--bg-secondary)',
+            color: isSidebarEnabled ? 'var(--brand-primary)' : 'var(--text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            {isSidebarEnabled ? <Eye size={20} /> : <EyeOff size={20} />}
+          </div>
+          <div>
+            <div style={{ fontSize: '0.925rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>Main Navigation Sidebar</span>
+              <span className={`badge ${isSidebarEnabled ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '0.7rem' }}>
+                {isSidebarEnabled ? 'ON / VISIBLE' : 'OFF / HIDDEN'}
+              </span>
+            </div>
+            <div style={{ fontSize: '0.775rem', color: 'var(--text-muted)' }}>
+              Toggle the left navigation sidebar on or off. State is synced live across the application.
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleToggleSidebar}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 18px',
+            borderRadius: 'var(--radius-sm)',
+            fontWeight: 700,
+            fontSize: '0.825rem',
+            cursor: 'pointer',
+            backgroundColor: isSidebarEnabled ? 'var(--rose-bg)' : 'var(--emerald-bg)',
+            color: isSidebarEnabled ? 'var(--rose-primary)' : 'var(--emerald-text)',
+            border: isSidebarEnabled ? '1px solid var(--rose-border)' : '1px solid var(--emerald-border)',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <Power size={14} />
+          <span>{isSidebarEnabled ? 'Turn OFF Sidebar' : 'Turn ON Sidebar'}</span>
+        </button>
       </div>
 
       {/* ===== ROLES TAB ===== */}

@@ -1974,6 +1974,7 @@ export default function POSView({
                 );
               })}
             </div>
+          )}
         </div>
       </div>
 

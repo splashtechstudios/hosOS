@@ -108,17 +108,17 @@ export const ROLE_VIEW_ACCESS: Record<ExtendedRole, string[]> = {
 export const ROLE_DEFAULT_VIEW: Record<ExtendedRole, string> = {
   SUPERADMIN: 'dashboard',
   OWNER: 'dashboard',
-  MANAGER: 'daily-operations',
-  GENERAL_MANAGER: 'daily-operations',
+  MANAGER: 'front-desk',
+  GENERAL_MANAGER: 'front-desk',
   ACCOUNTANT: 'accountant-audit',
-  FRONT_DESK: 'daily-operations',
-  CASHIER: 'daily-operations',
-  WAITER: 'pos',
-  BARTENDER: 'pos',
-  CHEF: 'pos',
+  FRONT_DESK: 'front-desk',
+  CASHIER: 'front-desk',
+  WAITER: 'front-desk',
+  BARTENDER: 'front-desk',
+  CHEF: 'front-desk',
   HOUSEKEEPING: 'front-desk',
   MAINTENANCE: 'room-audit',
-  STOREKEEPER: 'daily-operations',
+  STOREKEEPER: 'front-desk',
   ADMIN: 'dashboard',
 };
 
@@ -126,7 +126,7 @@ export const ROLE_DEFAULT_VIEW: Record<ExtendedRole, string> = {
  * Human readable view titles
  */
 export const VIEW_TITLES: Record<string, string> = {
-  'daily-operations': 'Daily Operations Board',
+  'daily-operations': 'Hospitality Command Hub',
   'accountant-audit': 'Audit & Reconciliation Desk',
   dashboard: 'Executive P&L Overview',
   'night-audit': 'Night Audit & Flash Rollover',
@@ -136,7 +136,7 @@ export const VIEW_TITLES: Record<string, string> = {
   'room-audit': 'Room 360° Internal Room Audit',
   'front-desk': 'Hospitality Command Hub',
   'hospitality-hub': 'Hospitality Command Hub',
-  pos: 'Restaurant & Bar POS',
+  pos: 'Hospitality Command Hub',
   'inventory-tots': 'Bar Tot Dipstick Audit',
   'inventory-bom': 'Recipe Bill of Materials',
   'facilities-generators': 'Diesel & Generator Logs',

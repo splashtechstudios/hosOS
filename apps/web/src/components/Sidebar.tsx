@@ -104,12 +104,10 @@ export default function Sidebar({
       key: 'operations',
       name: 'Resort Operations',
       icon: Hotel,
-      badge: 'Daily',
+      badge: 'Hub',
       submenus: [
-        { id: 'daily-operations', label: 'Daily Operations Board', icon: LayoutDashboard, highlight: true, tag: 'Manager' },
-        { id: 'front-desk', label: 'Tape Chart & Room Grid', icon: Hotel, tag: '60 Rooms' },
+        { id: 'front-desk', label: 'Hospitality Command Hub', icon: Hotel, highlight: true, tag: 'Hub' },
         { id: 'room-audit', label: 'Room 360° Internal Audit', icon: ShieldCheck, tag: 'Live Folio' },
-        { id: 'pos', label: 'Restaurant & Bar POS', icon: UtensilsCrossed, tag: 'Terminal' },
       ],
     },
     {
