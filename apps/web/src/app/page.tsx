@@ -18,6 +18,7 @@ import DailyOperationsView from '@/components/DailyOperationsView';
 import AccountantAuditDeskView from '@/components/AccountantAuditDeskView';
 import StaffOnboardingView from '@/components/StaffOnboardingView';
 import RBACView from '@/components/RBACView';
+import HospitalityHubView from '@/components/HospitalityHubView';
 import AddStaffModal from '@/components/AddStaffModal';
 import CheckInModal from '@/components/CheckInModal';
 import CheckOutModal from '@/components/CheckOutModal';
@@ -696,7 +697,7 @@ function HosOSAppInner() {
             <HospitalityHubView
               activeStaff={currentUser}
               rooms={rooms}
-              onNavigate={(view) => {
+              onNavigate={(view: 'rooms' | 'kitchen' | 'bar') => {
                 if (view === 'rooms') {
                   setHubSubView('rooms');
                 } else if (view === 'kitchen') {

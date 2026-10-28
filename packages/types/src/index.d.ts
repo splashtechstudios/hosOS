@@ -1,4 +1,4 @@
-export type UserRole = 'OWNER' | 'GENERAL_MANAGER' | 'FRONT_DESK' | 'CASHIER' | 'WAITER' | 'BARTENDER' | 'CHEF' | 'HOUSEKEEPING' | 'MAINTENANCE' | 'ACCOUNTANT' | 'STOREKEEPER';
+export type UserRole = 'SUPERADMIN' | 'OWNER' | 'MANAGER' | 'GENERAL_MANAGER' | 'FRONT_DESK' | 'CASHIER' | 'WAITER' | 'BARTENDER' | 'CHEF' | 'HOUSEKEEPING' | 'MAINTENANCE' | 'ACCOUNTANT' | 'STOREKEEPER';
 export interface StaffUser {
     id: string;
     name: string;
@@ -344,11 +344,105 @@ export interface StaffOnboardingRecord {
     createdAt: string;
     completedAt?: string;
 }
-export type AppPermission = 'rooms.audit.view' | 'rooms.status.override' | 'orders.create' | 'orders.increment' | 'discounts.approve' | 'voids.execute' | 'cash.receive' | 'maintenance.raise' | 'maintenance.signoff' | 'reports.export' | 'users.onboard' | 'crm.manage' | 'diesel.log';
+export type AppPermission = 'rooms.audit.view' | 'rooms.status.override' | 'rooms.checkin' | 'rooms.checkout' | 'rooms.customize' | 'orders.create' | 'orders.increment' | 'prices.override' | 'discounts.approve' | 'voids.execute' | 'menu.manage' | 'cash.receive' | 'maintenance.raise' | 'maintenance.signoff' | 'reports.export' | 'users.onboard' | 'crm.manage' | 'solar.log' | 'solar.powersaver_toggle' | 'diesel.log' | 'audit.stamp' | 'daily.submit' | 'daily.audit_update' | 'rbac.manage';
 export interface RoleRBACDefinition {
     role: UserRole;
     displayName: string;
     department: DepartmentType;
     description: string;
+    isEnabled: boolean;
+    allowedViews: string[];
     permissions: AppPermission[];
+    dataScope: 'ALL_RESORT_DATA' | 'RESTRICTED_SHIFT_DATA';
+}
+export interface SolarTelemetryDay {
+    date: string;
+    solarHarvestedKwh: number;
+    batteryStateOfCharge: number;
+    resortConsumptionKwh: number;
+    peakSolarPowerKw: number;
+    equivalentDieselSavedLitres: number;
+    moneySavedNaira: number;
+    co2OffsetKg: number;
+    generatorBackupHours: number;
+    powerSaverActive: boolean;
+}
+export interface DynamicMenuItem {
+    id: string;
+    name: string;
+    category: 'Kitchen' | 'Bar' | 'Grill' | 'Events' | string;
+    pricingType: 'OPEN_MARKET_PRICE' | 'DAILY_SPECIAL' | 'SUGGESTED_BENCHMARK';
+    suggestedPrice: number;
+    priceFloor: number;
+    description?: string;
+    addedBy: string;
+    isAvailable: boolean;
+    dailyPriceSnapshot?: number;
+    imageUrl?: string;
+}
+export interface DailyRoomOccupancyLog {
+    occupiedCount: number;
+    vacantCleanCount: number;
+    vacantDirtyCount: number;
+    outOfOrderCount: number;
+    totalRooms: number;
+    roomRevenueCash: number;
+    roomRevenuePOS: number;
+    roomRevenueTransfer: number;
+    roomRevenueTotal: number;
+}
+export interface DailyFBSalesLog {
+    foodSalesAmount: number;
+    drinksSalesAmount: number;
+    totalSalesAmount: number;
+    cashReceived: number;
+    posTerminalReceived: number;
+    bankTransferReceived: number;
+}
+export interface DailyPettyExpense {
+    id: string;
+    title: string;
+    amount: number;
+    paidVia: 'CASH' | 'TRANSFER';
+    receiptAttached?: boolean;
+}
+export interface DailyEnergyExpensesLog {
+    generatorRunHours: number;
+    dieselLitresPurchased: number;
+    dieselPricePerLitre: number;
+    totalDieselCost: number;
+    otherPettyExpenses: DailyPettyExpense[];
+    totalExpenses: number;
+}
+export interface DailyReconciliationLog {
+    totalPhysicalCashHandover: number;
+    expectedCashOnHand: number;
+    cashDiscrepancy: number;
+    receiptPhotoUrls?: string[];
+    bankAlertNotes?: string;
+    managerNotes?: string;
+}
+export interface DailyAuditStatus {
+    status: 'DRAFT' | 'SUBMITTED' | 'AUDITED_VERIFIED' | 'AUDIT_FLAGGED';
+    auditedBy?: string;
+    auditedAt?: string;
+    auditNotes?: string;
+    varianceAmount?: number;
+    discrepanciesFound?: string[];
+}
+export interface DailyOperationalSheet {
+    id: string;
+    sheetId: string;
+    date: string;
+    resortProperty: string;
+    managerId: string;
+    managerName: string;
+    rooms: DailyRoomOccupancyLog;
+    fbSales: DailyFBSalesLog;
+    energyExpenses: DailyEnergyExpensesLog;
+    reconciliation: DailyReconciliationLog;
+    audit: DailyAuditStatus;
+    submittedAt?: string;
+    createdAt: string;
+    updatedAt: string;
 }
