@@ -15,7 +15,7 @@ import {
   Package, 
   GlassWater, 
   Layers, 
-  Fuel, 
+  Sun, 
   Wrench, 
   UserPlus, 
   Lock, 
@@ -107,6 +107,7 @@ export default function Sidebar({
       badge: 'Hub',
       submenus: [
         { id: 'front-desk', label: 'Hospitality Command Hub', icon: Hotel, highlight: true, tag: 'Hub' },
+        { id: 'halls-services', label: 'Halls & Event Venues', icon: Building2, tag: 'Banquets' },
         { id: 'room-audit', label: 'Room 360° Internal Audit', icon: ShieldCheck, tag: 'Live Folio' },
       ],
     },
@@ -127,6 +128,7 @@ export default function Sidebar({
       icon: Building2,
       submenus: [
         { id: 'dashboard', label: 'Executive P&L Overview', icon: LayoutDashboard, tag: 'KPIs' },
+        { id: 'facilities-generators', label: 'Off-Grid Solar Microgrid', icon: Sun, tag: 'Pure Solar' },
         { id: 'onboarding-directory', label: 'Staff & Role Directory', icon: Users, tag: 'Atlas' },
         { id: 'rbac-matrix', label: 'Multi-Role RBAC Matrix', icon: Lock, tag: 'Governance' },
       ],

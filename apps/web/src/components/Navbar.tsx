@@ -10,7 +10,7 @@ import {
   Hotel, 
   UtensilsCrossed, 
   Package, 
-  Fuel, 
+  Sun, 
   FileText,
   Users,
   Briefcase,
@@ -44,7 +44,7 @@ export default function Navbar({
     { id: 'front-desk', label: 'Front Desk & Tape Chart', icon: Hotel },
     { id: 'pos', label: 'Restaurant & Bar POS', icon: UtensilsCrossed },
     { id: 'inventory', label: 'Stores & Bar Tots', icon: Package },
-    { id: 'facilities', label: 'Energy & Diesel Logs', icon: Fuel },
+    { id: 'facilities', label: 'Off-Grid Solar Microgrid', icon: Sun },
     { id: 'night-audit', label: 'Night Audit & Flash', icon: FileText },
   ];
 

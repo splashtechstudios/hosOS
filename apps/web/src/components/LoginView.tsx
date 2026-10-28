@@ -35,9 +35,9 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   // Create Admin form state
-  const [adminName, setAdminName] = useState('Alhaji Ibrahim Danjuma');
-  const [adminEmail, setAdminEmail] = useState('owner@osiekaresort.ng');
-  const [adminPassword, setAdminPassword] = useState('OwnerSecure2026!');
+  const [adminName, setAdminName] = useState('Engnr Omole');
+  const [adminEmail, setAdminEmail] = useState('admin@osiekaresort.ng');
+  const [adminPassword, setAdminPassword] = useState('Admin123!');
   const [adminPin, setAdminPin] = useState('1001');
 
   // Seed status state

@@ -136,10 +136,11 @@ export const VIEW_TITLES: Record<string, string> = {
   'room-audit': 'Room 360° Internal Room Audit',
   'front-desk': 'Hospitality Command Hub',
   'hospitality-hub': 'Hospitality Command Hub',
+  'halls-services': 'Halls, Banqueting & Event Venues',
   pos: 'Hospitality Command Hub',
   'inventory-tots': 'Bar Tot Dipstick Audit',
   'inventory-bom': 'Recipe Bill of Materials',
-  'facilities-generators': 'Diesel & Generator Logs',
+  'facilities-generators': 'Off-Grid Solar Microgrid & Power Saver',
   'onboarding-directory': 'Staff Directory & Access',
   'rbac-matrix': 'Multi-Role RBAC Matrix',
 };

@@ -85,7 +85,7 @@ const STANDARD_VENUE_AMENITIES = [
   'Acoustic Sound Treatment',
   'Dual 4K Laser Projectors',
   'Intelligent Stage Lighting',
-  'Backup Generator 250kVA',
+  '100% Off-Grid Solar & BESS Power',
   'VIP Dressing Suites',
   'Banquet Tables & Chiavari Chairs',
   'High-Speed Dedicated Wi-Fi',

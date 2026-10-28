@@ -346,21 +346,21 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
           </div>
         </div>
 
-        {/* Energy & Diesel OPEX */}
-        <div className="ent-card" style={{ padding: '20px', borderTop: '3px solid var(--rose-primary)' }}>
+        {/* 100% Green Solar Microgrid */}
+        <div className="ent-card" style={{ padding: '20px', borderTop: '3px solid var(--emerald-primary)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Diesel Energy OPEX
+              Solar Microgrid (100% Off-Grid)
             </span>
-            <span className="badge badge-dirty">
-              {((currentMetrics.dieselOpex / currentMetrics.grossRevenue) * 100).toFixed(1)}% of Rev
+            <span className="badge badge-clean">
+              ₦0 Diesel OPEX
             </span>
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--rose-primary)', fontFamily: 'var(--font-mono)' }}>
-            {formatNaira(currentMetrics.dieselOpex)}
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--emerald-primary)', fontFamily: 'var(--font-mono)' }}>
+            {dateRange === 'TODAY' ? '540 kWh' : dateRange === 'WEEK' ? '3,780 kWh' : dateRange === 'MTD' ? '16,200 kWh' : '48,600 kWh'}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            {currentMetrics.dieselLitres.toLocaleString()} Litres burnt @ ₦1,350/L
+            Pure Solar & BESS Battery Estate • Zero generator dependency
           </div>
         </div>
       </div>

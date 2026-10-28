@@ -174,6 +174,7 @@ export default function RBACView({
   const availableViews: Array<{ id: string; label: string; icon: any; category: string }> = [
     { id: 'front-desk', label: 'Hospitality Command Hub', icon: Hotel, category: 'Operations' },
     { id: 'room-audit', label: 'Room 360° Internal Audit', icon: ShieldCheck, category: 'Operations' },
+    { id: 'halls-services', label: 'Halls, Banquets & Venues', icon: Building2, category: 'Operations' },
     { id: 'accountant-audit', label: 'Audit & Reconciliation Desk', icon: FileCheck, category: 'Finance' },
     { id: 'night-audit', label: 'Night Audit & Flash Rollover', icon: DollarSign, category: 'Finance' },
     { id: 'loss-prevention', label: 'Loss Prevention & Trail', icon: ShieldAlert, category: 'Finance' },

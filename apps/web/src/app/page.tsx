@@ -797,10 +797,16 @@ function HosOSAppInner() {
             />
           )}
 
-          {currentView === 'front-desk' && hubSubView === 'halls' && (
+          {(currentView === 'halls-services' || (currentView === 'front-desk' && hubSubView === 'halls')) && (
             <HallsAndServicesView
               activeStaff={currentUser}
-              onBack={() => setHubSubView(null)}
+              onBack={() => {
+                if (currentView === 'halls-services') {
+                  setCurrentView('front-desk');
+                } else {
+                  setHubSubView(null);
+                }
+              }}
               defaultGroup={hallsDefaultGroup}
             />
           )}
