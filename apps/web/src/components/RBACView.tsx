@@ -793,6 +793,8 @@ export default function RBACView({
             )}
           </div>
         </div>
+      )}
+
       {/* ===== SUPERADMIN DANGER ZONE: MASTER DATABASE PURGE ===== */}
       {isSuperAdmin && (
         <div className="ent-card" style={{ padding: '24px', border: '1.5px solid #FDA4AF', backgroundColor: '#FFF1F2', borderRadius: '12px' }}>

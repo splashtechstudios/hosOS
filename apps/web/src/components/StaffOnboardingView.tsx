@@ -219,6 +219,7 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
       onboardingStatus: 'ACTIVE_CONFIRMED',
       posQuickPinIssued: posQuickPin,
       onboardedByStaffName: activeStaff.name,
+      onboardedByUserId: activeStaff.id,
       createdAt: new Date().toISOString(),
     };
 

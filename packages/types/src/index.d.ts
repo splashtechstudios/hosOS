@@ -349,7 +349,7 @@ export interface StaffOnboardingRecord {
     onboardingStatus: OnboardingStatus;
     posQuickPinIssued: string;
     onboardedByStaffName: string;
-    onboardedByUserId: string;
+    onboardedByUserId?: string;
     createdAt: string;
     completedAt?: string;
 }

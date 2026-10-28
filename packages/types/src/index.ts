@@ -467,7 +467,7 @@ export interface StaffOnboardingRecord {
   onboardingStatus: OnboardingStatus;
   posQuickPinIssued: string; // 4-digit PIN
   onboardedByStaffName: string;
-  onboardedByUserId: string;
+  onboardedByUserId?: string;
   createdAt: string;
   completedAt?: string;
 }

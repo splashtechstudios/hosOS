@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     // 4. Log the audit event for compliance
     try {
       await AuditLog.create({
-        action: 'DATABASE_PURGED',
+        roomNumber: 'RESORT',
         category: 'SYSTEM',
         actor: {
           staffId: 'superadmin-master',
@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
           roomsReset: resetRooms.modifiedCount,
           resetType: resetType || 'OPERATIONAL_TRANSACTIONS',
         },
+        timestamp: new Date().toISOString(),
       });
     } catch (_) {}
 

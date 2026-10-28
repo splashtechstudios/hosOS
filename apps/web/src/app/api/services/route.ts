@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
 
     try {
       await AuditLog.create({
-        action: 'SERVICE_CREATED',
+        roomNumber: 'RESORT',
         category: 'SERVICE',
         actor: {
           staffId: 'superadmin-01',
@@ -187,6 +187,7 @@ export async function POST(req: NextRequest) {
         headline: `New Service Created: ${name}`,
         details: `Created in group [${group}] at ₦${Number(price).toLocaleString()} (${duration})`,
         meta: { serviceId, price, duration, group },
+        timestamp: new Date().toISOString(),
       });
     } catch (_) {}
 
@@ -249,7 +250,7 @@ export async function PATCH(req: NextRequest) {
 
     try {
       await AuditLog.create({
-        action: 'SERVICE_UPDATED',
+        roomNumber: 'RESORT',
         category: 'SERVICE',
         actor: {
           staffId: 'superadmin-01',
@@ -259,6 +260,7 @@ export async function PATCH(req: NextRequest) {
         headline: `Service Updated: ${updated.name}`,
         details: `Updated parameters: ${Object.keys(updateFields).join(', ')}`,
         meta: { serviceId, updateFields },
+        timestamp: new Date().toISOString(),
       });
     } catch (_) {}
 
