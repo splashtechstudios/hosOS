@@ -3,7 +3,9 @@ import mongoose, { Schema, Model } from 'mongoose';
 export interface IRoom {
   _id?: string;
   roomNumber: string;
+  blockName?: string;
   roomTypeName: string;
+  description?: string;
   customName?: string;
   colorTag?: string;
   colorBg?: string;
@@ -24,12 +26,14 @@ export interface IRoom {
 const RoomSchema = new Schema<IRoom>(
   {
     roomNumber: { type: String, required: true, unique: true, index: true },
-    roomTypeName: { type: String, required: true, default: 'Standard Deluxe' },
+    blockName: { type: String },
+    roomTypeName: { type: String, required: true, default: 'Standard Room' },
+    description: { type: String },
     customName: { type: String },
     colorTag: { type: String },
     colorBg: { type: String },
     floor: { type: Number, required: true, default: 1 },
-    rackRatePerNight: { type: Number, required: true, default: 45000 },
+    rackRatePerNight: { type: Number, required: true, default: 10000 },
     status: {
       type: String,
       required: true,
@@ -47,4 +51,8 @@ const RoomSchema = new Schema<IRoom>(
   { timestamps: true }
 );
 
-export const Room: Model<IRoom> = mongoose.models.Room || mongoose.model<IRoom>('Room', RoomSchema);
+if (mongoose.models.Room) {
+  delete mongoose.models.Room;
+}
+
+export const Room: Model<IRoom> = mongoose.model<IRoom>('Room', RoomSchema);

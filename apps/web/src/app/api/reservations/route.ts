@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 const INITIAL_FALLBACK_RESERVATIONS: IReservation[] = [
   {
     reservationNumber: 'RES-2026-0982',
-    roomNumber: '102',
+    roomNumber: 'Block B1 Room 1',
     roomType: 'Standard Room',
     numberOfRooms: 1,
     guestsCount: 2,
@@ -33,8 +33,8 @@ const INITIAL_FALLBACK_RESERVATIONS: IReservation[] = [
   },
   {
     reservationNumber: 'RES-2026-0955',
-    roomNumber: '101',
-    roomType: 'VIP Suite',
+    roomNumber: 'Block A1 Room 1',
+    roomType: 'Executive VIP Suite',
     numberOfRooms: 1,
     guestsCount: 2,
     guestName: 'Barrister Folake Coker',
@@ -58,8 +58,8 @@ const INITIAL_FALLBACK_RESERVATIONS: IReservation[] = [
   },
   {
     reservationNumber: 'RES-2026-0914',
-    roomNumber: '204',
-    roomType: 'VIP Suite',
+    roomNumber: 'Block A2 Room 1',
+    roomType: 'Executive VIP Suite',
     numberOfRooms: 1,
     guestsCount: 2,
     guestName: 'Chief Emeka Nwosu',
@@ -178,8 +178,13 @@ export async function POST(req: NextRequest) {
     staff = body.staff;
 
     // Resolve roomType & default rate
-    if (body.roomType === 'vip' || body.roomType === 'VIP Suite' || body.roomType === 'Deluxe Suite') {
-      roomType = 'VIP Suite';
+    if (
+      body.roomType === 'vip' ||
+      body.roomType === 'VIP Suite' ||
+      body.roomType === 'Executive VIP Suite' ||
+      body.roomType === 'Deluxe Suite'
+    ) {
+      roomType = 'Executive VIP Suite';
       ratePerNight = Number(body.ratePerNight) || 15000;
     } else if (body.roomType === 'standard' || body.roomType === 'Standard Room') {
       roomType = 'Standard Room';
@@ -191,7 +196,7 @@ export async function POST(req: NextRequest) {
 
     roomNumber =
       body.roomNumber ||
-      (roomType === 'VIP Suite' ? '201' : '101');
+      (roomType === 'Executive VIP Suite' ? 'Block A1 Room 1' : 'Block B1 Room 1');
 
     depositPaid = Number(body.depositPaid) || 0;
 

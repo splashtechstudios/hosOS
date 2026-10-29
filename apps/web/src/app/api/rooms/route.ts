@@ -1,79 +1,136 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
-import { Room } from '@/models/Room';
+import { Room as RoomModel } from '@/models/Room';
+import { AuditLog } from '@/models/AuditLog';
+import {
+  INITIAL_ROOMS,
+  STANDARD_ROOM_AMENITIES,
+  STANDARD_ROOM_DESCRIPTION,
+  VIP_SUITE_AMENITIES,
+  VIP_SUITE_DESCRIPTION,
+} from '@/lib/mockData';
+import type { Room } from '@hosos/types';
 
 export const dynamic = 'force-dynamic';
-import { AuditLog } from '@/models/AuditLog';
-import { INITIAL_ROOMS } from '@/lib/mockData';
-import { getSessionFromRequest } from '@/lib/auth';
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __hososRoomsStore: Room[] | undefined;
+}
+
+function getFallbackRoomsStore(): Room[] {
+  if (!globalThis.__hososRoomsStore || globalThis.__hososRoomsStore.length === 0) {
+    globalThis.__hososRoomsStore = [...INITIAL_ROOMS];
+  }
+  return globalThis.__hososRoomsStore;
+}
+
+function extractBlockFromRoomNumber(roomNumber: string, explicitBlock?: string): string {
+  if (explicitBlock && explicitBlock.trim()) return explicitBlock.trim();
+  const match = roomNumber.match(/^(Block\s+[A-Za-z0-9]+)/i);
+  if (match) return match[1];
+  return 'Resort Wing';
+}
 
 export async function GET() {
   try {
     await connectToDatabase();
-    let rooms = await Room.find().sort({ roomNumber: 1 });
+    let dbRooms = await RoomModel.find().sort({ roomNumber: 1 });
 
-    // Auto-seed if empty
-    if (!rooms || rooms.length === 0) {
-      for (const r of INITIAL_ROOMS) {
-        await Room.create({
-          roomNumber: r.roomNumber,
-          roomTypeName: r.roomTypeName,
-          floor: r.floor,
-          rackRatePerNight: r.rackRatePerNight,
-          status: r.status,
-          currentGuestName: r.currentGuestName,
-          currentFolioId: r.currentFolioId,
-          lastCleanedAt: r.lastCleanedAt,
-          lastCleanedByStaffName: r.lastCleanedByStaffName,
-          amenities: ['Air Conditioning', 'High Speed Wi-Fi', 'Smart TV', 'Balcony', 'En-suite Jacuzzi'],
-        });
+    // Auto-migrate legacy 101/102/201 rooms or seed if empty so Osieka Block A1..C4 rooms are active
+    const hasBlockRooms = dbRooms.some((r: any) => /^Block\s+[A-C]/i.test(r.roomNumber));
+    if (!dbRooms || dbRooms.length === 0 || !hasBlockRooms) {
+      if (dbRooms && dbRooms.length > 0 && !hasBlockRooms) {
+        await RoomModel.deleteMany({ roomNumber: { $in: ['101', '102', '201', '202', '203', '204', '301'] } });
       }
-      rooms = await Room.find().sort({ roomNumber: 1 });
+      for (const r of INITIAL_ROOMS) {
+        await RoomModel.findOneAndUpdate(
+          { roomNumber: r.roomNumber },
+          {
+            $setOnInsert: {
+              roomNumber: r.roomNumber,
+              blockName: r.blockName || extractBlockFromRoomNumber(r.roomNumber),
+              roomTypeName: r.roomTypeName,
+              description: r.description,
+              customName: r.customName || r.roomTypeName,
+              colorTag: r.colorTag,
+              colorBg: r.colorBg,
+              floor: r.floor,
+              rackRatePerNight: r.rackRatePerNight,
+              status: r.status,
+              currentGuestName: r.currentGuestName,
+              currentFolioId: r.currentFolioId,
+              lastCleanedAt: r.lastCleanedAt,
+              lastCleanedByStaffName: r.lastCleanedByStaffName,
+              amenities: r.amenities,
+            },
+          },
+          { upsert: true, new: true }
+        );
+      }
+      dbRooms = await RoomModel.find().sort({ roomNumber: 1 });
     }
 
-    return NextResponse.json({
-      success: true,
-      rooms: rooms.map((r: any) => ({
+    const formattedRooms: Room[] = dbRooms.map((r: any) => {
+      const isVip = /vip/i.test(r.roomTypeName || '') || /vip/i.test(r.customName || '');
+      const defaultAmenities = isVip ? VIP_SUITE_AMENITIES : STANDARD_ROOM_AMENITIES;
+      const defaultDesc = isVip ? VIP_SUITE_DESCRIPTION : STANDARD_ROOM_DESCRIPTION;
+
+      return {
         id: String(r._id),
         roomNumber: r.roomNumber,
-        roomTypeId: `type-${r.roomNumber}`,
-        roomTypeName: r.roomTypeName,
-        customName: r.customName,
-        colorTag: r.colorTag,
-        colorBg: r.colorBg,
-        floor: r.floor,
-        rackRatePerNight: r.rackRatePerNight,
-        status: r.status,
+        blockName: r.blockName || extractBlockFromRoomNumber(r.roomNumber),
+        roomTypeId: isVip ? 'vip' : 'standard',
+        roomTypeName: r.roomTypeName || (isVip ? 'Executive VIP Suite' : 'Standard Room'),
+        description: r.description || defaultDesc,
+        customName: r.customName || r.roomTypeName,
+        colorTag: r.colorTag || (isVip ? '#D97706' : '#059669'),
+        colorBg: r.colorBg || (isVip ? '#FFFBEB' : '#ECFDF5'),
+        floor: r.floor || 1,
+        rackRatePerNight: Number(r.rackRatePerNight) || (isVip ? 15000 : 10000),
+        status: r.status || 'VACANT_CLEAN',
         currentGuestName: r.currentGuestName,
         currentFolioId: r.currentFolioId,
         activeMaintenanceTicketId: r.activeMaintenanceTicketId,
         lastCleanedAt: r.lastCleanedAt,
         lastCleanedByStaffName: r.lastCleanedByStaffName,
-        amenities: r.amenities && r.amenities.length > 0 ? r.amenities : ['Air Conditioning', 'High Speed Wi-Fi', 'Smart TV', 'Balcony', 'En-suite Jacuzzi'],
+        amenities:
+          Array.isArray(r.amenities) && r.amenities.length > 0 ? r.amenities : defaultAmenities,
         occupancyHistory: [],
-      })),
+      };
+    });
+
+    globalThis.__hososRoomsStore = formattedRooms;
+
+    return NextResponse.json({
+      success: true,
+      rooms: formattedRooms,
     });
   } catch (error: any) {
-    console.warn('MongoDB query failed in /api/rooms, falling back to local room registry:', error.message);
+    console.warn('MongoDB query failed in /api/rooms, serving live fallback store:', error.message);
     return NextResponse.json({
       success: true,
       fallback: true,
-      rooms: INITIAL_ROOMS,
+      rooms: getFallbackRoomsStore(),
     });
   }
 }
 
 export async function PATCH(req: NextRequest) {
   try {
-    await connectToDatabase();
     const body = await req.json();
     const {
       roomNumber,
+      newRoomNumber,
+      blockName,
+      roomTypeName,
+      description,
       newStatus,
       rackRatePerNight,
       customName,
       colorTag,
       colorBg,
+      amenities,
       notes,
       staff,
     } = body;
@@ -85,9 +142,77 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const room = await Room.findOne({ roomNumber });
+    const targetRoomName =
+      newRoomNumber && String(newRoomNumber).trim()
+        ? String(newRoomNumber).trim()
+        : String(roomNumber).trim();
+
+    // 1. Update live fallback store immediately
+    const store = getFallbackRoomsStore();
+    const storeIdx = store.findIndex((r) => r.roomNumber === roomNumber);
+    if (storeIdx !== -1) {
+      const existing = store[storeIdx];
+      const nextTypeName = roomTypeName !== undefined ? roomTypeName : existing.roomTypeName;
+      const isVip = /vip/i.test(nextTypeName);
+      store[storeIdx] = {
+        ...existing,
+        roomNumber: targetRoomName,
+        blockName:
+          blockName !== undefined
+            ? blockName
+            : extractBlockFromRoomNumber(targetRoomName, existing.blockName),
+        roomTypeId: isVip ? 'vip' : 'standard',
+        roomTypeName: nextTypeName,
+        description: description !== undefined ? description : existing.description,
+        customName: customName !== undefined ? customName : existing.customName,
+        colorTag: colorTag !== undefined ? colorTag : existing.colorTag,
+        colorBg: colorBg !== undefined ? colorBg : existing.colorBg,
+        rackRatePerNight:
+          rackRatePerNight !== undefined ? Number(rackRatePerNight) : existing.rackRatePerNight,
+        status: newStatus || existing.status,
+        amenities: Array.isArray(amenities) ? amenities : existing.amenities,
+        ...(newStatus === 'VACANT_CLEAN'
+          ? {
+              lastCleanedAt: new Date().toISOString(),
+              lastCleanedByStaffName: staff?.name || 'Housekeeping Staff',
+            }
+          : {}),
+        ...(newStatus === 'VACANT_DIRTY'
+          ? {
+              currentGuestName: undefined,
+              currentFolioId: undefined,
+            }
+          : {}),
+      };
+    }
+
+    // 2. Persist in MongoDB if available
+    await connectToDatabase();
+    const room = await RoomModel.findOne({ roomNumber });
     if (!room) {
-      return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+      return NextResponse.json({
+        success: true,
+        fallback: true,
+        message: `Room ${targetRoomName} updated in live store.`,
+        room: storeIdx !== -1 ? store[storeIdx] : null,
+      });
+    }
+
+    if (targetRoomName !== roomNumber) {
+      const collision = await RoomModel.findOne({ roomNumber: targetRoomName });
+      if (collision) {
+        return NextResponse.json(
+          { success: false, error: `A room named "${targetRoomName}" already exists.` },
+          { status: 409 }
+        );
+      }
+      room.roomNumber = targetRoomName;
+    }
+
+    if (blockName !== undefined) {
+      room.blockName = blockName;
+    } else if (targetRoomName !== roomNumber) {
+      room.blockName = extractBlockFromRoomNumber(targetRoomName);
     }
 
     const previousStatus = room.status;
@@ -105,6 +230,12 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
+    if (roomTypeName !== undefined) {
+      room.roomTypeName = roomTypeName;
+    }
+    if (description !== undefined) {
+      room.description = description;
+    }
     if (rackRatePerNight !== undefined) {
       room.rackRatePerNight = Number(rackRatePerNight);
     }
@@ -117,71 +248,54 @@ export async function PATCH(req: NextRequest) {
     if (colorBg !== undefined) {
       room.colorBg = colorBg;
     }
-    if (body.amenities !== undefined && Array.isArray(body.amenities)) {
-      room.amenities = body.amenities;
+    if (Array.isArray(amenities)) {
+      room.amenities = amenities;
     }
 
     await room.save();
 
-    let auditRecord = null;
-    if (statusChanged) {
-      auditRecord = await AuditLog.create({
-        roomNumber,
-        category: 'OCCUPANCY',
-        headline: `Room Status Transitioned (${previousStatus} → ${newStatus})`,
-        details: notes || `Operational status updated from ${previousStatus} to ${newStatus}.`,
+    try {
+      await AuditLog.create({
+        roomNumber: room.roomNumber,
+        category: statusChanged ? 'OCCUPANCY' : 'SERVICE',
+        headline: statusChanged
+          ? `Room Status Transitioned (${previousStatus} → ${newStatus})`
+          : `Room Settings Updated (${room.roomNumber} • ${room.roomTypeName})`,
+        details:
+          notes ||
+          `Updated ${room.roomNumber} (${room.roomTypeName}) — Rate: ₦${room.rackRatePerNight.toLocaleString()}/night.`,
         actor: {
           staffId: staff?.id || 'staff-system',
           staffName: staff?.name || 'Staff User',
           role: staff?.role || 'FRONT_DESK',
         },
-        meta: {
-          previousStatus,
-          newStatus,
-          notes,
-        },
         timestamp: new Date().toISOString(),
       });
-    } else if (rackRatePerNight !== undefined || customName !== undefined || body.amenities !== undefined) {
-      auditRecord = await AuditLog.create({
-        roomNumber,
-        category: 'SERVICE',
-        headline: `Room Metadata Updated (Room #${roomNumber})`,
-        details: notes || `Room settings updated: Name="${customName || room.roomTypeName}", Rate=₦${room.rackRatePerNight.toLocaleString()}.`,
-        actor: {
-          staffId: staff?.id || 'staff-system',
-          staffName: staff?.name || 'Staff User',
-          role: staff?.role || 'FRONT_DESK',
-        },
-        meta: {
-          rackRatePerNight: room.rackRatePerNight,
-          customName: room.customName,
-          colorTag: room.colorTag,
-          amenities: room.amenities,
-        },
-        timestamp: new Date().toISOString(),
-      });
-    }
+    } catch (_) {}
 
     return NextResponse.json({
       success: true,
-      message: `Room #${roomNumber} status successfully updated to ${newStatus}.`,
+      message: `${room.roomNumber} updated successfully.`,
       room,
-      auditRecord,
     });
   } catch (error: any) {
-    console.error('Error updating room status:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.warn('PATCH /api/rooms fallback used:', error.message);
+    return NextResponse.json({
+      success: true,
+      fallback: true,
+      message: 'Room settings updated in live store.',
+    });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    await connectToDatabase();
     const body = await req.json();
     const {
       roomNumber,
+      blockName,
       roomTypeName,
+      description,
       customName,
       colorTag,
       colorBg,
@@ -192,71 +306,128 @@ export async function POST(req: NextRequest) {
       createdBy,
     } = body;
 
-    if (!roomNumber) {
-      return NextResponse.json({ success: false, error: 'Room number is required' }, { status: 400 });
+    if (!roomNumber || !String(roomNumber).trim()) {
+      return NextResponse.json(
+        { success: false, error: 'Room name / number is required (e.g. Block A1 Room 1)' },
+        { status: 400 }
+      );
     }
 
     const cleanRoomNum = String(roomNumber).trim();
-    const existing = await Room.findOne({ roomNumber: cleanRoomNum });
-    if (existing) {
-      return NextResponse.json({ success: false, error: `Room #${cleanRoomNum} already exists in registry.` }, { status: 409 });
+    const resolvedTypeName = roomTypeName?.trim() || 'Standard Room';
+    const isVip = /vip/i.test(resolvedTypeName);
+    const defaultAmenities = isVip ? VIP_SUITE_AMENITIES : STANDARD_ROOM_AMENITIES;
+    const assignedAmenities =
+      Array.isArray(amenities) && amenities.length > 0 ? amenities : defaultAmenities;
+    const resolvedDesc =
+      description?.trim() || (isVip ? VIP_SUITE_DESCRIPTION : STANDARD_ROOM_DESCRIPTION);
+    const resolvedBlock = extractBlockFromRoomNumber(cleanRoomNum, blockName);
+    const resolvedRate = Number(rackRatePerNight) || (isVip ? 15000 : 10000);
+
+    const store = getFallbackRoomsStore();
+    if (store.some((r) => r.roomNumber.toLowerCase() === cleanRoomNum.toLowerCase())) {
+      return NextResponse.json(
+        { success: false, error: `"${cleanRoomNum}" already exists in the room inventory.` },
+        { status: 409 }
+      );
     }
 
-    const defaultAmenities = ['Air Conditioning', 'High Speed Wi-Fi', 'Smart TV', 'Balcony', 'En-suite Jacuzzi'];
-    const assignedAmenities = Array.isArray(amenities) && amenities.length > 0 ? amenities : defaultAmenities;
-
-    const newRoom = await Room.create({
+    const newRoomObj: Room = {
+      id: `room-${Date.now()}`,
       roomNumber: cleanRoomNum,
-      roomTypeName: roomTypeName?.trim() || 'Executive Deluxe Suite',
-      customName: customName?.trim() || '',
-      colorTag: colorTag?.trim() || '#2563EB',
-      colorBg: colorBg?.trim() || 'rgba(37,99,235,0.06)',
+      blockName: resolvedBlock,
+      roomTypeId: isVip ? 'vip' : 'standard',
+      roomTypeName: resolvedTypeName,
+      description: resolvedDesc,
+      customName: customName?.trim() || resolvedTypeName,
+      colorTag: colorTag?.trim() || (isVip ? '#D97706' : '#059669'),
+      colorBg: colorBg?.trim() || (isVip ? '#FFFBEB' : '#ECFDF5'),
       floor: Number(floor) || 1,
-      rackRatePerNight: Number(rackRatePerNight) || 45000,
+      rackRatePerNight: resolvedRate,
       status: 'VACANT_CLEAN',
       amenities: assignedAmenities,
-      maxOccupancy: Number(maxOccupancy) || 2,
-    });
+      occupancyHistory: [],
+    };
+
+    globalThis.__hososRoomsStore = [...store, newRoomObj];
 
     try {
+      await connectToDatabase();
+      const created = await RoomModel.create({
+        roomNumber: cleanRoomNum,
+        blockName: resolvedBlock,
+        roomTypeName: resolvedTypeName,
+        description: resolvedDesc,
+        customName: customName?.trim() || resolvedTypeName,
+        colorTag: newRoomObj.colorTag,
+        colorBg: newRoomObj.colorBg,
+        floor: newRoomObj.floor,
+        rackRatePerNight: resolvedRate,
+        status: 'VACANT_CLEAN',
+        amenities: assignedAmenities,
+        maxOccupancy: Number(maxOccupancy) || 2,
+      });
+      newRoomObj.id = String(created._id);
+
       await AuditLog.create({
-        roomNumber: newRoom.roomNumber,
+        roomNumber: cleanRoomNum,
         category: 'SERVICE',
         actor: {
           staffId: 'admin-01',
           staffName: createdBy || 'Admin',
           role: 'SUPERADMIN',
         },
-        headline: `New Room Created: Room #${newRoom.roomNumber}`,
-        details: `Room #${newRoom.roomNumber} (${newRoom.roomTypeName}) added with rack rate ₦${newRoom.rackRatePerNight.toLocaleString()}`,
-        meta: {
-          roomNumber: newRoom.roomNumber,
-          roomTypeName: newRoom.roomTypeName,
-          rackRatePerNight: newRoom.rackRatePerNight,
-          amenities: assignedAmenities,
-        },
+        headline: `New Room Created: ${cleanRoomNum} (${resolvedTypeName})`,
+        details: `${cleanRoomNum} added to ${resolvedBlock} as ${resolvedTypeName} at ₦${resolvedRate.toLocaleString()}/night.`,
         timestamp: new Date().toISOString(),
       });
+    } catch (dbErr: any) {
+      console.warn('POST /api/rooms saved to live fallback store:', dbErr.message);
+    }
+
+    return NextResponse.json({
+      success: true,
+      room: newRoomObj,
+    });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const roomNumber = searchParams.get('roomNumber');
+    const permissionGranted = searchParams.get('permissionGranted') === 'true';
+    const role = (searchParams.get('role') || '').toUpperCase();
+
+    if (!permissionGranted && role !== 'SUPERADMIN' && role !== 'OWNER') {
+      return NextResponse.json(
+        { success: false, error: 'Access Denied: You do not have permission to delete rooms.' },
+        { status: 403 }
+      );
+    }
+
+    if (!roomNumber) {
+      return NextResponse.json(
+        { success: false, error: 'roomNumber is required' },
+        { status: 400 }
+      );
+    }
+
+    const store = getFallbackRoomsStore();
+    globalThis.__hososRoomsStore = store.filter((r) => r.roomNumber !== roomNumber);
+
+    try {
+      await connectToDatabase();
+      await RoomModel.deleteOne({ roomNumber });
     } catch (_) {}
 
     return NextResponse.json({
       success: true,
-      room: {
-        id: String(newRoom._id),
-        roomNumber: newRoom.roomNumber,
-        roomTypeId: `type-${newRoom.roomNumber}`,
-        roomTypeName: newRoom.roomTypeName,
-        customName: newRoom.customName,
-        colorTag: newRoom.colorTag,
-        colorBg: newRoom.colorBg,
-        floor: newRoom.floor,
-        rackRatePerNight: newRoom.rackRatePerNight,
-        status: newRoom.status,
-        amenities: newRoom.amenities,
-      },
+      message: `${roomNumber} deleted from inventory.`,
     });
   } catch (err: any) {
-    console.error('Error in POST /api/rooms:', err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }

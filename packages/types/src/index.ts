@@ -106,9 +106,11 @@ export interface RoomOccupancyTransition {
 
 export interface Room {
   id: string;
-  roomNumber: string; // e.g. "101", "204"
+  roomNumber: string; // e.g. "Block A1 Room 1", "Block B2 Room 2"
+  blockName?: string; // e.g. "Block A1", "Block B2"
   roomTypeId: string;
-  roomTypeName: string; // "Standard", "Deluxe Ocean View", "Executive Suite"
+  roomTypeName: string; // "Standard Room" | "Executive VIP Suite"
+  description?: string;
   floor: number;
   rackRatePerNight: number;
   status: RoomStatus;

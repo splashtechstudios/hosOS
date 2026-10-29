@@ -483,144 +483,95 @@ export const INITIAL_STAFF_ONBOARDING: StaffOnboardingRecord[] = [
   },
 ];
 
-export const INITIAL_ROOMS: Room[] = [
-  {
-    id: 'room-101',
-    roomNumber: '101',
-    roomTypeId: 'type-std',
-    roomTypeName: 'Standard Garden View',
-    floor: 1,
-    rackRatePerNight: 55000,
-    status: 'VACANT_CLEAN',
-    lastCleanedAt: '2026-10-15T11:30:00Z',
-    lastCleanedByStaffName: 'Blessing Eze',
-    occupancyHistory: [
-      {
-        transitionTime: '2026-10-15T11:00:00Z',
-        previousStatus: 'VACANT_DIRTY',
-        newStatus: 'VACANT_CLEAN',
-        staffUserId: 'staff-06',
-        staffName: 'Blessing Eze',
-        staffRole: 'HOUSEKEEPING',
-        notes: 'Full linen replacement and sanitization completed',
-      },
-    ],
-  },
-  {
-    id: 'room-102',
-    roomNumber: '102',
-    roomTypeId: 'type-std',
-    roomTypeName: 'Standard Terrace View',
-    floor: 1,
-    rackRatePerNight: 65000,
-    status: 'VACANT_DIRTY',
-    occupancyHistory: [
-      {
-        transitionTime: '2026-10-15T12:05:00Z',
-        previousStatus: 'OCCUPIED',
-        newStatus: 'VACANT_DIRTY',
-        staffUserId: 'staff-02',
-        staffName: 'Mary Okon',
-        staffRole: 'FRONT_DESK',
-        notes: 'Guest checked out on schedule. Awaiting housekeeping turnaround.',
-      },
-    ],
-  },
-  {
-    id: 'room-201',
-    roomNumber: '201',
-    roomTypeId: 'type-dlx',
-    roomTypeName: 'Deluxe Ocean View',
-    floor: 2,
-    rackRatePerNight: 95000,
-    status: 'OCCUPIED',
-    currentGuestName: 'Chief Adeyemi Thomas',
-    currentReservationId: 'res-201-98',
-    currentFolioId: 'fol-201-12',
-    occupancyHistory: [
-      {
-        transitionTime: '2026-10-14T15:20:00Z',
-        previousStatus: 'VACANT_CLEAN',
-        newStatus: 'OCCUPIED',
-        staffUserId: 'staff-02',
-        staffName: 'Mary Okon',
-        staffRole: 'FRONT_DESK',
-        guestName: 'Chief Adeyemi Thomas',
-        notes: '2-night corporate stay with breakfast plan',
-      },
-    ],
-  },
-  {
-    id: 'room-202',
-    roomNumber: '202',
-    roomTypeId: 'type-dlx',
-    roomTypeName: 'Deluxe Courtyard',
-    floor: 2,
-    rackRatePerNight: 85000,
-    status: 'VACANT_CLEAN',
-    occupancyHistory: [],
-  },
-  {
-    id: 'room-203',
-    roomNumber: '203',
-    roomTypeId: 'type-exec',
-    roomTypeName: 'Executive Penthouse Suite',
-    floor: 2,
-    rackRatePerNight: 165000,
-    status: 'MAINTENANCE',
-    activeMaintenanceTicketId: 'mnt-2026-0098',
-    occupancyHistory: [
-      {
-        transitionTime: '2026-10-15T09:15:00Z',
-        previousStatus: 'VACANT_CLEAN',
-        newStatus: 'MAINTENANCE',
-        staffUserId: 'staff-05',
-        staffName: 'Engr. Tunde Bakare',
-        staffRole: 'MAINTENANCE',
-        notes: 'AC compressor scheduled overhaul before weekend arrival',
-      },
-    ],
-  },
-  {
-    id: 'room-204',
-    roomNumber: '204',
-    roomTypeId: 'type-dlx',
-    roomTypeName: 'Deluxe Ocean View',
-    floor: 2,
-    rackRatePerNight: 95000,
-    status: 'OCCUPIED',
-    currentGuestName: 'Dr. Adeleke Bello',
-    currentReservationId: 'res-204-77',
-    currentFolioId: 'fol-204-89',
-    lastCleanedAt: '2026-10-15T12:00:00Z',
-    lastCleanedByStaffName: 'Blessing Eze',
-    occupancyHistory: [
-      {
-        transitionTime: '2026-10-15T14:10:00Z',
-        previousStatus: 'VACANT_CLEAN',
-        newStatus: 'OCCUPIED',
-        staffUserId: 'staff-02',
-        staffName: 'Mary Okon',
-        staffRole: 'FRONT_DESK',
-        guestName: 'Dr. Adeleke Bello',
-        notes: 'Check-in completed. National ID verified. Keycard #KC-204-A issued.',
-      },
-    ],
-  },
-  {
-    id: 'room-301',
-    roomNumber: '301',
-    roomTypeId: 'type-pres',
-    roomTypeName: 'Presidential Royal Suite',
-    floor: 3,
-    rackRatePerNight: 350000,
-    status: 'OCCUPIED',
-    currentGuestName: 'Senator N. Kalu',
-    currentReservationId: 'res-301-01',
-    currentFolioId: 'fol-301-05',
-    occupancyHistory: [],
-  },
+export const STANDARD_ROOM_DESCRIPTION =
+  'Ideal for solo travelers and business guests. Features a plush double bed, 100% solar-powered inverter air conditioning, flat-screen satellite TV, and a serene private bathroom.';
+
+export const STANDARD_ROOM_AMENITIES = [
+  '100% Off-Grid Solar Power',
+  'Solar Inverter AC',
+  'Room Service',
+  'En-Suite Bath',
+  'Plush Double Bed',
+  'Flat-Screen Satellite TV',
 ];
+
+export const VIP_SUITE_DESCRIPTION =
+  'Our most spacious suite tailored for couples, VIP guests, and weekend retreats. Includes executive king bedding, priority dining & bar room service, 100% solar inverter AC, and tranquil views.';
+
+export const VIP_SUITE_AMENITIES = [
+  'Spacious Executive Layout',
+  '24/7 Off-Grid Solar AC & TV',
+  'Priority VIP Concierge',
+  'Luxury En-Suite',
+  'Executive King Bedding',
+  'Tranquil Views',
+];
+
+const OSIEKA_BLOCKS = [
+  { block: 'Block A1', floor: 1, defaultTier: 'VIP' as const },
+  { block: 'Block A2', floor: 1, defaultTier: 'VIP' as const },
+  { block: 'Block A3', floor: 1, defaultTier: 'VIP' as const },
+  { block: 'Block B1', floor: 1, defaultTier: 'STANDARD' as const },
+  { block: 'Block B2', floor: 1, defaultTier: 'STANDARD' as const },
+  { block: 'Block B3', floor: 1, defaultTier: 'STANDARD' as const },
+  { block: 'Block B4', floor: 1, defaultTier: 'STANDARD' as const },
+  { block: 'Block C1', floor: 1, defaultTier: 'STANDARD' as const },
+  { block: 'Block C2', floor: 1, defaultTier: 'STANDARD' as const },
+  { block: 'Block C3', floor: 1, defaultTier: 'VIP' as const },
+  { block: 'Block C4', floor: 1, defaultTier: 'VIP' as const },
+];
+
+export const INITIAL_ROOMS: Room[] = OSIEKA_BLOCKS.flatMap(({ block, floor, defaultTier }, bIdx) =>
+  [1, 2].map((roomIdx) => {
+    const roomNumber = `${block} Room ${roomIdx}`;
+    const isVip = defaultTier === 'VIP';
+    const slug = roomNumber.toLowerCase().replace(/\s+/g, '-');
+
+    // Give a few rooms realistic live statuses while keeping most VACANT_CLEAN
+    let status: Room['status'] = 'VACANT_CLEAN';
+    let currentGuestName: string | undefined;
+    let currentReservationId: string | undefined;
+    let currentFolioId: string | undefined;
+
+    if (roomNumber === 'Block A1 Room 1') {
+      status = 'OCCUPIED';
+      currentGuestName = 'Chief Adeyemi Thomas';
+      currentReservationId = 'RES-A1R1-98';
+      currentFolioId = 'FOL-A1R1-12';
+    } else if (roomNumber === 'Block A2 Room 2') {
+      status = 'OCCUPIED';
+      currentGuestName = 'Dr. Adeleke Bello';
+      currentReservationId = 'RES-A2R2-77';
+      currentFolioId = 'FOL-A2R2-89';
+    } else if (roomNumber === 'Block B1 Room 2') {
+      status = 'VACANT_DIRTY';
+    } else if (roomNumber === 'Block C4 Room 2') {
+      status = 'MAINTENANCE';
+    }
+
+    return {
+      id: `room-${slug}`,
+      roomNumber,
+      blockName: block,
+      roomTypeId: isVip ? 'vip' : 'standard',
+      roomTypeName: isVip ? 'Executive VIP Suite' : 'Standard Room',
+      customName: isVip ? 'Executive VIP Suite' : 'Standard Room',
+      description: isVip ? VIP_SUITE_DESCRIPTION : STANDARD_ROOM_DESCRIPTION,
+      colorTag: isVip ? '#D97706' : '#059669',
+      colorBg: isVip ? '#FFFBEB' : '#ECFDF5',
+      floor,
+      rackRatePerNight: isVip ? 15000 : 10000,
+      status,
+      currentGuestName,
+      currentReservationId,
+      currentFolioId,
+      lastCleanedAt: '2026-10-29T10:30:00Z',
+      lastCleanedByStaffName: 'Blessing Eze',
+      amenities: isVip ? [...VIP_SUITE_AMENITIES] : [...STANDARD_ROOM_AMENITIES],
+      occupancyHistory: [],
+    };
+  })
+);
 
 // Room 204 Comprehensive 360° Timeline Activity Feed
 export const ROOM_204_TIMELINE: RoomTimelineItem[] = [
