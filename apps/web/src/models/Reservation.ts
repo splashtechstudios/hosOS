@@ -4,6 +4,9 @@ export interface IReservation {
   _id?: string;
   reservationNumber: string;
   roomNumber: string;
+  roomType?: string;
+  numberOfRooms?: number;
+  guestsCount?: number;
   guestName: string;
   guestPhone: string;
   guestEmail?: string;
@@ -13,7 +16,12 @@ export interface IReservation {
   ratePerNight: number;
   totalExpectedAmount: number;
   depositPaid: number;
-  status: 'CONFIRMED' | 'CHECKED_IN' | 'CANCELLED' | 'NO_SHOW';
+  status: 'PENDING_PAYMENT' | 'CONFIRMED' | 'CHECKED_IN' | 'CANCELLED' | 'NO_SHOW';
+  paymentStatus: 'AWAITING_PAYMENT' | 'PARTIAL_DEPOSIT' | 'PAID_CONFIRMED';
+  followUpStatus: 'PENDING' | 'CALLED' | 'TEXTED' | 'CALLED_AND_TEXTED';
+  lastFollowUpAt?: string;
+  lastFollowUpBy?: string;
+  followUpNotes?: string;
   source: 'DIRECT_WALK_IN' | 'PHONE' | 'WHATSAPP' | 'WEBSITE_BOOKING' | 'CORPORATE';
   specialRequests?: string;
   bookedByStaffName: string;
@@ -25,6 +33,9 @@ const ReservationSchema = new Schema<IReservation>(
   {
     reservationNumber: { type: String, required: true, unique: true, index: true },
     roomNumber: { type: String, required: true, index: true },
+    roomType: { type: String, default: 'Standard Room' },
+    numberOfRooms: { type: Number, default: 1 },
+    guestsCount: { type: Number, default: 1 },
     guestName: { type: String, required: true, index: true },
     guestPhone: { type: String, required: true },
     guestEmail: { type: String },
@@ -37,10 +48,26 @@ const ReservationSchema = new Schema<IReservation>(
     status: {
       type: String,
       required: true,
-      enum: ['CONFIRMED', 'CHECKED_IN', 'CANCELLED', 'NO_SHOW'],
-      default: 'CONFIRMED',
+      enum: ['PENDING_PAYMENT', 'CONFIRMED', 'CHECKED_IN', 'CANCELLED', 'NO_SHOW'],
+      default: 'PENDING_PAYMENT',
       index: true,
     },
+    paymentStatus: {
+      type: String,
+      required: true,
+      enum: ['AWAITING_PAYMENT', 'PARTIAL_DEPOSIT', 'PAID_CONFIRMED'],
+      default: 'AWAITING_PAYMENT',
+      index: true,
+    },
+    followUpStatus: {
+      type: String,
+      required: true,
+      enum: ['PENDING', 'CALLED', 'TEXTED', 'CALLED_AND_TEXTED'],
+      default: 'PENDING',
+    },
+    lastFollowUpAt: { type: String },
+    lastFollowUpBy: { type: String },
+    followUpNotes: { type: String },
     source: {
       type: String,
       required: true,
@@ -48,11 +75,14 @@ const ReservationSchema = new Schema<IReservation>(
       default: 'DIRECT_WALK_IN',
     },
     specialRequests: { type: String },
-    bookedByStaffName: { type: String, required: true, default: 'Front Desk' },
+    bookedByStaffName: { type: String, required: true, default: 'Website Guest Portal' },
   },
   { timestamps: true }
 );
 
+if (mongoose.models.Reservation) {
+  delete mongoose.models.Reservation;
+}
+
 export const Reservation: Model<IReservation> =
-  mongoose.models.Reservation ||
   mongoose.model<IReservation>('Reservation', ReservationSchema);

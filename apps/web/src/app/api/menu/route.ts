@@ -897,21 +897,23 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
-// Superadmin Permanent Menu Item Deletion
+// Permanent Menu Item Deletion (Authorized via menu.food.delete / menu.drink.delete)
 export async function DELETE(req: NextRequest) {
   try {
-    await connectToDatabase();
     const { searchParams } = new URL(req.url);
     const itemId = searchParams.get('itemId');
     const role = (searchParams.get('role') || '').toUpperCase();
-    const actorName = searchParams.get('actorName') || 'Super Admin';
+    const actorName = searchParams.get('actorName') || 'Authorized Staff';
+    const permissionGranted = searchParams.get('permissionGranted') === 'true';
 
-    if (role !== 'SUPERADMIN' && role !== 'OWNER' && role !== 'ADMIN') {
+    if (!permissionGranted && role !== 'SUPERADMIN') {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized: Only Superadmin has authority to permanently delete menu data items.' },
+        { success: false, error: 'Unauthorized: You do not have permission (menu.food.delete / menu.drink.delete) to delete menu items.' },
         { status: 403 }
       );
     }
+
+    await connectToDatabase();
 
     if (!itemId) {
       return NextResponse.json({ success: false, error: 'Item ID is required.' }, { status: 400 });

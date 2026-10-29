@@ -30,7 +30,9 @@ import {
   Sliders,
   DollarSign,
   AlertTriangle,
-  Sparkles
+  Sparkles,
+  MessageSquare,
+  Mail
 } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
 import { ENTERPRISE_ORG } from '@/lib/mockData';
@@ -87,6 +89,7 @@ export default function Sidebar({
 
   const [collapsedDepts, setCollapsedDepts] = useState<Record<string, boolean>>({
     executive: false,
+    messages: false,
     crm: false,
     rooms: false,
     fb: false,
@@ -111,6 +114,16 @@ export default function Sidebar({
         { id: 'halls-services', label: 'Halls & Event Venues', icon: Building2, tag: 'Banquets' },
         { id: 'ancillary-services', label: 'Ancillary Operations Board', icon: Sparkles, tag: 'Laundry/Spa' },
         { id: 'room-audit', label: 'Room 360° Internal Audit', icon: ShieldCheck, tag: 'Live Folio' },
+      ],
+    },
+    {
+      key: 'messages',
+      name: 'Message Board',
+      icon: MessageSquare,
+      badge: 'Inbox',
+      submenus: [
+        { id: 'message-board', label: 'Contact Message Board', icon: MessageSquare, highlight: true, tag: 'Inbox' },
+        { id: 'message-emails', label: 'Email List (Subscribers)', icon: Mail, tag: 'Emails' },
       ],
     },
     {

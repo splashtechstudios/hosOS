@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { StaffUser, UserRole, AppPermission, RoleRBACDefinition } from '@hosos/types';
 import { RBAC_ROLE_DEFINITIONS, INITIAL_STAFF } from '@/lib/mockData';
-import { VIEW_TITLES } from '@/lib/rbac';
+import { VIEW_TITLES, RBAC_STORAGE_KEY, hasPermission } from '@/lib/rbac';
 import { useFeedback } from '@/context/FeedbackContext';
 
 // =========================================
@@ -64,7 +64,7 @@ export default function RBACView({
   // == Role-level matrix state ==
   const [roleDefinitions, setRoleDefinitions] = useState<RoleRBACDefinition[]>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('hosos_custom_rbac_matrix');
+      const saved = localStorage.getItem(RBAC_STORAGE_KEY);
       if (saved) { try { return JSON.parse(saved); } catch (_) {} }
     }
     return RBAC_ROLE_DEFINITIONS;
@@ -175,6 +175,8 @@ export default function RBACView({
     { id: 'front-desk', label: 'Hospitality Command Hub', icon: Hotel, category: 'Operations' },
     { id: 'room-audit', label: 'Room 360° Internal Audit', icon: ShieldCheck, category: 'Operations' },
     { id: 'halls-services', label: 'Halls, Banquets & Venues', icon: Building2, category: 'Operations' },
+    { id: 'message-board', label: 'Contact Message Board', icon: FileCheck, category: 'Comms & Inbox' },
+    { id: 'message-emails', label: 'Email List (Subscribers)', icon: Users, category: 'Comms & Inbox' },
     { id: 'accountant-audit', label: 'Audit & Reconciliation Desk', icon: FileCheck, category: 'Finance' },
     { id: 'night-audit', label: 'Night Audit & Flash Rollover', icon: DollarSign, category: 'Finance' },
     { id: 'loss-prevention', label: 'Loss Prevention & Trail', icon: ShieldAlert, category: 'Finance' },
@@ -184,78 +186,130 @@ export default function RBACView({
     { id: 'rbac-matrix', label: 'Multi-Role RBAC Matrix', icon: Lock, category: 'Governance' },
   ];
 
-  // Granular Action Permissions
+  // Granular Atomic Action Permissions (Every individual action is a separate toggle)
   const permissionCategories: Array<{ name: string; icon: any; permissions: Array<{ key: AppPermission; label: string; desc: string }> }> = [
     {
-      name: 'Rooms & Guest Division',
+      name: '1. Rooms & Guest Division',
       icon: Hotel,
       permissions: [
-        { key: 'rooms.audit.view', label: 'View 360° Room Audit', desc: 'Inspect guest folios, invoices, stay history' },
-        { key: 'rooms.status.override', label: 'Change Room Status', desc: 'Transition rooms: Vacant Clean, Dirty, Out of Service' },
-        { key: 'rooms.checkin', label: 'Execute Guest Check-In', desc: 'Assign guests to clean rooms and issue folios' },
-        { key: 'rooms.checkout', label: 'Execute Guest Check-Out', desc: 'Reconcile folio balance, print bill, release room' },
-        { key: 'rooms.customize', label: 'Customize Room Names, Tags & Prices', desc: 'Edit custom display names, color tags, and adjust rack rate prices' },
-        { key: 'rooms.create', label: 'Create New Rooms & Suites', desc: 'Add new rooms into resort inventory with number, floor, rack rate, colors, and amenities' },
-        { key: 'rooms.manage_amenities', label: 'Manage Room Amenities', desc: 'Add and configure standard & bespoke room amenities (WiFi, Jacuzzi, Smart TV, etc.)' },
+        { key: 'rooms.audit.view', label: 'View 360° Room Audit & Folios', desc: 'Inspect guest folios, invoices, and room stay history' },
+        { key: 'rooms.checkin', label: 'Execute Guest Check-In', desc: 'Assign guests to vacant clean rooms and open room folios' },
+        { key: 'rooms.checkout', label: 'Execute Guest Check-Out', desc: 'Reconcile folio balance, print receipt, and release room' },
+        { key: 'rooms.status.override', label: 'Change Room Status (Clean / Dirty / Maintenance)', desc: 'Transition room housekeeping and availability state' },
+        { key: 'rooms.customize', label: 'Edit Room Names, Color Tags & Rack Rates', desc: 'Customize room display names, color tags, and nightly rack rates' },
+        { key: 'rooms.create', label: 'Create / Add New Rooms & Suites', desc: 'Add new physical rooms to resort inventory' },
+        { key: 'rooms.manage_amenities', label: 'Manage Room Amenities', desc: 'Add or remove room amenities (Wi-Fi, Jacuzzi, Smart TV, etc.)' },
+        { key: 'rooms.delete', label: 'Delete Rooms from Inventory', desc: 'Permanently delete a room record from the resort database' },
       ],
     },
     {
-      name: 'Halls, Banqueting & Event Venues',
-      icon: Building2,
+      name: '2. Reservations & Payment Follow-Up Desk',
+      icon: FileCheck,
       permissions: [
-        { key: 'halls.book', label: 'Book & Reserve Halls & Venues', desc: 'Create event reservations with client details, 12-hour time slots, and split payments' },
-        { key: 'halls.checkin', label: 'Start Event (Check-In)', desc: 'Transition reserved hall to Event In Progress and open event folio' },
-        { key: 'halls.checkout', label: 'Conclude Event & Settle Bill (Check-Out)', desc: 'Reconcile bill, collect balance, and release venue to Cleaning & Turnaround' },
-        { key: 'halls.manage', label: 'Create & Configure Halls & Venues', desc: 'Add new venues, set hourly/daily rates, duration, capacity, and amenities' },
+        { key: 'reservations.view', label: 'View Website & Walk-In Reservations', desc: 'View incoming room booking requests and payment follow-up queue' },
+        { key: 'reservations.create', label: 'Create New Room Reservation', desc: 'Create a manual or walk-in room reservation from the hub' },
+        { key: 'reservations.followup', label: 'Log Call / WhatsApp Follow-Up Status', desc: 'Trigger "Called" or "Texted" follow-up status on unpaid bookings' },
+        { key: 'reservations.confirm_payment', label: 'Confirm Payment & Honour Reservation', desc: 'Verify payment receipt and lock in reservation as honoured' },
+        { key: 'reservations.cancel', label: 'Cancel / Release Unpaid Reservation', desc: 'Cancel an unconfirmed reservation and release held room inventory' },
       ],
     },
     {
-      name: 'Restaurant, Bar & Dynamic Pricing',
+      name: '3. Kitchen & Food Menu (POS)',
       icon: UtensilsCrossed,
       permissions: [
-        { key: 'orders.create', label: 'Create Food & Drink Orders', desc: 'Open ticket and send orders to kitchen and bar' },
-        { key: 'orders.increment', label: 'Add Extra Items to Bill', desc: 'Increment active table orders with attribution' },
-        { key: 'prices.override', label: 'Enter Dynamic Custom Prices', desc: 'Input market/daily pricing for seafood and chef specials' },
-        { key: 'menu.manage', label: 'Add & Manage Menu Catalog', desc: 'Add dishes and drinks to resort menu catalog' },
-        { key: 'services.manage', label: 'Manage Ancillary Services', desc: 'Create and configure laundry and ancillary offerings' },
-        { key: 'discounts.approve', label: 'Approve Customer Discounts', desc: 'Apply percentage or fixed reductions to bills' },
-        { key: 'voids.execute', label: 'Cancel / Void Fired Orders', desc: 'Remove items with mandatory audit reason code' },
+        { key: 'orders.create', label: 'Create & Fire Food Orders', desc: 'Open food tickets and dispatch orders to the kitchen' },
+        { key: 'orders.increment', label: 'Add Extra Items to Active Bill / Tab', desc: 'Append additional items to an existing open table or room order' },
+        { key: 'orders.remove_cart_item', label: 'Remove / Clear Items from Active POS Cart', desc: 'Remove items from the POS cart before firing the order' },
+        { key: 'menu.food.create', label: 'Add New Food Menu Items', desc: 'Create and add new dishes or culinary specials to the food catalog' },
+        { key: 'menu.food.edit', label: 'Edit Food Menu Item Price & Availability', desc: 'Update daily market prices or toggle availability of food dishes' },
+        { key: 'menu.food.delete', label: 'Delete Food Menu Items', desc: 'Permanently delete food dishes from the kitchen menu catalog' },
       ],
     },
     {
-      name: 'Cash, Finance & Daily Audit',
+      name: '4. Bar & Beverage Menu (POS)',
+      icon: Layers,
+      permissions: [
+        { key: 'orders.bar.create', label: 'Create & Dispense Bar / Drink Orders', desc: 'Open bar tabs and dispense beverages, wines, and spirits' },
+        { key: 'menu.drink.create', label: 'Add New Bar / Drink Menu Items', desc: 'Create and add new drinks, wines, or beers to the bar catalog' },
+        { key: 'menu.drink.edit', label: 'Edit Bar Drink Price & Availability', desc: 'Update beverage unit prices or toggle stock availability' },
+        { key: 'menu.drink.delete', label: 'Delete Bar / Drink Menu Items', desc: 'Permanently delete drink items from the bar menu catalog' },
+      ],
+    },
+    {
+      name: '5. POS Billing, Pricing, Discounts & Voids',
       icon: DollarSign,
       permissions: [
-        { key: 'cash.receive', label: 'Receive Cash & POS Payments', desc: 'Collect payments and post to resort registers' },
-        { key: 'payment.split', label: 'Execute Split Multi-Channel Settlements', desc: 'Settle transactions across two combined payment methods (POS, Transfer, Cash)' },
-        { key: 'audit.stamp', label: 'Apply Audit Verification Stamp', desc: 'Certify daily sheets as Reconciled or Flagged' },
-        { key: 'daily.submit', label: 'Submit Daily Closing Sheet', desc: 'Lock and send daily operational report to accountant' },
-        { key: 'daily.audit_update', label: 'Modify Submitted Records', desc: 'Super Admin/Accountant privilege to adjust logs' },
-        { key: 'reports.export', label: 'Export Tax & Financial Reports', desc: 'Download CSV and Excel files for accounting' },
+        { key: 'cash.receive', label: 'Receive Direct Cash / POS / Transfer Payments', desc: 'Settle bills directly via Cash, POS terminal, or Bank Transfer' },
+        { key: 'orders.charge_room', label: 'Post POS Order to Guest Room Folio', desc: 'Charge restaurant or bar bills directly to an occupied room folio' },
+        { key: 'payment.split', label: 'Execute Split Multi-Channel Settlements', desc: 'Settle transactions across two combined payment methods' },
+        { key: 'prices.override', label: 'Override Custom Prices & Set Price Floors', desc: 'Enter custom market prices on orders and configure minimum price floors' },
+        { key: 'discounts.approve', label: 'Approve Customer Discounts & Rebates', desc: 'Apply percentage or fixed Naira discounts to customer bills' },
+        { key: 'voids.execute', label: 'Cancel / Void Fired Orders & Line Items', desc: 'Void or reverse an already-dispatched order with audit reason' },
       ],
     },
     {
-      name: 'Off-Grid Solar & Facility Controls',
+      name: '6. Halls, Banqueting & Event Venues',
+      icon: Building2,
+      permissions: [
+        { key: 'halls.book', label: 'Book & Reserve Event Halls + Catering', desc: 'Create event hall reservations and attach banquet catering packages' },
+        { key: 'halls.checkin', label: 'Start Event (Hall Check-In)', desc: 'Transition a reserved hall to Event In Progress' },
+        { key: 'halls.checkout', label: 'Conclude Event & Settle Bill (Hall Check-Out)', desc: 'Settle final banquet balance and release venue to Cleaning' },
+        { key: 'halls.mark_clean', label: 'Mark Hall Clean & Ready After Turnaround', desc: 'Confirm post-event cleanup and mark venue Available' },
+        { key: 'halls.create', label: 'Create / Add New Halls & Event Venues', desc: 'Add new banquet halls, conference rooms, or lawns to the catalog' },
+        { key: 'halls.edit', label: 'Edit Hall Rates, Capacity & Amenities', desc: 'Modify existing venue pricing, duration, capacity, and amenities' },
+        { key: 'halls.delete', label: 'Delete Halls & Event Venues', desc: 'Permanently delete a hall or event venue from the database' },
+      ],
+    },
+    {
+      name: '7. Laundry, Transport & Ancillary Services',
+      icon: Sliders,
+      permissions: [
+        { key: 'services.order', label: 'Create & Dispatch Guest Service Requests', desc: 'Log new guest laundry, airport transfer, or spa requests' },
+        { key: 'services.status_update', label: 'Update Service Turnaround Status', desc: 'Advance service orders through In Service, Ready, and Delivered' },
+        { key: 'services.create', label: 'Add New Ancillary Service Offerings', desc: 'Register new laundry, chauffeur, or wellness packages in the catalog' },
+        { key: 'services.edit', label: 'Edit Ancillary Service Prices & Details', desc: 'Modify pricing or turnaround duration of ancillary service items' },
+        { key: 'services.delete', label: 'Delete Ancillary Service Offerings', desc: 'Permanently delete an ancillary service offering from the catalog' },
+      ],
+    },
+    {
+      name: '8. Daily Operations, Finance & Audit',
+      icon: ShieldCheck,
+      permissions: [
+        { key: 'daily.submit', label: 'Submit Daily Closing Sheet', desc: 'Lock and submit the daily shift operational report to accounting' },
+        { key: 'daily.audit_update', label: 'Modify & Adjust Submitted Daily Records', desc: 'Accountant/Admin privilege to adjust submitted operational logs' },
+        { key: 'audit.stamp', label: 'Apply Executive Audit Verification Stamp', desc: 'Certify daily operational sheets as Reconciled or Flagged' },
+        { key: 'reports.export', label: 'Export Tax, CSV & Financial Reports', desc: 'Download CSV, Excel, and PDF accounting reports' },
+      ],
+    },
+    {
+      name: '9. Off-Grid Solar, Generators & Engineering',
       icon: Sun,
       permissions: [
-        { key: 'solar.log', label: 'Log Solar Telemetry & Battery SoC', desc: 'Record daily solar kWh harvested and battery reserves' },
-        { key: 'solar.powersaver_toggle', label: 'Toggle Smart Power Saver Mode', desc: 'Control resort smart load shedding & battery saver' },
-        { key: 'diesel.log', label: 'Log Emergency Backup Generator', desc: 'Record generator run hours and diesel top-up' },
-        { key: 'maintenance.raise', label: 'Raise Asset Fault Ticket', desc: 'Log AC, plumbing, inverter, or structural faults' },
-        { key: 'maintenance.signoff', label: 'Sign-Off Completed Repairs', desc: 'Verify completed engineering maintenance tickets' },
+        { key: 'solar.log', label: 'Log Solar Telemetry & Battery SoC', desc: 'Record daily solar kWh harvested and battery bank reserves' },
+        { key: 'solar.powersaver_toggle', label: 'Toggle Smart Power Saver Mode', desc: 'Control resort smart load shedding and battery saver mode' },
+        { key: 'diesel.log', label: 'Log Emergency Backup Generator & Diesel', desc: 'Record generator run hours and diesel fuel top-ups' },
+        { key: 'maintenance.raise', label: 'Raise Asset Fault & Repair Ticket', desc: 'Log AC, plumbing, inverter, or room facility fault tickets' },
+        { key: 'maintenance.signoff', label: 'Sign-Off Completed Engineering Repairs', desc: 'Verify and close completed engineering maintenance tickets' },
       ],
     },
     {
-      name: 'Governance, Staff & RBAC',
+      name: '10. Staff HR, VIP CRM & System Governance',
       icon: Lock,
       permissions: [
-        { key: 'users.onboard', label: 'Onboard Staff & Issue PINs', desc: 'Create resort personnel and set access PINs' },
-        { key: 'users.manage', label: 'Edit & Update Staff Details', desc: 'Modify names, roles, departments, salaries, and PIN codes' },
-        { key: 'users.delete', label: 'Purge & Delete Staff Users', desc: 'Permanently remove staff members from Osieka Resort systems' },
-        { key: 'rbac.manage', label: 'Manage RBAC Security Matrix', desc: 'Toggle role permissions and sub-page clearances' },
-        { key: 'crm.manage', label: 'VIP CRM & Corporate Deals', desc: 'Access VIP profiles and banquet event pipeline' },
-        { key: 'sidebar.toggle', label: 'Toggle Navigation Sidebar Access', desc: 'Permission to show, hide or configure the navigation sidebar' },
-        { key: 'database.clear', label: 'Superadmin Master Database Purge', desc: 'Wipe all operational transactions, folios, orders, and reset database' },
+        { key: 'users.onboard', label: 'Onboard New Staff & Issue POS PINs', desc: 'Create new resort personnel accounts and issue quick PINs' },
+        { key: 'users.manage', label: 'Edit & Update Existing Staff Details', desc: 'Modify staff names, roles, departments, salaries, and PIN codes' },
+        { key: 'users.delete', label: 'Permanently Delete Staff Users', desc: 'Permanently remove staff accounts from Osieka Resort systems' },
+        { key: 'crm.manage', label: 'View VIP CRM & Corporate Deals Pipeline', desc: 'Access VIP guest directory, preferences, and corporate event pipeline' },
+        { key: 'crm.create_guest', label: 'Register New VIP Guest Profile', desc: 'Create new VIP guest records in the CRM directory' },
+        { key: 'crm.create_deal', label: 'Create New Corporate Event / B2B Deal', desc: 'Add new corporate contracts and group blocks to the CRM pipeline' },
+        { key: 'messages.view', label: 'View Contact Message Board & Inquiries', desc: 'Read website contact form inquiries and guest messages' },
+        { key: 'messages.followup', label: 'Follow Up on Contact Messages (Call / WhatsApp / Email)', desc: 'Trigger WhatsApp, Call, or Email responses on the Message Board' },
+        { key: 'messages.delete', label: 'Delete Contact Form Messages', desc: 'Permanently delete inquiry messages from the Message Board' },
+        { key: 'emails.manage', label: 'Manage & Export Email List Subscribers', desc: 'Add subscribers, toggle status, and export email list CSV' },
+        { key: 'emails.delete', label: 'Delete Email List Subscribers', desc: 'Permanently remove subscribers from the resort email list' },
+        { key: 'sidebar.toggle', label: 'Toggle Navigation Sidebar Access', desc: 'Show, hide, or configure the main navigation sidebar' },
+        { key: 'rbac.manage', label: 'Manage RBAC Security Matrix & Permissions', desc: 'Toggle role permissions, sub-page clearances, and user overrides' },
+        { key: 'database.clear', label: 'Execute Master Database Purge & Reset', desc: 'Wipe operational transactions, folios, orders, and reset database' },
       ],
     },
   ];
@@ -312,7 +366,7 @@ export default function RBACView({
       `Are you sure you want to enforce these permission updates across Osieka Resort? Changes will take effect immediately for all staff accounts.`,
       () => {
         if (typeof window !== 'undefined') {
-          localStorage.setItem('hosos_custom_rbac_matrix', JSON.stringify(roleDefinitions));
+          localStorage.setItem(RBAC_STORAGE_KEY, JSON.stringify(roleDefinitions));
           window.dispatchEvent(new CustomEvent('hosos_rbac_updated', { detail: roleDefinitions }));
         }
         setHasUnsavedChanges(false);
@@ -801,7 +855,7 @@ export default function RBACView({
       )}
 
       {/* ===== SUPERADMIN DANGER ZONE: MASTER DATABASE PURGE ===== */}
-      {isSuperAdmin && (
+      {hasPermission(activeStaff.role, 'database.clear', activeStaff.id) && (
         <div className="ent-card" style={{ padding: '24px', border: '1.5px solid #FDA4AF', backgroundColor: '#FFF1F2', borderRadius: '12px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
             <div>

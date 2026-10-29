@@ -53,6 +53,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
           const merged = data.staff.map((s: any) => {
             const seedMatch = SEEDED_ACCOUNTS.find(a => a.email.toLowerCase() === s.email.toLowerCase());
             return {
+              id: s.id,
               name: s.name,
               email: s.email,
               password: seedMatch?.password || 'Pass123!',
@@ -190,14 +191,14 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
     );
   };
 
-  const handleQuickRoleFill = (acc: typeof SEEDED_ACCOUNTS[0]) => {
+  const handleQuickRoleFill = (acc: typeof SEEDED_ACCOUNTS[0] & { id?: string }) => {
     setEmail(acc.email);
     setPassword(acc.password);
     setMode('LOGIN');
     // Immediate login
     setTimeout(() => {
       onLoginSuccess({
-        id: `staff-${acc.role.toLowerCase()}`,
+        id: acc.id || `staff-${acc.role.toLowerCase()}`,
         name: acc.name,
         email: acc.email,
         role: acc.role as UserRole,

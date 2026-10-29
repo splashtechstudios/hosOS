@@ -138,12 +138,21 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
   const [displayMode, setDisplayMode] = useState<'CARDS' | 'LIST'>('CARDS');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Permission Checks
-  const isSuperAdmin = activeStaff.role === 'SUPERADMIN' || activeStaff.role === 'OWNER' || (activeStaff.role as any) === 'ADMIN';
-  const canBookHall = isSuperAdmin || hasPermission(activeStaff.role, 'halls.book' as any, activeStaff.id);
-  const canCheckInHall = isSuperAdmin || hasPermission(activeStaff.role, 'halls.checkin' as any, activeStaff.id);
-  const canCheckOutHall = isSuperAdmin || hasPermission(activeStaff.role, 'halls.checkout' as any, activeStaff.id);
-  const canManageHalls = isSuperAdmin || hasPermission(activeStaff.role, 'halls.manage' as any, activeStaff.id) || hasPermission(activeStaff.role, 'services.manage', activeStaff.id);
+  // Atomic Permission Checks
+  const [, setRbacTick] = useState(0);
+  useEffect(() => {
+    const onRbacUpdate = () => setRbacTick((t) => t + 1);
+    window.addEventListener('hosos_rbac_updated', onRbacUpdate);
+    return () => window.removeEventListener('hosos_rbac_updated', onRbacUpdate);
+  }, []);
+
+  const canBookHall = hasPermission(activeStaff.role, 'halls.book', activeStaff.id);
+  const canCheckInHall = hasPermission(activeStaff.role, 'halls.checkin', activeStaff.id);
+  const canCheckOutHall = hasPermission(activeStaff.role, 'halls.checkout', activeStaff.id);
+  const canMarkCleanHall = hasPermission(activeStaff.role, 'halls.mark_clean', activeStaff.id);
+  const canCreateHall = hasPermission(activeStaff.role, 'halls.create', activeStaff.id) || hasPermission(activeStaff.role, 'halls.manage', activeStaff.id);
+  const canEditHall = hasPermission(activeStaff.role, 'halls.edit', activeStaff.id) || hasPermission(activeStaff.role, 'halls.manage', activeStaff.id);
+  const canDeleteHall = hasPermission(activeStaff.role, 'halls.delete', activeStaff.id);
 
   // Modal State: Create / Edit Venue
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -708,8 +717,8 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
               </button>
             </div>
 
-            {/* Super Admin Create Button */}
-            {canManageHalls && (
+            {/* Create Hall Button */}
+            {canCreateHall && (
               <button onClick={openAddModal} className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.825rem' }}>
                 <Plus size={15} />
                 <span>+ Add Venue / Hall</span>
@@ -977,7 +986,7 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                   )}
 
                   {/* Mark Clean for Turnaround venues */}
-                  {item.status === 'CLEANING_TURNAROUND' && (
+                  {item.status === 'CLEANING_TURNAROUND' && canMarkCleanHall && (
                     <button
                       onClick={() => handleMarkClean(item)}
                       className="btn-secondary"
@@ -1001,25 +1010,29 @@ export default function HallsAndServicesView({ activeStaff, onBack, defaultGroup
                   )}
                 </div>
 
-                {/* Admin settings */}
-                {canManageHalls && (
+                {/* Atomic Edit & Delete Buttons */}
+                {(canEditHall || canDeleteHall) && (
                   <div style={{ display: 'flex', gap: '5px' }}>
-                    <button
-                      onClick={() => openEditModal(item)}
-                      className="btn-secondary"
-                      style={{ padding: '5px 8px', fontSize: '0.72rem' }}
-                      title="Edit Venue Settings & Amenities"
-                    >
-                      <Edit3 size={12} color="var(--brand-primary)" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteVenue(item.serviceId, item.name)}
-                      className="btn-danger"
-                      style={{ padding: '5px 8px', fontSize: '0.72rem' }}
-                      title="Delete Venue"
-                    >
-                      <Trash2 size={12} />
-                    </button>
+                    {canEditHall && (
+                      <button
+                        onClick={() => openEditModal(item)}
+                        className="btn-secondary"
+                        style={{ padding: '5px 8px', fontSize: '0.72rem' }}
+                        title="Edit Venue Settings & Amenities (halls.edit)"
+                      >
+                        <Edit3 size={12} color="var(--brand-primary)" />
+                      </button>
+                    )}
+                    {canDeleteHall && (
+                      <button
+                        onClick={() => handleDeleteVenue(item.serviceId, item.name)}
+                        className="btn-danger"
+                        style={{ padding: '5px 8px', fontSize: '0.72rem' }}
+                        title="Delete Venue (halls.delete)"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

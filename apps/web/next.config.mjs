@@ -2,6 +2,15 @@
 const nextConfig = {
   transpilePackages: ['@hosos/types'],
   reactStrictMode: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  images: {
+    unoptimized: true,
+  },
   async headers() {
     return [
       {

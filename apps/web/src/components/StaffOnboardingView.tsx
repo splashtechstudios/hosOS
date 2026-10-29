@@ -29,9 +29,16 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
   const [onboardingList, setOnboardingList] = useState<StaffOnboardingRecord[]>(INITIAL_STAFF_ONBOARDING);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
 
-  const isSuperAdmin = activeStaff.role === 'SUPERADMIN' || activeStaff.role === 'OWNER' || (activeStaff.role as any) === 'ADMIN';
-  const canManageUsers = isSuperAdmin || hasPermission(activeStaff.role, 'users.manage', activeStaff.id);
-  const canDeleteUsers = isSuperAdmin || hasPermission(activeStaff.role, 'users.delete', activeStaff.id);
+  const [, setRbacTick] = useState(0);
+  React.useEffect(() => {
+    const onRbacUpdate = () => setRbacTick((t) => t + 1);
+    window.addEventListener('hosos_rbac_updated', onRbacUpdate);
+    return () => window.removeEventListener('hosos_rbac_updated', onRbacUpdate);
+  }, []);
+
+  const canOnboardUsers = hasPermission(activeStaff.role, 'users.onboard', activeStaff.id);
+  const canManageUsers = hasPermission(activeStaff.role, 'users.manage', activeStaff.id);
+  const canDeleteUsers = hasPermission(activeStaff.role, 'users.delete', activeStaff.id);
 
   // Edit Staff State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -291,7 +298,7 @@ export default function StaffOnboardingView({ activeStaff }: { activeStaff: Staf
             </p>
           </div>
 
-          {canManageUsers && (
+          {canOnboardUsers && (
             <button onClick={() => setIsWizardOpen(true)} className="btn-primary">
               <UserPlus size={16} />
               <span>+ Onboard New Staff Member</span>

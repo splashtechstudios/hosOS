@@ -18,6 +18,8 @@ export const ROLE_VIEW_ACCESS: Record<ExtendedRole, string[]> = {
     'loss-prevention',
     'halls-services',
     'ancillary-services',
+    'message-board',
+    'message-emails',
     'onboarding-directory',
     'rbac-matrix',
   ],
@@ -32,6 +34,8 @@ export const ROLE_VIEW_ACCESS: Record<ExtendedRole, string[]> = {
     'loss-prevention',
     'halls-services',
     'ancillary-services',
+    'message-board',
+    'message-emails',
     'onboarding-directory',
     'rbac-matrix',
   ],
@@ -40,6 +44,8 @@ export const ROLE_VIEW_ACCESS: Record<ExtendedRole, string[]> = {
     'front-desk',
     'halls-services',
     'ancillary-services',
+    'message-board',
+    'message-emails',
     'room-audit',
   ],
   GENERAL_MANAGER: [
@@ -53,6 +59,8 @@ export const ROLE_VIEW_ACCESS: Record<ExtendedRole, string[]> = {
     'loss-prevention',
     'halls-services',
     'ancillary-services',
+    'message-board',
+    'message-emails',
     'onboarding-directory',
     'rbac-matrix',
   ],
@@ -62,12 +70,16 @@ export const ROLE_VIEW_ACCESS: Record<ExtendedRole, string[]> = {
     'night-audit',
     'loss-prevention',
     'room-audit',
+    'message-board',
+    'message-emails',
   ],
   FRONT_DESK: [
     'daily-operations',
     'front-desk',
     'halls-services',
     'ancillary-services',
+    'message-board',
+    'message-emails',
     'room-audit',
     'pos',
   ],
@@ -107,6 +119,8 @@ export const ROLE_VIEW_ACCESS: Record<ExtendedRole, string[]> = {
     'pos',
     'night-audit',
     'loss-prevention',
+    'message-board',
+    'message-emails',
     'onboarding-directory',
     'rbac-matrix',
   ],
@@ -148,6 +162,8 @@ export const VIEW_TITLES: Record<string, string> = {
   'hospitality-hub': 'Hospitality Command Hub',
   'halls-services': 'Halls, Venues & Event Banqueting Board',
   'ancillary-services': 'Ancillary Operations Board (Laundry & Spa)',
+  'message-board': 'Concierge Message Board',
+  'message-emails': 'Email List & Dispatch Subscribers',
   pos: 'Hospitality Command Hub',
   'inventory-tots': 'Bar Tot Dipstick Audit',
   'inventory-bom': 'Recipe Bill of Materials',
@@ -155,6 +171,8 @@ export const VIEW_TITLES: Record<string, string> = {
   'onboarding-directory': 'Staff Directory & Access',
   'rbac-matrix': 'Multi-Role RBAC Matrix',
 };
+
+export const RBAC_STORAGE_KEY = 'hosos_custom_rbac_matrix_v2';
 
 /**
  * Retrieves per-user permission overrides (grants and denials) from localStorage.
@@ -164,12 +182,15 @@ function getUserPermissionOverrides(userId?: string | null) {
   if (!userId || typeof window === 'undefined') return null;
   try {
     const overrides = JSON.parse(localStorage.getItem('hosos_user_permission_overrides') || '{}');
-    return overrides[userId] as {
-      grantedPermissions: AppPermission[];
-      deniedPermissions: AppPermission[];
-      allowedViews: string[];
-      elevatedRole?: string;
-    } | undefined;
+    if (overrides[userId]) return overrides[userId];
+    // Also check case-insensitive or email match if stored under another key
+    const lowerId = userId.toLowerCase();
+    for (const [k, v] of Object.entries(overrides)) {
+      if (k.toLowerCase() === lowerId || (v as any)?.email?.toLowerCase() === lowerId) {
+        return v as any;
+      }
+    }
+    return undefined;
   } catch { return null; }
 }
 
@@ -178,11 +199,11 @@ function getUserPermissionOverrides(userId?: string | null) {
  */
 export function getActiveRoleDefinition(role: string | undefined | null): RoleRBACDefinition | undefined {
   if (!role) return undefined;
-  const normalized = role.toUpperCase();
+  const normalized = role.toUpperCase() === 'ADMIN' ? 'SUPERADMIN' : role.toUpperCase();
 
   if (typeof window !== 'undefined') {
     try {
-      const saved = localStorage.getItem('hosos_custom_rbac_matrix');
+      const saved = localStorage.getItem(RBAC_STORAGE_KEY);
       if (saved) {
         const parsed: RoleRBACDefinition[] = JSON.parse(saved);
         const match = parsed.find((r) => r.role === normalized);
@@ -240,7 +261,16 @@ export function canAccessView(role: string | undefined | null, viewId: string, u
     }
     // If Superadmin specifically configured allowed sub-page views for this role
     if (Array.isArray(def.allowedViews) && def.allowedViews.length > 0) {
-      return def.allowedViews.includes(viewId);
+      if (def.allowedViews.includes(viewId)) return true;
+      if (
+        (viewId === 'message-board' || viewId === 'message-emails') &&
+        (def.allowedViews.includes('front-desk') ||
+          def.allowedViews.includes('message-board') ||
+          def.allowedViews.includes('accountant-audit'))
+      ) {
+        return true;
+      }
+      return false;
     }
   }
 
@@ -260,34 +290,37 @@ export function getDefaultViewForRole(role: string | undefined | null): string {
 
 /**
  * Checks whether a given role holds a specific AppPermission.
- * Strictly enforced against Superadmin saved permissions.
+ * Strictly enforced against Superadmin saved permissions and per-user overrides.
  */
 export function hasPermission(role: string | undefined | null, permission: AppPermission, userId?: string | null): boolean {
   if (!role) return false;
-  const normalized = role.toUpperCase();
+  const normalized = role.toUpperCase() === 'ADMIN' ? 'SUPERADMIN' : role.toUpperCase();
 
-  if (normalized === 'SUPERADMIN' || normalized === 'OWNER') {
+  // Prevent Superadmin from ever locking themselves out of the RBAC Permissions page itself
+  if (normalized === 'SUPERADMIN' && permission === 'rbac.manage') {
     return true;
   }
 
-  // Check per-user overrides first
+  // 1. Check per-user overrides FIRST (applies to all users and roles)
   if (userId) {
     const userOverride = getUserPermissionOverrides(userId);
     if (userOverride) {
-      // Explicit deny overrides everything
+      // Explicit deny always blocks the action
       if (userOverride.deniedPermissions?.includes(permission)) return false;
-      // Explicit grant overrides role default
+      // Explicit grant always allows the action
       if (userOverride.grantedPermissions?.includes(permission)) return true;
-      // If user has an elevated role, check that role's permissions
+      // If user has an elevated role, check that elevated role's active permissions
       if (userOverride.elevatedRole) {
-        const elevatedNorm = userOverride.elevatedRole.toUpperCase();
-        if (elevatedNorm === 'SUPERADMIN' || elevatedNorm === 'OWNER') return true;
+        const elevatedNorm = userOverride.elevatedRole.toUpperCase() === 'ADMIN' ? 'SUPERADMIN' : userOverride.elevatedRole.toUpperCase();
         const elevatedDef = getActiveRoleDefinition(elevatedNorm);
-        if (elevatedDef && elevatedDef.isEnabled !== false && elevatedDef.permissions.includes(permission)) return true;
+        if (elevatedDef && elevatedDef.isEnabled !== false) {
+          return elevatedDef.permissions.includes(permission);
+        }
       }
     }
   }
 
+  // 2. Check Role-Level Matrix permissions
   const def = getActiveRoleDefinition(normalized);
   if (!def) return false;
 

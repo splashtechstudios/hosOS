@@ -474,43 +474,85 @@ export interface StaffOnboardingRecord {
 }
 
 // ------------------------------------------
-// Multi-Role RBAC Permissions Matrix
+// Multi-Role RBAC Permissions Matrix (Atomic Per-Action Toggles)
 // ------------------------------------------
 export type AppPermission =
+  // Rooms & Guest Division
   | 'rooms.audit.view'
   | 'rooms.status.override'
   | 'rooms.checkin'
   | 'rooms.checkout'
   | 'rooms.customize'
+  | 'rooms.create'
+  | 'rooms.manage_amenities'
+  | 'rooms.delete'
+  // Reservations & Payment Follow-Up Desk
+  | 'reservations.view'
+  | 'reservations.create'
+  | 'reservations.followup'
+  | 'reservations.confirm_payment'
+  | 'reservations.cancel'
+  // Kitchen & Food Menu (POS)
   | 'orders.create'
   | 'orders.increment'
+  | 'orders.remove_cart_item'
+  | 'menu.food.create'
+  | 'menu.food.edit'
+  | 'menu.food.delete'
+  // Bar & Beverage Menu (POS)
+  | 'orders.bar.create'
+  | 'menu.drink.create'
+  | 'menu.drink.edit'
+  | 'menu.drink.delete'
+  // Legacy / General Menu & POS Pricing / Billing
+  | 'menu.manage'
+  | 'menu.delete'
   | 'prices.override'
   | 'discounts.approve'
   | 'voids.execute'
-  | 'menu.manage'
   | 'cash.receive'
-  | 'maintenance.raise'
-  | 'maintenance.signoff'
-  | 'reports.export'
-  | 'users.onboard'
-  | 'crm.manage'
-  | 'solar.log'
-  | 'solar.powersaver_toggle'
-  | 'diesel.log'
-  | 'audit.stamp'
-  | 'daily.submit'
-  | 'daily.audit_update'
+  | 'orders.charge_room'
   | 'payment.split'
-  | 'sidebar.toggle'
-  | 'rooms.create'
-  | 'rooms.manage_amenities'
+  // Halls, Banqueting & Event Venues
   | 'halls.book'
   | 'halls.checkin'
   | 'halls.checkout'
+  | 'halls.mark_clean'
   | 'halls.manage'
+  | 'halls.create'
+  | 'halls.edit'
+  | 'halls.delete'
+  // Laundry, Transport & Ancillary Services
+  | 'services.order'
+  | 'services.status_update'
+  | 'services.manage'
+  | 'services.create'
+  | 'services.edit'
+  | 'services.delete'
+  // Daily Operations, Finance & Audit
+  | 'daily.submit'
+  | 'daily.audit_update'
+  | 'audit.stamp'
+  | 'reports.export'
+  // Off-Grid Solar, Generators & Engineering
+  | 'maintenance.raise'
+  | 'maintenance.signoff'
+  | 'solar.log'
+  | 'solar.powersaver_toggle'
+  | 'diesel.log'
+  // Staff HR, VIP CRM & System Governance
+  | 'users.onboard'
   | 'users.manage'
   | 'users.delete'
-  | 'services.manage'
+  | 'crm.manage'
+  | 'crm.create_guest'
+  | 'crm.create_deal'
+  | 'messages.view'
+  | 'messages.followup'
+  | 'messages.delete'
+  | 'emails.manage'
+  | 'emails.delete'
+  | 'sidebar.toggle'
   | 'database.clear'
   | 'rbac.manage';
 

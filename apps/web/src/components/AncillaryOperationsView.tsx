@@ -209,7 +209,17 @@ export default function AncillaryOperationsView({ activeStaff, onBack }: Ancilla
   const [newServiceDuration, setNewServiceDuration] = useState('Same Day');
   const [newServiceDesc, setNewServiceDesc] = useState('');
 
-  const isSuperAdmin = activeStaff.role === 'SUPERADMIN' || activeStaff.role === 'OWNER' || (activeStaff.role as any) === 'ADMIN';
+  const [, setRbacTick] = useState(0);
+  useEffect(() => {
+    const onRbacUpdate = () => setRbacTick((t) => t + 1);
+    window.addEventListener('hosos_rbac_updated', onRbacUpdate);
+    return () => window.removeEventListener('hosos_rbac_updated', onRbacUpdate);
+  }, []);
+
+  const canOrderService = hasPermission(activeStaff.role, 'services.order', activeStaff.id);
+  const canUpdateServiceStatus = hasPermission(activeStaff.role, 'services.status_update', activeStaff.id);
+  const canCreateService = hasPermission(activeStaff.role, 'services.create', activeStaff.id) || hasPermission(activeStaff.role, 'services.manage', activeStaff.id);
+  const canDeleteService = hasPermission(activeStaff.role, 'services.delete', activeStaff.id);
 
   const formatNaira = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -346,16 +356,18 @@ export default function AncillaryOperationsView({ activeStaff, onBack }: Ancilla
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button
-              onClick={() => setIsOrderModalOpen(true)}
-              className="btn-primary"
-              style={{ padding: '8px 16px', fontSize: '0.825rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-            >
-              <Plus size={15} />
-              <span>+ New Service Request</span>
-            </button>
+            {canOrderService && (
+              <button
+                onClick={() => setIsOrderModalOpen(true)}
+                className="btn-primary"
+                style={{ padding: '8px 16px', fontSize: '0.825rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Plus size={15} />
+                <span>+ New Service Request</span>
+              </button>
+            )}
 
-            {isSuperAdmin && (
+            {canCreateService && (
               <button
                 onClick={() => setIsServiceModalOpen(true)}
                 className="btn-secondary"
@@ -510,7 +522,7 @@ export default function AncillaryOperationsView({ activeStaff, onBack }: Ancilla
                       </td>
                       <td style={{ padding: '12px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'inline-flex', gap: '6px' }}>
-                          {ord.status === 'PENDING' && (
+                          {ord.status === 'PENDING' && canUpdateServiceStatus && (
                             <button
                               onClick={() => handleUpdateOrderStatus(ord.orderId, 'IN_SERVICE')}
                               style={{
@@ -527,7 +539,7 @@ export default function AncillaryOperationsView({ activeStaff, onBack }: Ancilla
                               Start Service
                             </button>
                           )}
-                          {ord.status === 'IN_SERVICE' && (
+                          {ord.status === 'IN_SERVICE' && canUpdateServiceStatus && (
                             <button
                               onClick={() => handleUpdateOrderStatus(ord.orderId, 'READY_FOR_DELIVERY')}
                               style={{
@@ -544,7 +556,7 @@ export default function AncillaryOperationsView({ activeStaff, onBack }: Ancilla
                               Ready for Delivery
                             </button>
                           )}
-                          {ord.status === 'READY_FOR_DELIVERY' && (
+                          {ord.status === 'READY_FOR_DELIVERY' && canUpdateServiceStatus && (
                             <button
                               onClick={() => handleUpdateOrderStatus(ord.orderId, 'COMPLETED')}
                               style={{
@@ -620,16 +632,33 @@ export default function AncillaryOperationsView({ activeStaff, onBack }: Ancilla
                 <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700 }}>
                   ● Active Service Offering
                 </span>
-                <button
-                  onClick={() => {
-                    setSelectedServiceId(item.serviceId);
-                    setIsOrderModalOpen(true);
-                  }}
-                  className="btn-primary"
-                  style={{ padding: '6px 14px', fontSize: '0.75rem' }}
-                >
-                  Order Service
-                </button>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  {canOrderService && (
+                    <button
+                      onClick={() => {
+                        setSelectedServiceId(item.serviceId);
+                        setIsOrderModalOpen(true);
+                      }}
+                      className="btn-primary"
+                      style={{ padding: '6px 14px', fontSize: '0.75rem' }}
+                    >
+                      Order Service
+                    </button>
+                  )}
+                  {canDeleteService && (
+                    <button
+                      onClick={() => {
+                        setServices(prev => prev.filter(s => s.serviceId !== item.serviceId));
+                        showSuccess('Service Removed', `${item.name} removed from catalog.`);
+                      }}
+                      className="btn-danger"
+                      style={{ padding: '6px 10px', fontSize: '0.72rem' }}
+                      title="Delete Ancillary Service (services.delete)"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}

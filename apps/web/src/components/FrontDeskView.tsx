@@ -98,14 +98,20 @@ export default function FrontDeskView({
   const [priceEdits, setPriceEdits] = useState<Record<string, number>>({});
   const [isSavingPrice, setIsSavingPrice] = useState(false);
 
-  const isSuperAdmin = activeStaff.role === 'SUPERADMIN' || activeStaff.role === 'OWNER' || (activeStaff.role as any) === 'ADMIN';
+  const [, setRbacTick] = useState(0);
+  useEffect(() => {
+    const onRbacUpdate = () => setRbacTick((t) => t + 1);
+    window.addEventListener('hosos_rbac_updated', onRbacUpdate);
+    return () => window.removeEventListener('hosos_rbac_updated', onRbacUpdate);
+  }, []);
+
   const canCheckIn = hasPermission(activeStaff.role, 'rooms.checkin', activeStaff.id);
   const canCheckOut = hasPermission(activeStaff.role, 'rooms.checkout', activeStaff.id);
   const canStatusOverride = hasPermission(activeStaff.role, 'rooms.status.override', activeStaff.id);
-  const canCustomizeRooms = isSuperAdmin || hasPermission(activeStaff.role, 'rooms.customize' as any, activeStaff.id) || hasPermission(activeStaff.role, 'prices.override', activeStaff.id);
-  const canCreateRoom = isSuperAdmin || hasPermission(activeStaff.role, 'rooms.create' as any, activeStaff.id);
-  const canManageAmenities = isSuperAdmin || hasPermission(activeStaff.role, 'rooms.manage_amenities' as any, activeStaff.id);
-  const canExportReports = isSuperAdmin || hasPermission(activeStaff.role, 'reports.export', activeStaff.id);
+  const canCustomizeRooms = hasPermission(activeStaff.role, 'rooms.customize', activeStaff.id);
+  const canCreateRoom = hasPermission(activeStaff.role, 'rooms.create', activeStaff.id);
+  const canManageAmenities = hasPermission(activeStaff.role, 'rooms.manage_amenities', activeStaff.id);
+  const canExportReports = hasPermission(activeStaff.role, 'reports.export', activeStaff.id);
 
   // Create Room state
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
@@ -463,7 +469,7 @@ export default function FrontDeskView({
         <h3 style={{ fontSize: '1rem', fontWeight: 800, color: activeTabConfig.color, margin: 0 }}>
           {activeTabConfig.emoji} {activeTabConfig.label} Rooms ({filteredRooms.length})
         </h3>
-        {isSuperAdmin && (
+        {canCustomizeRooms && (
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Settings size={13} />
             Click the settings icon on any room card to edit name, color tag &amp; price

@@ -871,14 +871,21 @@ export default function POSView({
   const effectiveViewMode = userViewMode ?? 'GRID';
 
   // Superadmin & Granular RBAC Authority checks with activeStaff.id for custom/elevated overrides
-  const isSuperAdmin =
-    activeStaff.role === 'SUPERADMIN' ||
-    activeStaff.role === 'OWNER' ||
-    (activeStaff.role as any) === 'ADMIN';
+  const [, setRbacTick] = useState(0);
+  useEffect(() => {
+    const onRbacUpdate = () => setRbacTick((t) => t + 1);
+    window.addEventListener('hosos_rbac_updated', onRbacUpdate);
+    return () => window.removeEventListener('hosos_rbac_updated', onRbacUpdate);
+  }, []);
 
-  const canCreateOrder = hasPermission(activeStaff.role, 'orders.create', activeStaff.id);
-  const canOverridePrice = isSuperAdmin || hasPermission(activeStaff.role, 'prices.override', activeStaff.id);
-  const canManageMenu = isSuperAdmin || hasPermission(activeStaff.role, 'menu.manage', activeStaff.id);
+  const canCreateFoodOrder = hasPermission(activeStaff.role, 'orders.create', activeStaff.id);
+  const canCreateBarOrder = hasPermission(activeStaff.role, 'orders.bar.create', activeStaff.id);
+  const canCreateOrder = initialCategory === 'Bar' ? canCreateBarOrder : canCreateFoodOrder;
+  const canOverridePrice = hasPermission(activeStaff.role, 'prices.override', activeStaff.id);
+  const canDeleteFoodMenu = hasPermission(activeStaff.role, 'menu.food.delete', activeStaff.id);
+  const canDeleteDrinkMenu = hasPermission(activeStaff.role, 'menu.drink.delete', activeStaff.id);
+  const canRemoveCartItem = hasPermission(activeStaff.role, 'orders.remove_cart_item', activeStaff.id);
+  const canChargeToRoom = hasPermission(activeStaff.role, 'orders.charge_room', activeStaff.id);
   const canDirectSettle = hasPermission(activeStaff.role, 'cash.receive', activeStaff.id);
 
   // Initial cart: starts clean for order entry
@@ -901,20 +908,28 @@ export default function POSView({
       .catch((e) => console.warn('Could not fetch dynamic menu for POS:', e));
   }, []);
 
-  // Superadmin Permanent Menu Item Deletion
-  const handleDeleteMenuItem = (itemId: string, itemName: string) => {
-    if (!isSuperAdmin) return;
+  // Permanent Menu Item Deletion (Strictly gated by individual menu.food.delete / menu.drink.delete permission)
+  const handleDeleteMenuItem = (itemId: string, itemName: string, isBarItem: boolean = false) => {
+    const allowed = isBarItem ? canDeleteDrinkMenu : canDeleteFoodMenu;
+    if (!allowed) {
+      showToast({
+        type: 'error',
+        title: 'Permission Denied',
+        message: `Your account does not have the "${isBarItem ? 'menu.drink.delete' : 'menu.food.delete'}" permission enabled.`,
+      });
+      return;
+    }
     showConfirm(
       'Delete Menu Item Permanently',
       `Are you sure you want to completely delete "${itemName}" from the Osieka Resort menu catalog? This data item will be completely removed from MongoDB Atlas and cannot be recovered.`,
       async () => {
         try {
-          const res = await fetch(`/api/menu?itemId=${encodeURIComponent(itemId)}&role=${encodeURIComponent(activeStaff.role)}&actorName=${encodeURIComponent(activeStaff.name)}`, {
+          const res = await fetch(`/api/menu?itemId=${encodeURIComponent(itemId)}&role=${encodeURIComponent(activeStaff.role)}&actorName=${encodeURIComponent(activeStaff.name)}&permissionGranted=true`, {
             method: 'DELETE',
           });
           const data = await res.json();
           if (data.success) {
-            showSuccess('Menu Item Deleted', `"${itemName}" was permanently purged from the catalog by Superadmin.`);
+            showSuccess('Menu Item Deleted', `"${itemName}" was permanently purged from the catalog by ${activeStaff.name}.`);
             setMenuItems((prev) => prev.filter((m) => m.id !== itemId && (m as any).itemId !== itemId));
             setCart((prev) => prev.filter((c) => c.id !== itemId));
           } else {
@@ -1167,12 +1182,15 @@ export default function POSView({
                   <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.85rem', flex: 1, paddingRight: '6px' }}>
                     {item.name}
                   </div>
-                  <button
-                    onClick={() => removeFromCart(item.id)}
-                    style={{ background: 'transparent', color: 'var(--rose-primary)', padding: '2px', border: 'none', cursor: 'pointer' }}
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  {canRemoveCartItem && (
+                    <button
+                      onClick={() => removeFromCart(item.id)}
+                      style={{ background: 'transparent', color: 'var(--rose-primary)', padding: '2px', border: 'none', cursor: 'pointer' }}
+                      title="Remove item from active cart"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                 </div>
 
                 {/* Interactive Dynamic Price & Quantity Row */}
@@ -1282,7 +1300,7 @@ export default function POSView({
               handleChargeToRoom();
               if (isDrawerModal) setMobileDrawerOpen(false);
             }}
-            disabled={cart.length === 0 || !canCreateOrder}
+            disabled={cart.length === 0 || !canCreateOrder || !canChargeToRoom}
             className="btn-primary"
             style={{ width: '100%', padding: '12px', fontSize: '0.9rem', fontWeight: 800 }}
           >
@@ -1301,17 +1319,19 @@ export default function POSView({
           </button>
         )}
 
-        <button
-          onClick={() => {
-            setCart([]);
-            if (isDrawerModal) setMobileDrawerOpen(false);
-          }}
-          disabled={cart.length === 0}
-          className="btn-secondary"
-          style={{ width: '100%', padding: '8px', fontSize: '0.8rem' }}
-        >
-          Clear Ticket
-        </button>
+        {canRemoveCartItem && (
+          <button
+            onClick={() => {
+              setCart([]);
+              if (isDrawerModal) setMobileDrawerOpen(false);
+            }}
+            disabled={cart.length === 0}
+            className="btn-secondary"
+            style={{ width: '100%', padding: '8px', fontSize: '0.8rem' }}
+          >
+            Clear Ticket
+          </button>
+        )}
       </div>
     </>
   );
@@ -1776,14 +1796,14 @@ export default function POSView({
                               >
                                 <Plus size={13} /> Add
                               </button>
-                              {canManageMenu && (
+                              {(isBar ? canDeleteDrinkMenu : canDeleteFoodMenu) && (
                                 <button
                                   className="btn-danger"
                                   style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '6px' }}
-                                  title="Permanently purge item (Authorized)"
+                                  title={`Permanently delete ${isBar ? 'bar drink' : 'food item'} (Requires ${isBar ? 'menu.drink.delete' : 'menu.food.delete'})`}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleDeleteMenuItem(item.id, item.name);
+                                    handleDeleteMenuItem(item.id, item.name, isBar);
                                   }}
                                 >
                                   <Trash2 size={13} />
@@ -1965,15 +1985,15 @@ export default function POSView({
                             <Plus size={13} /> Add
                           </button>
 
-                          {canManageMenu && (
+                          {(isBar ? canDeleteDrinkMenu : canDeleteFoodMenu) && (
                             <button
                               type="button"
                               className="btn-danger"
                               style={{ padding: '4px 7px', fontSize: '0.725rem', borderRadius: '6px' }}
-                              title="Permanently purge item (Authorized)"
+                              title={`Permanently delete ${isBar ? 'bar drink' : 'food item'} (Requires ${isBar ? 'menu.drink.delete' : 'menu.food.delete'})`}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDeleteMenuItem(item.id, item.name);
+                                handleDeleteMenuItem(item.id, item.name, isBar);
                               }}
                             >
                               <Trash2 size={12} />

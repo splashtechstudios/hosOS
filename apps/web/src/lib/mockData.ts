@@ -73,32 +73,54 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     dataScope: 'ALL_RESORT_DATA',
     allowedViews: [
       'dashboard', 'daily-operations', 'accountant-audit', 'front-desk', 'room-audit',
-      'pos', 'facilities-generators', 'night-audit', 'loss-prevention', 'onboarding-directory', 'rbac-matrix'
+      'pos', 'halls-services', 'facilities-generators', 'night-audit', 'loss-prevention', 'onboarding-directory', 'rbac-matrix'
     ],
     permissions: [
+      // Rooms
       'rooms.audit.view', 'rooms.status.override', 'rooms.checkin', 'rooms.checkout',
-      'rooms.create', 'rooms.manage_amenities',
-      'halls.book', 'halls.checkin', 'halls.checkout', 'halls.manage',
-      'orders.create', 'orders.increment', 'prices.override', 'discounts.approve',
-      'voids.execute', 'menu.manage', 'cash.receive', 'maintenance.raise',
-      'maintenance.signoff', 'reports.export', 'users.onboard', 'crm.manage',
+      'rooms.customize', 'rooms.create', 'rooms.manage_amenities', 'rooms.delete',
+      // Reservations
+      'reservations.view', 'reservations.create', 'reservations.followup',
+      'reservations.confirm_payment', 'reservations.cancel',
+      // Kitchen & Food Menu
+      'orders.create', 'orders.increment', 'orders.remove_cart_item',
+      'menu.food.create', 'menu.food.edit',
+      // Note: 'menu.food.delete' and 'menu.drink.delete' can be toggled ON/OFF individually in RBAC Matrix
+      // Bar & Drink Menu
+      'orders.bar.create', 'menu.drink.create', 'menu.drink.edit',
+      // POS Billing & Pricing
+      'menu.manage', 'prices.override', 'discounts.approve', 'voids.execute',
+      'cash.receive', 'orders.charge_room', 'payment.split',
+      // Halls & Venues
+      'halls.book', 'halls.checkin', 'halls.checkout', 'halls.mark_clean',
+      'halls.manage', 'halls.create', 'halls.edit', 'halls.delete',
+      // Ancillary Services
+      'services.order', 'services.status_update', 'services.manage', 'services.create', 'services.edit', 'services.delete',
+      // Finance, Solar & Governance
+      'maintenance.raise', 'maintenance.signoff', 'reports.export',
+      'users.onboard', 'users.manage', 'users.delete',
+      'crm.manage', 'crm.create_guest', 'crm.create_deal',
       'solar.log', 'solar.powersaver_toggle', 'diesel.log', 'audit.stamp',
-      'daily.submit', 'daily.audit_update', 'rbac.manage'
+      'daily.submit', 'daily.audit_update', 'sidebar.toggle', 'database.clear', 'rbac.manage'
     ],
   },
   {
     role: 'MANAGER',
     displayName: 'Resort Operations Manager',
     department: 'EXECUTIVE',
-    description: 'Daily operational management, room check-in oversight, menu management, and single-screen daily closing submission.',
+    description: 'Daily operational management, room check-in oversight, menu additions (no deletion), and single-screen daily closing submission.',
     isEnabled: true,
     hasSidebar: false,
     dataScope: 'ALL_RESORT_DATA',
-    allowedViews: ['daily-operations', 'front-desk', 'room-audit', 'pos'],
+    allowedViews: ['daily-operations', 'front-desk', 'room-audit', 'pos', 'halls-services'],
     permissions: [
       'rooms.audit.view', 'rooms.status.override', 'rooms.checkin', 'rooms.checkout',
-      'halls.book', 'halls.checkin', 'halls.checkout',
-      'orders.create', 'orders.increment', 'menu.manage', 'cash.receive',
+      'reservations.view', 'reservations.create', 'reservations.followup', 'reservations.confirm_payment',
+      'halls.book', 'halls.checkin', 'halls.checkout', 'halls.mark_clean',
+      'orders.create', 'orders.bar.create', 'orders.increment', 'orders.remove_cart_item',
+      'orders.charge_room', 'cash.receive', 'payment.split',
+      'menu.food.create', 'menu.food.edit', 'menu.drink.create', 'menu.drink.edit', 'menu.manage',
+      'services.order', 'services.status_update',
       'maintenance.raise', 'solar.log', 'solar.powersaver_toggle', 'daily.submit'
     ],
   },
@@ -112,7 +134,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     dataScope: 'ALL_RESORT_DATA',
     allowedViews: ['accountant-audit', 'dashboard', 'night-audit', 'loss-prevention', 'room-audit'],
     permissions: [
-      'rooms.audit.view', 'reports.export', 'audit.stamp', 'daily.audit_update', 'prices.override'
+      'rooms.audit.view', 'reservations.view', 'reports.export', 'audit.stamp', 'daily.audit_update', 'prices.override'
     ],
   },
   {
@@ -125,16 +147,21 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     dataScope: 'ALL_RESORT_DATA',
     allowedViews: [
       'dashboard', 'daily-operations', 'accountant-audit', 'front-desk', 'room-audit',
-      'pos', 'facilities-generators', 'night-audit', 'loss-prevention', 'onboarding-directory', 'rbac-matrix'
+      'pos', 'halls-services', 'facilities-generators', 'night-audit', 'loss-prevention', 'onboarding-directory', 'rbac-matrix'
     ],
     permissions: [
       'rooms.audit.view', 'rooms.status.override', 'rooms.checkin', 'rooms.checkout',
-      'rooms.create', 'rooms.manage_amenities',
-      'halls.book', 'halls.checkin', 'halls.checkout', 'halls.manage',
-      'orders.create', 'orders.increment', 'discounts.approve', 'voids.execute', 'cash.receive', 'maintenance.raise',
-      'maintenance.signoff', 'reports.export', 'users.onboard', 'crm.manage',
+      'rooms.customize', 'rooms.create', 'rooms.manage_amenities',
+      'reservations.view', 'reservations.create', 'reservations.followup', 'reservations.confirm_payment', 'reservations.cancel',
+      'halls.book', 'halls.checkin', 'halls.checkout', 'halls.mark_clean', 'halls.manage', 'halls.create', 'halls.edit',
+      'orders.create', 'orders.bar.create', 'orders.increment', 'orders.remove_cart_item',
+      'menu.food.create', 'menu.food.edit', 'menu.drink.create', 'menu.drink.edit', 'menu.manage',
+      'discounts.approve', 'voids.execute', 'cash.receive', 'orders.charge_room', 'payment.split',
+      'services.order', 'services.status_update', 'services.manage', 'services.create', 'services.edit',
+      'maintenance.raise', 'maintenance.signoff', 'reports.export',
+      'users.onboard', 'users.manage', 'crm.manage', 'crm.create_guest', 'crm.create_deal',
       'solar.log', 'solar.powersaver_toggle', 'diesel.log', 'audit.stamp',
-      'daily.submit', 'daily.audit_update', 'rbac.manage'
+      'daily.submit', 'daily.audit_update', 'sidebar.toggle', 'rbac.manage'
     ],
   },
   {
@@ -147,14 +174,19 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     dataScope: 'ALL_RESORT_DATA',
     allowedViews: [
       'dashboard', 'daily-operations', 'accountant-audit', 'front-desk', 'room-audit',
-      'pos', 'facilities-generators', 'night-audit', 'loss-prevention', 'onboarding-directory', 'rbac-matrix'
+      'pos', 'halls-services', 'facilities-generators', 'night-audit', 'loss-prevention', 'onboarding-directory', 'rbac-matrix'
     ],
     permissions: [
       'rooms.audit.view', 'rooms.status.override', 'rooms.checkin', 'rooms.checkout',
-      'rooms.create', 'rooms.manage_amenities',
-      'halls.book', 'halls.checkin', 'halls.checkout', 'halls.manage',
-      'orders.create', 'orders.increment', 'discounts.approve', 'voids.execute', 'cash.receive', 'maintenance.raise',
-      'maintenance.signoff', 'reports.export', 'users.onboard', 'crm.manage',
+      'rooms.customize', 'rooms.create', 'rooms.manage_amenities',
+      'reservations.view', 'reservations.create', 'reservations.followup', 'reservations.confirm_payment', 'reservations.cancel',
+      'halls.book', 'halls.checkin', 'halls.checkout', 'halls.mark_clean', 'halls.manage', 'halls.create', 'halls.edit',
+      'orders.create', 'orders.bar.create', 'orders.increment', 'orders.remove_cart_item',
+      'menu.food.create', 'menu.food.edit', 'menu.drink.create', 'menu.drink.edit', 'menu.manage',
+      'discounts.approve', 'voids.execute', 'cash.receive', 'orders.charge_room', 'payment.split',
+      'services.order', 'services.status_update', 'services.manage', 'services.create', 'services.edit',
+      'maintenance.raise', 'maintenance.signoff', 'reports.export',
+      'users.onboard', 'users.manage', 'crm.manage', 'crm.create_guest', 'crm.create_deal',
       'solar.log', 'solar.powersaver_toggle', 'diesel.log', 'daily.submit'
     ],
   },
@@ -166,11 +198,14 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     isEnabled: true,
     hasSidebar: false,
     dataScope: 'RESTRICTED_SHIFT_DATA',
-    allowedViews: ['daily-operations', 'front-desk', 'room-audit', 'pos'],
+    allowedViews: ['daily-operations', 'front-desk', 'room-audit', 'pos', 'halls-services'],
     permissions: [
       'rooms.audit.view', 'rooms.status.override', 'rooms.checkin', 'rooms.checkout',
-      'halls.book', 'halls.checkin', 'halls.checkout',
-      'orders.create', 'orders.increment', 'cash.receive', 'maintenance.raise', 'crm.manage'
+      'reservations.view', 'reservations.create', 'reservations.followup', 'reservations.confirm_payment',
+      'halls.book', 'halls.checkin', 'halls.checkout', 'halls.mark_clean',
+      'orders.create', 'orders.bar.create', 'orders.increment', 'orders.charge_room',
+      'services.order', 'services.status_update',
+      'cash.receive', 'payment.split', 'maintenance.raise', 'crm.manage', 'crm.create_guest'
     ],
   },
   {
@@ -183,7 +218,8 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     dataScope: 'RESTRICTED_SHIFT_DATA',
     allowedViews: ['daily-operations', 'pos', 'room-audit', 'dashboard'],
     permissions: [
-      'rooms.audit.view', 'cash.receive', 'reports.export'
+      'rooms.audit.view', 'reservations.view', 'reservations.confirm_payment',
+      'cash.receive', 'orders.charge_room', 'payment.split', 'reports.export'
     ],
   },
   {
@@ -196,7 +232,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     dataScope: 'RESTRICTED_SHIFT_DATA',
     allowedViews: ['pos'],
     permissions: [
-      'orders.create', 'orders.increment'
+      'orders.create', 'orders.bar.create', 'orders.increment', 'orders.remove_cart_item', 'orders.charge_room'
     ],
   },
   {
@@ -209,7 +245,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     dataScope: 'RESTRICTED_SHIFT_DATA',
     allowedViews: ['pos'],
     permissions: [
-      'orders.create', 'orders.increment', 'cash.receive'
+      'orders.bar.create', 'orders.increment', 'orders.remove_cart_item', 'orders.charge_room', 'cash.receive'
     ],
   },
   {
@@ -222,7 +258,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     dataScope: 'RESTRICTED_SHIFT_DATA',
     allowedViews: ['pos'],
     permissions: [
-      'orders.create'
+      'orders.create', 'menu.food.edit'
     ],
   },
   {
@@ -235,7 +271,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
     dataScope: 'RESTRICTED_SHIFT_DATA',
     allowedViews: ['front-desk', 'room-audit'],
     permissions: [
-      'rooms.audit.view', 'rooms.status.override', 'maintenance.raise'
+      'rooms.audit.view', 'rooms.status.override', 'halls.mark_clean', 'services.status_update', 'maintenance.raise'
     ],
   },
   {
