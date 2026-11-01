@@ -91,9 +91,9 @@ export function HeroSlider({ onBookNow, onSeeMenu }: HeroSliderProps) {
   }
 
   return (
-    <section id="home" className="relative h-[94vh] min-h-[700px] overflow-hidden bg-[#23140B]">
+    <section id="home" className="relative min-h-[580px] sm:min-h-[660px] lg:h-[94vh] lg:min-h-[700px] overflow-hidden bg-[#23140B] flex flex-col justify-center">
       {/* Slides Container */}
-      <div className="relative h-full">
+      <div className="absolute inset-0">
         {heroSlides.map((slide, index) => (
           <div
             key={slide.id}
@@ -113,7 +113,7 @@ export function HeroSlider({ onBookNow, onSeeMenu }: HeroSliderProps) {
               className="absolute inset-0"
               style={{
                 background:
-                  "linear-gradient(180deg, rgba(35, 20, 11, 0.76) 0%, rgba(61, 37, 22, 0.50) 45%, rgba(35, 20, 11, 0.88) 100%)",
+                  "linear-gradient(180deg, rgba(35, 20, 11, 0.82) 0%, rgba(61, 37, 22, 0.55) 45%, rgba(35, 20, 11, 0.92) 100%)",
               }}
             />
           </div>
@@ -121,7 +121,7 @@ export function HeroSlider({ onBookNow, onSeeMenu }: HeroSliderProps) {
       </div>
 
       {/* Content Overlay — Strict 90% Mobile / 80% Desktop Container */}
-      <div className="absolute inset-0 flex items-center justify-center z-10 pt-28 pb-28">
+      <div className="relative z-10 pt-24 pb-20 sm:pt-28 sm:pb-24 w-full">
         <div className="osieka-container relative flex items-center justify-between">
           {/* Left Arrow aligned to 80% container edge */}
           <button
@@ -132,50 +132,50 @@ export function HeroSlider({ onBookNow, onSeeMenu }: HeroSliderProps) {
             <ChevronLeft className="w-6 h-6 group-hover:-translate-x-0.5 transition-transform" />
           </button>
 
-          <div className="text-center text-[#FAF7F2] max-w-3xl mx-auto px-2 sm:px-6">
+          <div className="text-center text-[#FAF7F2] max-w-3xl mx-auto px-1 sm:px-6">
             {/* Eyebrow Tag in Lagoon Teal & Terracotta */}
-            <div className="inline-flex items-center gap-2.5 bg-[#23140B]/70 backdrop-blur-md border border-[#D97736]/60 text-[#F4EFE6] px-5 py-2 rounded-full text-[11px] sm:text-xs font-bold tracking-[0.16em] uppercase mb-6 shadow-lg">
+            <div className="inline-flex items-center gap-2 bg-[#23140B]/80 backdrop-blur-md border border-[#D97736]/60 text-[#F4EFE6] px-3.5 py-1.5 sm:px-5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-[0.14em] sm:tracking-[0.16em] uppercase mb-4 sm:mb-6 shadow-lg max-w-full">
               <span className="w-2 h-2 rounded-full bg-[#D97736] animate-pulse shrink-0" />
-              <span>{heroSlides[currentSlide].tag}</span>
+              <span className="truncate">{heroSlides[currentSlide].tag}</span>
             </div>
 
-            <h1 className="font-osieka-serif text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-[#FAF7F2] mb-4 leading-[1.1] drop-shadow-md">
+            <h1 className="font-osieka-serif text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-[#FAF7F2] mb-3 sm:mb-4 leading-[1.12] drop-shadow-md">
               {heroSlides[currentSlide].title}
             </h1>
 
-            <p className="text-base sm:text-xl font-semibold text-[#E8A574] mb-4 tracking-wide">
+            <p className="text-sm sm:text-xl font-semibold text-[#E8A574] mb-3 sm:mb-4 tracking-wide leading-snug">
               {heroSlides[currentSlide].subtitle}
             </p>
 
-            <p className="text-sm sm:text-base text-[#EAE0D0]/90 max-w-2xl mx-auto mb-8 leading-relaxed">
+            <p className="text-xs sm:text-base text-[#EAE0D0]/90 max-w-2xl mx-auto mb-6 sm:mb-8 leading-relaxed">
               {heroSlides[currentSlide].description}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center w-full max-w-md mx-auto sm:max-w-none">
               <Button
                 size="lg"
-                className="bg-[#D97736] hover:bg-[#C06225] text-[#FAF7F2] font-bold text-sm sm:text-base px-8 py-6 rounded-full shadow-xl shadow-black/30 transform hover:-translate-y-0.5 transition-all duration-200 gap-2.5 w-full sm:w-auto border border-[#E8955B]/40"
+                className="bg-[#D97736] hover:bg-[#C06225] text-[#FAF7F2] font-bold text-xs sm:text-base px-6 sm:px-8 py-5 sm:py-6 rounded-full shadow-xl shadow-black/30 transform hover:-translate-y-0.5 transition-all duration-200 gap-2 sm:gap-2.5 w-full sm:w-auto border border-[#E8955B]/40 active:scale-95"
                 onClick={onBookNow}
               >
-                <CalendarDays className="w-5 h-5" />
+                <CalendarDays className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
                 Reserve Your Stay
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="text-[#FAF7F2] border-[#F4EFE6]/45 hover:bg-[#F4EFE6] hover:text-[#3D2516] font-semibold text-sm sm:text-base px-8 py-6 rounded-full bg-[#23140B]/40 backdrop-blur-md transform hover:-translate-y-0.5 transition-all duration-200 gap-2.5 w-full sm:w-auto"
+                className="text-[#FAF7F2] border-[#F4EFE6]/45 hover:bg-[#F4EFE6] hover:text-[#3D2516] font-semibold text-xs sm:text-base px-6 sm:px-8 py-5 sm:py-6 rounded-full bg-[#23140B]/40 backdrop-blur-md transform hover:-translate-y-0.5 transition-all duration-200 gap-2 sm:gap-2.5 w-full sm:w-auto active:scale-95"
                 onClick={onSeeMenu}
               >
-                <Utensils className="w-5 h-5 text-[#D97736]" />
+                <Utensils className="w-4 h-4 sm:w-5 sm:h-5 text-[#D97736] shrink-0" />
                 Explore Dining &amp; Lounge
               </Button>
             </div>
 
             {/* Policy Pill */}
-            <div className="mt-7 inline-flex items-center gap-2.5 text-xs text-[#F4EFE6]/90 bg-[#23140B]/60 backdrop-blur-md px-5 py-2.5 rounded-full border border-[#437A6C]/60">
-              <ShieldCheck className="w-4 h-4 text-[#68B09E] shrink-0" />
-              <span>
-                Reservations are officially honoured &amp; kept upon payment confirmation • Instant Concierge Follow-Up
+            <div className="mt-5 sm:mt-7 inline-flex items-center gap-2 text-[11px] sm:text-xs text-[#F4EFE6]/90 bg-[#23140B]/75 backdrop-blur-md px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full border border-[#437A6C]/60 max-w-full text-left">
+              <ShieldCheck className="w-4 h-4 text-[#68B09E] shrink-0 mt-0.5 sm:mt-0" />
+              <span className="leading-tight">
+                Reservations honoured &amp; kept upon payment confirmation • Instant Concierge Follow-Up
               </span>
             </div>
           </div>
@@ -192,15 +192,15 @@ export function HeroSlider({ onBookNow, onSeeMenu }: HeroSliderProps) {
       </div>
 
       {/* Slide Indicators */}
-      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex space-x-2.5">
+      <div className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 z-20 flex space-x-2">
         {heroSlides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
             className={`h-2 rounded-full transition-all duration-300 ${
               index === currentSlide
-                ? "w-10 bg-[#D97736]"
-                : "w-2.5 bg-[#F4EFE6]/45 hover:bg-[#F4EFE6]/80"
+                ? "w-8 sm:w-10 bg-[#D97736]"
+                : "w-2 sm:w-2.5 bg-[#F4EFE6]/45 hover:bg-[#F4EFE6]/80"
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />
