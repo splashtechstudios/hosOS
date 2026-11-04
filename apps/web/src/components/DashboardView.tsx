@@ -20,7 +20,8 @@ import {
   ChevronRight,
   FileCheck,
   Filter,
-  Layers
+  Layers,
+  ShieldCheck
 } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
 import { useFeedback } from '@/context/FeedbackContext';

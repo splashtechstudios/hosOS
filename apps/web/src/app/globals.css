@@ -602,3 +602,22 @@
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* Mobile Responsive Utility Classes */
+@media (max-width: 1023px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+  .show-on-mobile-flex {
+    display: flex !important;
+  }
+  .show-on-mobile-inline {
+    display: inline-flex !important;
+  }
+}
+@media (min-width: 1024px) {
+  .show-on-mobile-flex,
+  .show-on-mobile-inline {
+    display: none !important;
+  }
+}

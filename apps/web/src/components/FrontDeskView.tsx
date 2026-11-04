@@ -5,7 +5,7 @@ import { Room, StaffUser } from '@hosos/types';
 import { useFeedback } from '@/context/FeedbackContext';
 import { hasPermission } from '@/lib/rbac';
 import {
-  MMENKO_ROOM_TIERS,
+  OSIEKA_ROOM_TIERS,
   STANDARD_ROOM_AMENITIES,
   STANDARD_ROOM_DESCRIPTION,
   VIP_SUITE_AMENITIES,
@@ -195,19 +195,19 @@ export default function FrontDeskView({
   const [newRoomNumber, setNewRoomNumber] = useState('Room 16');
   const [newRoomTypeName, setNewRoomTypeName] = useState<string>('Standard Room');
   const [newCustomName, setNewCustomName] = useState('Standard Room');
-  const [newDescription, setNewDescription] = useState(MMENKO_ROOM_TIERS[0].description);
+  const [newDescription, setNewDescription] = useState(OSIEKA_ROOM_TIERS[0].description);
   const [newFloor, setNewFloor] = useState(1);
   const [newRackRate, setNewRackRate] = useState(40000);
   const [newColorTag, setNewColorTag] = useState('#FEA116');
   const [newColorBg, setNewColorBg] = useState('#FFFBEB');
-  const [newAmenities, setNewAmenities] = useState<string[]>([...MMENKO_ROOM_TIERS[0].features]);
+  const [newAmenities, setNewAmenities] = useState<string[]>([...OSIEKA_ROOM_TIERS[0].features]);
   const [customAmenityInput, setCustomAmenityInput] = useState('');
   const [isSubmittingRoom, setIsSubmittingRoom] = useState(false);
 
   const handleSelectCreateTier = (tierName: string) => {
     const tier =
-      MMENKO_ROOM_TIERS.find((t) => t.name.toLowerCase() === tierName.toLowerCase()) ||
-      MMENKO_ROOM_TIERS[0];
+      OSIEKA_ROOM_TIERS.find((t) => t.name.toLowerCase() === tierName.toLowerCase()) ||
+      OSIEKA_ROOM_TIERS[0];
     setNewRoomTypeName(tier.name);
     setNewCustomName(tier.name);
     setNewRackRate(tier.rate);
@@ -336,11 +336,11 @@ export default function FrontDeskView({
   const getRoomTier = (room: Room) => {
     const tName = (room.roomTypeName || room.customName || '').trim();
     return (
-      MMENKO_ROOM_TIERS.find(
+      OSIEKA_ROOM_TIERS.find(
         (t) =>
           t.name.toLowerCase() === tName.toLowerCase() ||
           t.id.toLowerCase() === (room.roomTypeId || '').toLowerCase()
-      ) || MMENKO_ROOM_TIERS[0]
+      ) || OSIEKA_ROOM_TIERS[0]
     );
   };
 
@@ -375,7 +375,7 @@ export default function FrontDeskView({
 
   const tierCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    MMENKO_ROOM_TIERS.forEach((t) => {
+    OSIEKA_ROOM_TIERS.forEach((t) => {
       counts[t.name] = 0;
     });
     rooms.forEach((r) => {
@@ -509,11 +509,11 @@ export default function FrontDeskView({
       return;
     }
     const currentTier = getRoomTier(room);
-    const currentIndex = MMENKO_ROOM_TIERS.findIndex(
+    const currentIndex = OSIEKA_ROOM_TIERS.findIndex(
       (t) => t.name.toLowerCase() === currentTier.name.toLowerCase()
     );
-    const nextIndex = (currentIndex + 1) % MMENKO_ROOM_TIERS.length;
-    const nextTier = MMENKO_ROOM_TIERS[nextIndex];
+    const nextIndex = (currentIndex + 1) % OSIEKA_ROOM_TIERS.length;
+    const nextTier = OSIEKA_ROOM_TIERS[nextIndex];
 
     try {
       const res = await fetch('/api/rooms', {
@@ -575,8 +575,8 @@ export default function FrontDeskView({
 
   const handleSelectEditTierPreset = (tierName: string) => {
     const tier =
-      MMENKO_ROOM_TIERS.find((t) => t.name.toLowerCase() === tierName.toLowerCase()) ||
-      MMENKO_ROOM_TIERS[0];
+      OSIEKA_ROOM_TIERS.find((t) => t.name.toLowerCase() === tierName.toLowerCase()) ||
+      OSIEKA_ROOM_TIERS[0];
     setEditTier(tier.name);
     setEditName(tier.name);
     setEditPrice(tier.rate);
@@ -840,7 +840,7 @@ export default function FrontDeskView({
                 setBlockFilter('ALL');
               },
             },
-            ...MMENKO_ROOM_TIERS.map((tier) => ({
+            ...OSIEKA_ROOM_TIERS.map((tier) => ({
               label: tier.name,
               value: tierCounts[tier.name] || 0,
               bg: tierFilter === tier.name ? tier.colorBg : '#FFFFFF',
@@ -973,7 +973,7 @@ export default function FrontDeskView({
             >
               <span>All Tiers ({totalRooms})</span>
             </button>
-            {MMENKO_ROOM_TIERS.map((tier) => (
+            {OSIEKA_ROOM_TIERS.map((tier) => (
               <button
                 key={tier.id}
                 onClick={() => setTierFilter(tier.name)}
@@ -1696,7 +1696,7 @@ export default function FrontDeskView({
                   1. Room Tier Preset (Landing Page Rates &amp; Amenities)
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px' }}>
-                  {MMENKO_ROOM_TIERS.map((tier) => {
+                  {OSIEKA_ROOM_TIERS.map((tier) => {
                     const isSelected = editTier.toLowerCase() === tier.name.toLowerCase();
                     return (
                       <button
@@ -1767,13 +1767,13 @@ export default function FrontDeskView({
                     </label>
                     <input
                       type="text"
-                      list="mmenko-block-presets"
+                      list="osieka-block-presets"
                       value={editBlockName}
                       onChange={(e) => setEditBlockName(e.target.value)}
                       placeholder="e.g. Block A1"
                       style={{ width: '100%' }}
                     />
-                    <datalist id="mmenko-block-presets">
+                    <datalist id="osieka-block-presets">
                       {BLOCK_PRESETS.map((b) => (
                         <option key={b} value={b} />
                       ))}
@@ -2211,7 +2211,7 @@ export default function FrontDeskView({
                   Select Room Tier Preset (Landing Page Rates &amp; Amenities)
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px' }}>
-                  {MMENKO_ROOM_TIERS.map((tier) => {
+                  {OSIEKA_ROOM_TIERS.map((tier) => {
                     const isSelected = newRoomTypeName.toLowerCase() === tier.name.toLowerCase();
                     return (
                       <button

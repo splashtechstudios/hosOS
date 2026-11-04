@@ -206,7 +206,7 @@ export default function Sidebar({
             alignItems: 'center',
             gap: '6px',
           }}>
-            <span>HosOS</span>
+            <span>Osieka Resort</span>
             <span className="badge badge-brand" style={{ fontSize: '0.6rem', padding: '1px 5px' }}>
               CRM
             </span>
@@ -218,7 +218,7 @@ export default function Sidebar({
             overflow: 'hidden',
             textOverflow: 'ellipsis',
           }}>
-            Osieka Luxury Resort
+            HosOS Enterprise PMS
           </div>
         </div>
 

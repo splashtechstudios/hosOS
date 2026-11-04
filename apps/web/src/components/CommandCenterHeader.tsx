@@ -178,7 +178,7 @@ export default function CommandCenterHeader({
           )}
 
           {/* Mobile Brand Identity Logo */}
-          <div style={{ display: isMobile ? 'flex' : 'none', alignItems: 'center', gap: '8px' }}>
+          <div className="show-on-mobile-flex" style={{ display: isMobile ? 'flex' : 'none', alignItems: 'center', gap: '8px' }}>
             <div style={{
               width: '28px',
               height: '28px',
@@ -198,14 +198,14 @@ export default function CommandCenterHeader({
               />
             </div>
             <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-              Osieka
+              Osieka Resort
             </span>
           </div>
         </div>
 
         {/* Search Field (Hidden on Mobile) */}
         {!isMobile && (
-          <div style={{ flex: 1, maxWidth: '460px' }}>
+          <div className="hide-on-mobile" style={{ flex: 1, maxWidth: '460px' }}>
             <button
               onClick={() => setIsCmdPaletteOpen(true)}
               style={{
@@ -258,7 +258,7 @@ export default function CommandCenterHeader({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: isMobile ? '0' : '6px',
+                gap: '6px',
                 padding: isMobile ? '7px 9px' : '6px 12px',
                 borderRadius: 'var(--radius-sm)',
                 backgroundColor: '#FEF2F2',
@@ -272,14 +272,13 @@ export default function CommandCenterHeader({
               }}
               title="Record operational expense or fuel outlay"
             >
-              {isMobile ? (
+              <span className="show-on-mobile-inline" style={{ display: isMobile ? 'inline-flex' : 'none', alignItems: 'center', justifyContent: 'center' }}>
                 <Plus size={17} color="#DC2626" strokeWidth={2.8} />
-              ) : (
-                <>
-                  <Fuel size={14} color="#DC2626" />
-                  <span>Record Expense</span>
-                </>
-              )}
+              </span>
+              <span className="hide-on-mobile" style={{ display: isMobile ? 'none' : 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Fuel size={14} color="#DC2626" />
+                <span>Record Expense</span>
+              </span>
             </button>
           )}
 

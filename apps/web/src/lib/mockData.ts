@@ -445,7 +445,7 @@ export const HOSOS_ROOM_TIERS: RoomTierConfig[] = [
   },
 ];
 
-// Compatibility alias
+export const OSIEKA_ROOM_TIERS = HOSOS_ROOM_TIERS;
 export const MMENKO_ROOM_TIERS = HOSOS_ROOM_TIERS;
 
 const OSIEKA_BLOCKS = [
