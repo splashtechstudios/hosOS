@@ -177,12 +177,12 @@ export default function CommandCenterHeader({
             </button>
           )}
 
-          {/* Mobile Brand Identity Logo */}
-          <div className="show-on-mobile-flex" style={{ display: isMobile ? 'flex' : 'none', alignItems: 'center', gap: '8px' }}>
+          {/* Mobile Brand Identity Logo (Icon Only) */}
+          <div className="show-on-mobile-flex" style={{ display: isMobile ? 'flex' : 'none', alignItems: 'center' }}>
             <div style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '6px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
               backgroundColor: '#FFFFFF',
               border: '1px solid var(--border-color)',
               overflow: 'hidden',
@@ -190,6 +190,7 @@ export default function CommandCenterHeader({
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
             }}>
               <img
                 src="/osieka-logo.jpg"
@@ -197,9 +198,6 @@ export default function CommandCenterHeader({
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
             </div>
-            <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-              Osieka Resort
-            </span>
           </div>
         </div>
 

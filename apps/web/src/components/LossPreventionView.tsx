@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StaffUser } from '@hosos/types';
 import { useFeedback } from '@/context/FeedbackContext';
 import {
@@ -26,8 +26,16 @@ interface LossPreventionViewProps {
 
 export default function LossPreventionView({ activeStaff }: LossPreventionViewProps) {
   const { showConfirm, showSuccess } = useFeedback();
-  const [filterSeverity, setFilterSeverity] = useState<'ALL' | 'CRITICAL' | 'HIGH' | 'MEDIUM'>('ALL');
+  const [filterSeverity, setFilterSeverity] = useState<'ALL' | 'LOW' | 'MEDIUM' | 'HIGH'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const formatNaira = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -46,7 +54,7 @@ export default function LossPreventionView({ activeStaff }: LossPreventionViewPr
     staff: string;
     approver: string;
     reason: string;
-    risk: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+    risk: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
     cctvRef: string;
     status: string;
   }>>([]);
@@ -65,7 +73,11 @@ export default function LossPreventionView({ activeStaff }: LossPreventionViewPr
   }>>([]);
 
   const filteredVoids = voidItems.filter(v => {
-    if (filterSeverity !== 'ALL' && v.risk !== filterSeverity) return false;
+    if (filterSeverity !== 'ALL') {
+      if (filterSeverity === 'HIGH' && v.risk !== 'HIGH' && v.risk !== 'CRITICAL') return false;
+      if (filterSeverity === 'MEDIUM' && v.risk !== 'MEDIUM') return false;
+      if (filterSeverity === 'LOW' && (v as any).risk !== 'LOW') return false;
+    }
     if (searchQuery) {
       return (
         v.item.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,16 +106,26 @@ export default function LossPreventionView({ activeStaff }: LossPreventionViewPr
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'stretch',
+            gap: '10px',
+            width: isMobile ? '100%' : 'auto',
+          }}>
             <button
               onClick={() => {
                 showSuccess(
                   'Audit Package Exported Successfully',
                   'Loss prevention workbook generated (.xlsx) for FIRS tax compliance and Internal Audit.',
-                  `Auditor: ${activeStaff.name} • 4 Void Records • 3 Spirit Variances`
+                  `Auditor: ${activeStaff?.name || 'Administrator'} • 0 Void Records • 0 Spirit Variances`
                 );
               }}
               className="btn-secondary"
+              style={{
+                width: isMobile ? '100%' : 'auto',
+                justifyContent: 'center',
+              }}
             >
               <FileSpreadsheet size={15} color="var(--emerald-primary)" />
               <span>Export Audit Package (.xlsx)</span>
@@ -127,7 +149,11 @@ export default function LossPreventionView({ activeStaff }: LossPreventionViewPr
                 );
               }}
               className="btn-primary"
-              style={{ backgroundColor: 'var(--rose-primary)' }}
+              style={{
+                backgroundColor: 'var(--rose-primary)',
+                width: isMobile ? '100%' : 'auto',
+                justifyContent: 'center',
+              }}
             >
               <AlertTriangle size={15} />
               <span>Flag New Incident</span>
@@ -222,38 +248,64 @@ export default function LossPreventionView({ activeStaff }: LossPreventionViewPr
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'stretch' : 'center',
+            gap: '10px',
+            width: isMobile ? '100%' : 'auto',
+          }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '8px',
               backgroundColor: 'var(--bg-secondary)',
               borderRadius: 'var(--radius-sm)',
-              padding: '6px 10px',
+              padding: '8px 12px',
               border: '1px solid var(--border-color)',
+              width: isMobile ? '100%' : 'auto',
             }}>
               <Search size={14} color="var(--text-muted)" />
               <input
                 placeholder="Search voids..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ border: 'none', background: 'transparent', padding: 0, fontSize: '0.75rem' }}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  padding: 0,
+                  fontSize: '0.8rem',
+                  outline: 'none',
+                  width: '100%',
+                }}
               />
             </div>
 
-            <div style={{ display: 'flex', backgroundColor: 'var(--bg-secondary)', padding: '2px', borderRadius: 'var(--radius-sm)' }}>
-              {(['ALL', 'CRITICAL', 'HIGH', 'MEDIUM'] as const).map(sev => (
+            <div style={{
+              display: 'flex',
+              backgroundColor: 'var(--bg-secondary)',
+              padding: '3px',
+              borderRadius: 'var(--radius-sm)',
+              width: isMobile ? '100%' : 'auto',
+              justifyContent: isMobile ? 'space-between' : 'flex-start',
+            }}>
+              {(['ALL', 'LOW', 'MEDIUM', 'HIGH'] as const).map(sev => (
                 <button
                   key={sev}
                   onClick={() => setFilterSeverity(sev)}
                   style={{
-                    padding: '4px 8px',
-                    fontSize: '0.7rem',
-                    fontWeight: 600,
+                    flex: isMobile ? 1 : 'initial',
+                    textAlign: 'center',
+                    padding: '6px 10px',
+                    fontSize: '0.725rem',
+                    fontWeight: 700,
                     borderRadius: '4px',
+                    border: 'none',
+                    cursor: 'pointer',
                     backgroundColor: filterSeverity === sev ? '#FFFFFF' : 'transparent',
                     color: filterSeverity === sev ? 'var(--brand-primary)' : 'var(--text-secondary)',
                     boxShadow: filterSeverity === sev ? 'var(--shadow-xs)' : 'none',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   {sev}

@@ -11,27 +11,54 @@ import { NightAuditRecord } from '@/models/NightAuditRecord';
 export async function GET() {
   try {
     await connectToDatabase();
+    const todayStr = new Date().toISOString().split('T')[0];
     const lastAudit = await NightAuditRecord.findOne().sort({ executedAt: -1 });
-    const currentBusinessDate = lastAudit ? lastAudit.nextBusinessDate : '2026-10-15';
+    const currentBusinessDate = lastAudit ? lastAudit.nextBusinessDate : todayStr;
 
+    const totalRooms = await Room.countDocuments() || 22;
     const occupiedRooms = await Room.find({ status: 'OCCUPIED' });
     const openOrders = await Order.find({ status: { $in: ['PENDING', 'CONFIRMED', 'PREPARING'] } });
+
+    // Live daily revenue calculation from MongoDB
+    const roomRevenue = occupiedRooms.reduce((sum, r) => sum + (r.rackRatePerNight || 0), 0);
+    const dayOrders = await Order.find({ createdAt: { $gte: new Date(currentBusinessDate) } });
+    const foodRevenue = dayOrders.reduce((sum, o) => sum + (o.subtotal || 0), 0);
+    const grossRevenue = roomRevenue + foodRevenue;
+
+    const occupancyRate = totalRooms > 0 ? ((occupiedRooms.length / totalRooms) * 100).toFixed(1) : '0.0';
+    const adr = occupiedRooms.length > 0 ? Math.round(roomRevenue / occupiedRooms.length) : 0;
+    const revPar = totalRooms > 0 ? Math.round(roomRevenue / totalRooms) : 0;
 
     return NextResponse.json({
       success: true,
       currentBusinessDate,
+      totalRoomsCount: totalRooms,
       occupiedRoomsCount: occupiedRooms.length,
       openOrdersCount: openOrders.length,
+      occupancyRate,
+      adr,
+      revPar,
+      roomRevenue,
+      foodRevenue,
+      grossRevenue,
       lastAudit,
     });
   } catch (error: any) {
-    console.warn('MongoDB query failed in /api/night-audit GET, using fallback status:', error.message);
+    console.warn('MongoDB query failed in /api/night-audit GET, using clean fallback status:', error.message);
+    const todayStr = new Date().toISOString().split('T')[0];
     return NextResponse.json({
       success: true,
       fallback: true,
-      currentBusinessDate: '2026-10-15',
-      occupiedRoomsCount: 6,
+      currentBusinessDate: todayStr,
+      totalRoomsCount: 22,
+      occupiedRoomsCount: 0,
       openOrdersCount: 0,
+      occupancyRate: '0.0',
+      adr: 0,
+      revPar: 0,
+      roomRevenue: 0,
+      foodRevenue: 0,
+      grossRevenue: 0,
     });
   }
 }
@@ -42,8 +69,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { staff } = body;
 
+    const todayStr = new Date().toISOString().split('T')[0];
     const lastAudit = await NightAuditRecord.findOne().sort({ executedAt: -1 });
-    const businessDate = lastAudit ? lastAudit.nextBusinessDate : '2026-10-15';
+    const businessDate = lastAudit ? lastAudit.nextBusinessDate : todayStr;
 
     // Calculate next business date
     const dateObj = new Date(businessDate);
@@ -161,17 +189,22 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.warn('MongoDB connection failed during night audit, falling back to simulated rollover:', error.message);
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
     return NextResponse.json({
       success: true,
       fallback: true,
-      message: 'Night Audit for 2026-10-15 executed successfully! Rolled to 2026-10-16.',
+      message: `Night Audit for ${todayStr} executed successfully! Rolled to ${tomorrowStr}.`,
       summary: {
-        businessDate: '2026-10-15',
-        nextBusinessDate: '2026-10-16',
-        totalRoomsOccupied: 6,
-        occupancyRate: '50%',
-        roomRevenueAccrued: 480000,
-        totalDailyRevenue: 642000,
+        businessDate: todayStr,
+        nextBusinessDate: tomorrowStr,
+        totalRoomsOccupied: 0,
+        occupancyRate: '0.0%',
+        roomRevenueAccrued: 0,
+        totalDailyRevenue: 0,
       },
     });
   }

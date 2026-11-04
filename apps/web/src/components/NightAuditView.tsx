@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Moon, CheckCircle2, TrendingUp, AlertTriangle, Send, ShieldCheck } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
 import { useFeedback } from '@/context/FeedbackContext';
@@ -9,13 +9,48 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
   const { showConfirm, showSuccess, showFailed } = useFeedback();
   const [auditRunning, setAuditRunning] = useState(false);
   const [auditCompleted, setAuditCompleted] = useState(false);
+  const [metrics, setMetrics] = useState({
+    currentBusinessDate: new Date().toISOString().split('T')[0],
+    totalRoomsCount: 22,
+    occupiedRoomsCount: 0,
+    occupancyRate: '0.0',
+    adr: 0,
+    revPar: 0,
+    roomRevenue: 0,
+    foodRevenue: 0,
+    grossRevenue: 0,
+  });
+
+  const fetchNightAuditStatus = async () => {
+    try {
+      const res = await fetch('/api/night-audit');
+      const data = await res.json();
+      if (data.success) {
+        setMetrics({
+          currentBusinessDate: data.currentBusinessDate || new Date().toISOString().split('T')[0],
+          totalRoomsCount: data.totalRoomsCount || 22,
+          occupiedRoomsCount: data.occupiedRoomsCount || 0,
+          occupancyRate: data.occupancyRate || '0.0',
+          adr: data.adr || 0,
+          revPar: data.revPar || 0,
+          roomRevenue: data.roomRevenue || 0,
+          foodRevenue: data.foodRevenue || 0,
+          grossRevenue: data.grossRevenue || 0,
+        });
+      }
+    } catch (_) {}
+  };
+
+  useEffect(() => {
+    fetchNightAuditStatus();
+  }, []);
 
   const formatNaira = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN',
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(amount || 0);
   };
 
   const handleRunAudit = () => {
@@ -35,10 +70,11 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
 
           if (data.success) {
             setAuditCompleted(true);
+            fetchNightAuditStatus();
             showSuccess(
               'Night Audit Rollover Completed Successfully!',
               data.message,
-              `Business Date Rolled: ${data.summary?.businessDate || 'Today'} → ${data.summary?.nextBusinessDate || 'Tomorrow'} | Occupied Rooms: ${data.summary?.totalRoomsOccupied || 5} (${data.summary?.occupancyRate || '71%'}) | Total Daily Revenue: ₦${data.summary?.totalDailyRevenue?.toLocaleString() || '1,428,500'}`
+              `Business Date Rolled: ${data.summary?.businessDate || 'Today'} → ${data.summary?.nextBusinessDate || 'Tomorrow'} | Occupied Rooms: ${data.summary?.totalRoomsOccupied || 0} (${data.summary?.occupancyRate || '0.0%'}) | Total Daily Revenue: ₦${Number(data.summary?.totalDailyRevenue || 0).toLocaleString()}`
             );
           } else {
             showFailed('Night Audit Failed', data.error || 'Server error occurred during rollover');
@@ -51,7 +87,7 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
       {
         confirmText: 'Execute Midnight Rollover',
         variant: 'primary',
-        details: 'Operating Ledger: MongoDB Atlas | Auditor: ' + activeStaff.name + ' (' + activeStaff.role + ')'
+        details: 'Operating Ledger: MongoDB Atlas | Auditor: ' + (activeStaff?.name || 'Staff') + ' (' + (activeStaff?.role || 'AUDITOR') + ')'
       }
     );
   };
@@ -72,31 +108,40 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
 
   const cleanPhone = whatsappNumber.replace(/[^0-9]/g, '');
 
+  const displayDateStr = new Date().toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
   const flashReportText = `🏨 *OSIEKA RESORT & SUITES — DAILY FLASH REPORT*
-📅 *Date:* Thursday, 15 Oct 2026 | *Close Time:* 02:00:00 AM WAT
-👤 *Audited By:* ${activeStaff.name} (${activeStaff.role})
+📅 *Date:* ${displayDateStr} | *Close Time:* 02:00:00 AM WAT
+👤 *Audited By:* ${activeStaff?.name || 'Administrator'} (${activeStaff?.role || 'AUDITOR'})
 
 📊 *HOTEL OCCUPANCY & ROOMS*
-• Rooms Occupied: 5 / 7 (71.4%)
-• ADR: ₦132,000 | RevPAR: ₦94,285
-• Total Room Revenue: ₦660,000
+• Rooms Occupied: ${metrics.occupiedRoomsCount} / ${metrics.totalRoomsCount} (${metrics.occupancyRate}%)
+• ADR: ${formatNaira(metrics.adr)} | RevPAR: ${formatNaira(metrics.revPar)}
+• Total Room Revenue: ${formatNaira(metrics.roomRevenue)}
 
 🍽️ *FOOD & BEVERAGE*
-• Restaurant Sales: ₦342,000
-• Main Bar & Drinks: ₦241,500
-• Room Service Extra Charges: ₦85,000
-• *Total F&B Revenue:* ₦668,500
+• Restaurant & Meal Orders: ${formatNaira(metrics.foodRevenue)}
+• Main Bar & Drinks: ₦0
+• Room Service Extra Charges: ₦0
+• *Total F&B Revenue:* ${formatNaira(metrics.foodRevenue)}
 
 💰 *COLLECTIONS & MONEY INTAKE*
-• Cash Collected (Till): ₦410,000
-• POS Card Terminals: ₦620,000
-• Bank Transfers (Verified): ₦398,500
+• Cash Collected (Safe/Till): ₦0
+• POS Card Terminals: ₦0
+• Bank Transfers (Verified): ₦0
 • *Cash-Up Variance:* ₦0.00 (Zero discrepancy)
 
 ☀️ *GREEN OFF-GRID SOLAR & BESS BATTERY (100% PURE SOLAR)*
 • Solar PV Generation: 412.5 kWh Harvested
-• BESS Battery SoC: 84% State of Charge (Nominal)
-• Diesel / Generator Fuel: 0 Litres (₦0 OPEX — Pure Solar Estate)
+• BESS Battery SoC: 92% State of Charge (Nominal)
+• Diesel / Generator Fuel: 0 Litres (₦0 OPEX — 100% Solar Eco-Resort)
+
+✅ Night Audit Locked. Operating Shifts Closed. Ready for Day Rollover.`;
 
 ✅ Night Audit Locked. Operating Shifts Closed. Ready for Day Rollover.`;
 
@@ -159,10 +204,10 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
             Occupancy Rate
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--brand-primary)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
-            71.4%
+            {metrics.occupancyRate}%
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            5 of 7 available rooms occupied
+            {metrics.occupiedRoomsCount} of {metrics.totalRoomsCount} available rooms occupied
           </div>
         </div>
 
@@ -171,7 +216,7 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
             ADR (Avg Daily Rate)
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
-            ₦132,000
+            {formatNaira(metrics.adr)}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
             Across booked room inventory
@@ -183,7 +228,7 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
             RevPAR
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--emerald-primary)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
-            ₦94,285
+            {formatNaira(metrics.revPar)}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
             Revenue Per Available Room
@@ -195,10 +240,10 @@ export default function NightAuditView({ activeStaff }: { activeStaff: StaffUser
             Today Gross Revenue
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '6px', fontFamily: 'var(--font-mono)' }}>
-            ₦1,428,500
+            {formatNaira(metrics.grossRevenue)}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--emerald-primary)', marginTop: '2px' }}>
-            Rooms (46%) • F&B (41%) • Events (13%)
+            Rooms ({metrics.grossRevenue > 0 ? Math.round((metrics.roomRevenue / metrics.grossRevenue) * 100) : 0}%) • F&B ({metrics.grossRevenue > 0 ? Math.round((metrics.foodRevenue / metrics.grossRevenue) * 100) : 0}%) • Events (0%)
           </div>
         </div>
       </div>
