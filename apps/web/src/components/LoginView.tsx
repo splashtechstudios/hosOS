@@ -240,15 +240,20 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: isMobile ? '40px' : '48px',
-            height: isMobile ? '40px' : '48px',
-            borderRadius: 'var(--radius-sm)',
-            backgroundColor: 'var(--brand-primary)',
-            color: '#FFFFFF',
-            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+            width: isMobile ? '52px' : '64px',
+            height: isMobile ? '52px' : '64px',
+            borderRadius: '14px',
+            backgroundColor: '#FFFFFF',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.1)',
             marginBottom: '10px',
+            overflow: 'hidden',
+            border: '1.5px solid var(--border-color)',
           }}>
-            <Building2 size={isMobile ? 24 : 28} />
+            <img
+              src="/osieka-logo.jpg"
+              alt="Osieka Resort Logo"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
           </div>
           <h1 style={{ fontSize: isMobile ? '1.4rem' : '1.75rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             HosOS Enterprise Portal

@@ -383,65 +383,75 @@ export default function MessageBoardView({
           border: 'none',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', width: '100%', maxWidth: '680px' }}>
           {onBack && (
             <button
               onClick={onBack}
               style={{
-                padding: '8px 12px',
+                padding: '6px 12px',
                 borderRadius: '8px',
                 backgroundColor: 'rgba(255,255,255,0.1)',
                 color: '#FFFFFF',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                fontSize: '0.8rem',
+                fontSize: '0.75rem',
                 fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background 0.15s ease',
               }}
             >
-              <ArrowLeft size={15} />
-              <span>Hub</span>
+              <ArrowLeft size={14} />
+              <span>← Back to Hub</span>
             </button>
           )}
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              backgroundColor: 'rgba(217, 119, 54, 0.2)',
-              border: '1px solid rgba(217, 119, 54, 0.45)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#F59E0B',
-            }}
-          >
-            {activeTab === 'MESSAGES' ? <MessageSquare size={22} /> : <Mail size={22} />}
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
-                {activeTab === 'MESSAGES'
-                  ? 'Concierge Message Board'
-                  : 'Email List & Dispatch Subscribers'}
-              </h1>
-              <span
-                className="badge"
-                style={{
-                  backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                  color: '#34D399',
-                  border: '1px solid rgba(16, 185, 129, 0.35)',
-                }}
-              >
-                Live Website Sync
-              </span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(217, 119, 54, 0.2)',
+                border: '1px solid rgba(217, 119, 54, 0.45)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#F59E0B',
+                flexShrink: 0,
+              }}
+            >
+              {activeTab === 'MESSAGES' ? <MessageSquare size={18} /> : <Mail size={18} />}
             </div>
-            <p style={{ fontSize: '0.8rem', color: '#94A3B8', margin: '4px 0 0 0' }}>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', margin: 0, letterSpacing: '-0.02em' }}>
               {activeTab === 'MESSAGES'
-                ? 'All inquiries submitted from the Osieka Resort website contact form with instant WhatsApp, Call & Email follow-up triggers.'
-                : 'Unified email directory collected from the Contact Form, Osieka Dispatch Newsletter, and Reservation Portal.'}
-            </p>
+                ? 'Concierge Message Board'
+                : 'Email List & Dispatch Subscribers'}
+            </h1>
           </div>
+
+          <div>
+            <span
+              className="badge"
+              style={{
+                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                color: '#34D399',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                fontSize: '0.7rem',
+                padding: '3px 9px',
+                display: 'inline-block',
+              }}
+            >
+              Live Website Sync
+            </span>
+          </div>
+
+          <p style={{ fontSize: '0.8rem', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
+            {activeTab === 'MESSAGES'
+              ? 'All inquiries submitted from the Osieka Resort website contact form with instant WhatsApp, Call & Email follow-up triggers.'
+              : 'Unified email directory collected from the Contact Form, Osieka Dispatch Newsletter, and Reservation Portal.'}
+          </p>
         </div>
 
         {/* Submenu Switcher Pills (Messages Board vs Email List Submenu) */}

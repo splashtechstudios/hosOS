@@ -178,19 +178,23 @@ export default function Sidebar({
         backgroundColor: '#FFFFFF',
       }}>
         <div style={{
-          width: '34px',
-          height: '34px',
-          borderRadius: 'var(--radius-sm)',
-          backgroundColor: 'var(--brand-primary)',
-          color: '#FFFFFF',
+          width: '36px',
+          height: '36px',
+          borderRadius: '8px',
+          backgroundColor: '#FFFFFF',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontWeight: 800,
-          fontSize: '1rem',
-          boxShadow: '0 2px 4px rgba(37, 99, 235, 0.25)',
+          overflow: 'hidden',
+          border: '1px solid var(--border-color)',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.08)',
+          flexShrink: 0,
         }}>
-          H
+          <img
+            src="/osieka-logo.jpg"
+            alt="Osieka Resort Logo"
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
@@ -273,6 +277,7 @@ export default function Sidebar({
       <div style={{
         flex: 1,
         overflowY: 'auto',
+        minHeight: 0,
         padding: '10px 10px',
         display: 'flex',
         flexDirection: 'column',
@@ -388,14 +393,20 @@ export default function Sidebar({
         })}
       </div>
 
-      {/* 4. Footer: Staff User Card & Quick Add Staff */}
+      {/* 4. Footer: Staff User Card & Quick Add Staff (Sticky to Bottom) */}
       <div style={{
+        marginTop: 'auto',
+        flexShrink: 0,
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 10,
         padding: '12px 14px',
         borderTop: '1px solid var(--border-color)',
         backgroundColor: '#FFFFFF',
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
+        boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.03)',
       }}>
         {/* In-App Add Staff Button (Admin/Executive Only) */}
         {hasPermission(activeStaff?.role, 'users.onboard') && (

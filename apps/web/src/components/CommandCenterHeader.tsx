@@ -59,6 +59,14 @@ export default function CommandCenterHeader({
   const [isCmdPaletteOpen, setIsCmdPaletteOpen] = useState(false);
   const [cmdSearch, setCmdSearch] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Keyboard shortcut listener for ⌘K / Ctrl+K
   useEffect(() => {
@@ -168,53 +176,80 @@ export default function CommandCenterHeader({
               <Menu size={18} />
             </button>
           )}
-        </div>
 
-        {/* Search Field */}
-        <div style={{ flex: 1, maxWidth: '460px' }}>
-          <button
-            onClick={() => setIsCmdPaletteOpen(true)}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '7px 14px',
-              backgroundColor: 'var(--bg-secondary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-muted)',
-              fontSize: '0.8125rem',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Search size={15} color="var(--text-muted)" />
-              <span>Search rooms, guests, folios, staff...</span>
-            </div>
-            <kbd style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '2px',
-              padding: '2px 6px',
+          {/* Mobile Brand Identity Logo */}
+          <div style={{ display: isMobile ? 'flex' : 'none', alignItems: 'center', gap: '8px' }}>
+            <div style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '6px',
               backgroundColor: '#FFFFFF',
               border: '1px solid var(--border-color)',
-              borderRadius: '4px',
-              fontSize: '0.7rem',
-              fontWeight: 600,
-              color: 'var(--text-secondary)',
-              fontFamily: 'var(--font-mono)',
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
             }}>
-              ⌘K
-            </kbd>
-          </button>
+              <img
+                src="/osieka-logo.jpg"
+                alt="Osieka Resort Logo"
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              />
+            </div>
+            <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+              Osieka
+            </span>
+          </div>
         </div>
 
-        {/* Right Section: Quick Expense, Notification & User */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Search Field (Hidden on Mobile) */}
+        {!isMobile && (
+          <div style={{ flex: 1, maxWidth: '460px' }}>
+            <button
+              onClick={() => setIsCmdPaletteOpen(true)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '7px 14px',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--text-muted)',
+                fontSize: '0.8125rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Search size={15} color="var(--text-muted)" />
+                <span>Search rooms, guests, folios, staff...</span>
+              </div>
+              <kbd style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '2px',
+                padding: '2px 6px',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid var(--border-color)',
+                borderRadius: '4px',
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                fontFamily: 'var(--font-mono)',
+              }}>
+                ⌘K
+              </kbd>
+            </button>
+          </div>
+        )}
+
+        {/* Right Section: Quick Expense (Plus Icon on Mobile), Notification & User */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '10px', marginLeft: isMobile ? 'auto' : '0' }}>
           
-          {/* Quick Expense / Diesel Trigger */}
+          {/* Quick Expense / Diesel Trigger (Plus icon on mobile) */}
           {onOpenRecordExpense && (
             <button
               type="button"
@@ -222,11 +257,12 @@ export default function CommandCenterHeader({
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
-                padding: '6px 12px',
+                justifyContent: 'center',
+                gap: isMobile ? '0' : '6px',
+                padding: isMobile ? '7px 9px' : '6px 12px',
                 borderRadius: 'var(--radius-sm)',
                 backgroundColor: '#FEF2F2',
-                border: '1px solid #FECACA',
+                border: '1.5px solid #FECACA',
                 color: '#DC2626',
                 fontSize: '0.75rem',
                 fontWeight: 700,
@@ -236,8 +272,14 @@ export default function CommandCenterHeader({
               }}
               title="Record operational expense or fuel outlay"
             >
-              <Fuel size={14} color="#DC2626" />
-              <span>Record Expense</span>
+              {isMobile ? (
+                <Plus size={17} color="#DC2626" strokeWidth={2.8} />
+              ) : (
+                <>
+                  <Fuel size={14} color="#DC2626" />
+                  <span>Record Expense</span>
+                </>
+              )}
             </button>
           )}
 

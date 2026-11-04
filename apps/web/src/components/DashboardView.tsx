@@ -172,7 +172,7 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
     window.open(exportEndpoint, '_blank');
     showSuccess(
       'Enterprise Report Exported Successfully',
-      `${reportType} generated and signed for ${activeStaff.name}.`,
+      `${reportType} generated and signed for ${activeStaff?.name || 'Administrator'}.`,
       'File downloaded and formatted for Nigerian FIRS tax compliance and executive board review.'
     );
   };

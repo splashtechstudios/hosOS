@@ -230,7 +230,7 @@ export function isReadOnlyAuditor(role: string | undefined | null): boolean {
  */
 export function canAccessView(role: string | undefined | null, viewId: string, userId?: string | null): boolean {
   if (!role) return false;
-  const normalized = role.toUpperCase();
+  const normalized = role.toUpperCase() === 'ADMIN' ? 'SUPERADMIN' : role.toUpperCase();
 
   // Superadmin & Owner retain master governance access to prevent total lockouts
   if (normalized === 'SUPERADMIN' || normalized === 'OWNER') {
@@ -345,7 +345,7 @@ export function hasPermission(role: string | undefined | null, permission: AppPe
  */
 export function isSidebarEnabledForRole(role: string | undefined | null): boolean {
   if (!role) return false;
-  const normalized = role.toUpperCase();
+  const normalized = role.toUpperCase() === 'ADMIN' ? 'SUPERADMIN' : role.toUpperCase();
   const def = getActiveRoleDefinition(normalized);
   if (def && typeof def.hasSidebar === 'boolean') {
     return def.hasSidebar;

@@ -43,13 +43,16 @@ import {
 import { Room, StaffUser, RoomTimelineItem, RoomStatus, UserRole, PaymentMethod, SplitPaymentDetail } from '@hosos/types';
 import { Clock, ShieldCheck, Database, LogOut, Lock, ShieldAlert, Hotel, Calendar, UtensilsCrossed, LayoutDashboard, Menu } from 'lucide-react';
 import { canAccessView, getDefaultViewForRole, VIEW_TITLES, isSidebarEnabledForRole } from '@/lib/rbac';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 import { FeedbackProvider, useFeedback } from '@/context/FeedbackContext';
 
 export default function HosOSApp() {
   return (
     <FeedbackProvider>
-      <HosOSAppInner />
+      <ErrorBoundary fallbackTitle="HosOS Application Shield">
+        <HosOSAppInner />
+      </ErrorBoundary>
     </FeedbackProvider>
   );
 }
@@ -181,9 +184,13 @@ function HosOSAppInner() {
           try {
             const parsed = JSON.parse(saved);
             if (parsed && parsed.email && parsed.role) {
-              initialUser = parsed;
-              setCurrentUser(parsed);
-              setCurrentView(getDefaultViewForRole(parsed.role));
+              if (parsed.email.includes('@mmenkopalmhotel.com')) {
+                localStorage.removeItem('hosos_active_user');
+              } else {
+                initialUser = parsed;
+                setCurrentUser(parsed);
+                setCurrentView(getDefaultViewForRole(parsed.role));
+              }
             }
           } catch (_) {}
         }
@@ -615,18 +622,27 @@ function HosOSAppInner() {
         gap: '16px',
       }}>
         <div style={{
-          width: '54px',
-          height: '54px',
-          borderRadius: '12px',
-          backgroundColor: 'var(--brand-primary)',
+          width: '56px',
+          height: '56px',
+          borderRadius: '14px',
+          overflow: 'hidden',
+          backgroundColor: '#FFFFFF',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontWeight: 800,
-          fontSize: '1.4rem',
-          boxShadow: '0 6px 24px rgba(37, 99, 235, 0.4)',
+          boxShadow: '0 8px 28px rgba(0, 0, 0, 0.4)',
         }}>
-          H
+          <img
+            src="/osieka-logo.jpg"
+            alt="Osieka Resort"
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = 'none';
+              if (e.currentTarget.parentElement) {
+                e.currentTarget.parentElement.innerHTML = '<span style="font-weight:900;color:#0F172A;font-size:1.4rem;">OR</span>';
+              }
+            }}
+          />
         </div>
         <div style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
           HosOS Enterprise
@@ -692,7 +708,9 @@ function HosOSAppInner() {
               height: '100%',
               backgroundColor: '#FFFFFF',
               boxShadow: 'var(--shadow-xl)',
-              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
             }}
           >
             <Sidebar
@@ -772,7 +790,11 @@ function HosOSAppInner() {
               </div>
             </div>
           ) : (
-            <>
+            <ErrorBoundary
+              key={currentView}
+              fallbackTitle={`${VIEW_TITLES[currentView] || 'Module'} Protected`}
+              onReset={() => setCurrentView(getDefaultViewForRole(currentUser?.role))}
+            >
               {/* Downsized Core Operations */}
               {currentView === 'daily-operations' && (
                 <DailyOperationsView activeStaff={currentUser} />
@@ -962,7 +984,7 @@ function HosOSAppInner() {
                 />
               )}
 
-            </>
+            </ErrorBoundary>
           )}
 
         </main>
