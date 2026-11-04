@@ -37,3 +37,4 @@ export function cleanRoomNumberString(raw: string): string {
   if (!raw) return '';
   return raw.replace(/^(?:Block\s+[A-Za-z0-9]+\s+|Wing\s+[A-Za-z0-9]+\s+|Villa\s+Wing\s+)/i, '').trim();
 }
+
