@@ -27,7 +27,8 @@ import {
   Database,
   Sliders,
   Check,
-  Flame
+  Flame,
+  Menu
 } from 'lucide-react';
 
 interface CommandCenterHeaderProps {
@@ -38,6 +39,8 @@ interface CommandCenterHeaderProps {
   onOpenAddStaff: () => void;
   onOpenQuickOrder?: () => void;
   onOpenQuickMaintenance?: () => void;
+  onOpenRecordExpense?: () => void;
+  onToggleMobileMenu?: () => void;
 }
 
 export default function CommandCenterHeader({
@@ -48,12 +51,14 @@ export default function CommandCenterHeader({
   onOpenAddStaff,
   onOpenQuickOrder,
   onOpenQuickMaintenance,
+  onOpenRecordExpense,
+  onToggleMobileMenu,
 }: CommandCenterHeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCmdPaletteOpen, setIsCmdPaletteOpen] = useState(false);
   const [cmdSearch, setCmdSearch] = useState('');
-  const [unreadCount, setUnreadCount] = useState(3);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Keyboard shortcut listener for ⌘K / Ctrl+K
   useEffect(() => {
@@ -73,40 +78,14 @@ export default function CommandCenterHeader({
   }, []);
 
   // Notifications List
-  const notifications = [
-    {
-      id: 'notif-1',
-      severity: 'CRITICAL',
-      title: 'Diesel Fuel Tank Level Critical',
-      desc: 'Bulk Storage Tank 1 at 24% capacity (840L remaining). Est. runtime: 18h at current load.',
-      time: '12m ago',
-      badgeClass: 'badge-danger',
-    },
-    {
-      id: 'notif-2',
-      severity: 'AUDIT',
-      title: 'Room 204 Order Increment Flagged',
-      desc: '+2x Hennessy VSOP (₦180,000) added to Room 204. Price snapshot matched master ledger.',
-      time: '34m ago',
-      badgeClass: 'badge-warning',
-    },
-    {
-      id: 'notif-3',
-      severity: 'CRM',
-      title: 'VIP Guest Checked In',
-      desc: 'Senator Adeleke Bello (VIP Platinum) checked into Penthouse Suite 304.',
-      time: '1h ago',
-      badgeClass: 'badge-vip',
-    },
-    {
-      id: 'notif-4',
-      severity: 'MAINTENANCE',
-      title: 'Room 102 AC Compressor Serviced',
-      desc: 'Engr. Tunde Bakare logged maintenance completion with digital inspection sign-off.',
-      time: '2h ago',
-      badgeClass: 'badge-success',
-    },
-  ];
+  const notifications: Array<{
+    id: string;
+    severity: string;
+    title: string;
+    desc: string;
+    time: string;
+    badgeClass: string;
+  }> = [];
 
   // Command palette searchable items
   const cmdItems = [
@@ -159,14 +138,39 @@ export default function CommandCenterHeader({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 20px',
+        padding: '0 16px',
         position: 'sticky',
         top: 0,
         zIndex: 40,
         boxShadow: 'var(--shadow-xs)',
+        gap: '12px',
       }}>
         
-        {/* Search Field (Only Search Field on Left) */}
+        {/* Left Section: Mobile Menu Trigger + Brand Identity */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {onToggleMobileMenu && (
+            <button
+              type="button"
+              onClick={onToggleMobileMenu}
+              aria-label="Open Navigation Drawer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '7px',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+              }}
+            >
+              <Menu size={18} />
+            </button>
+          )}
+        </div>
+
+        {/* Search Field */}
         <div style={{ flex: 1, maxWidth: '460px' }}>
           <button
             onClick={() => setIsCmdPaletteOpen(true)}
@@ -207,9 +211,36 @@ export default function CommandCenterHeader({
           </button>
         </div>
 
-        {/* Right Section: Only Notification & User */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* Right Section: Quick Expense, Notification & User */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           
+          {/* Quick Expense / Diesel Trigger */}
+          {onOpenRecordExpense && (
+            <button
+              type="button"
+              onClick={onOpenRecordExpense}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: '#FEF2F2',
+                border: '1px solid #FECACA',
+                color: '#DC2626',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
+              }}
+              title="Record operational expense or fuel outlay"
+            >
+              <Fuel size={14} color="#DC2626" />
+              <span>Record Expense</span>
+            </button>
+          )}
+
           {/* Notification Bell with Badge */}
           <div style={{ position: 'relative' }}>
             <button
@@ -283,32 +314,44 @@ export default function CommandCenterHeader({
                 </div>
 
                 <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
-                  {notifications.map(n => (
-                    <div
-                      key={n.id}
-                      style={{
-                        padding: '12px 16px',
-                        borderBottom: '1px solid var(--border-subtle)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px',
-                        transition: 'background 0.15s ease',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className={`badge ${n.badgeClass}`} style={{ fontSize: '0.65rem' }}>
-                          {n.severity}
-                        </span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{n.time}</span>
+                  {notifications.length === 0 ? (
+                    <div style={{ padding: '36px 20px', textAlign: 'center' }}>
+                      <CheckCircle2 size={32} color="var(--emerald-primary)" style={{ margin: '0 auto 8px' }} />
+                      <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        All Systems Normal
                       </div>
-                      <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {n.title}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                        {n.desc}
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        No pending operational alerts or critical warnings.
                       </div>
                     </div>
-                  ))}
+                  ) : (
+                    notifications.map(n => (
+                      <div
+                        key={n.id}
+                        style={{
+                          padding: '12px 16px',
+                          borderBottom: '1px solid var(--border-subtle)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                          transition: 'background 0.15s ease',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span className={`badge ${n.badgeClass}`} style={{ fontSize: '0.65rem' }}>
+                            {n.severity}
+                          </span>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{n.time}</span>
+                        </div>
+                        <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {n.title}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                          {n.desc}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
 
                 <div style={{

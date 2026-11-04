@@ -32,7 +32,8 @@ import {
   AlertTriangle,
   Sparkles,
   MessageSquare,
-  Mail
+  Mail,
+  X
 } from 'lucide-react';
 import { StaffUser } from '@hosos/types';
 import { ENTERPRISE_ORG } from '@/lib/mockData';
@@ -45,6 +46,7 @@ interface SidebarProps {
   onLogout: () => void;
   onOpenAddStaffModal: () => void;
   onSeedDatabase: () => void;
+  onCloseMobile?: () => void;
 }
 
 interface SubMenuItem {
@@ -70,6 +72,7 @@ export default function Sidebar({
   onLogout,
   onOpenAddStaffModal,
   onSeedDatabase,
+  onCloseMobile,
 }: SidebarProps) {
   const [searchFilter, setSearchFilter] = useState('');
   const [rbacRevision, setRbacRevision] = useState(0);
@@ -214,6 +217,27 @@ export default function Sidebar({
             Osieka Luxury Resort
           </div>
         </div>
+
+        {onCloseMobile && (
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            aria-label="Close Navigation"
+            style={{
+              padding: '6px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: 'var(--bg-secondary)',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       {/* 2. Quick Search Filter */}
@@ -318,7 +342,10 @@ export default function Sidebar({
                     return (
                       <button
                         key={sub.id}
-                        onClick={() => onNavigate(sub.id)}
+                        onClick={() => {
+                          onNavigate(sub.id);
+                          onCloseMobile?.();
+                        }}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -440,6 +467,10 @@ export default function Sidebar({
           >
             <LogOut size={13} color="var(--rose-primary)" />
           </button>
+        </div>
+
+        <div style={{ textAlign: 'center', fontSize: '0.62rem', color: 'var(--text-muted)', paddingTop: '4px' }}>
+          HosOS is licensed by <a href="https://splashtechstudios.com.ng" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand-primary)', textDecoration: 'none', fontWeight: 600 }}>splashtechstudios.com.ng</a>
         </div>
       </div>
     </aside>

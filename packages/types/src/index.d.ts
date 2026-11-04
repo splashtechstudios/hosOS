@@ -58,8 +58,10 @@ export interface RoomOccupancyTransition {
 export interface Room {
     id: string;
     roomNumber: string;
+    blockName?: string;
     roomTypeId: string;
     roomTypeName: string;
+    description?: string;
     floor: number;
     rackRatePerNight: number;
     status: RoomStatus;
@@ -354,7 +356,7 @@ export interface StaffOnboardingRecord {
     createdAt: string;
     completedAt?: string;
 }
-export type AppPermission = 'rooms.audit.view' | 'rooms.status.override' | 'rooms.checkin' | 'rooms.checkout' | 'rooms.customize' | 'orders.create' | 'orders.increment' | 'prices.override' | 'discounts.approve' | 'voids.execute' | 'menu.manage' | 'cash.receive' | 'maintenance.raise' | 'maintenance.signoff' | 'reports.export' | 'users.onboard' | 'crm.manage' | 'solar.log' | 'solar.powersaver_toggle' | 'diesel.log' | 'audit.stamp' | 'daily.submit' | 'daily.audit_update' | 'payment.split' | 'sidebar.toggle' | 'rooms.create' | 'rooms.manage_amenities' | 'halls.book' | 'halls.checkin' | 'halls.checkout' | 'halls.manage' | 'users.manage' | 'users.delete' | 'services.manage' | 'database.clear' | 'rbac.manage';
+export type AppPermission = 'rooms.audit.view' | 'rooms.status.override' | 'rooms.checkin' | 'rooms.checkout' | 'rooms.customize' | 'rooms.create' | 'rooms.manage_amenities' | 'rooms.delete' | 'reservations.view' | 'reservations.create' | 'reservations.followup' | 'reservations.confirm_payment' | 'reservations.cancel' | 'orders.create' | 'orders.increment' | 'orders.remove_cart_item' | 'menu.food.create' | 'menu.food.edit' | 'menu.food.delete' | 'orders.bar.create' | 'menu.drink.create' | 'menu.drink.edit' | 'menu.drink.delete' | 'menu.manage' | 'menu.delete' | 'prices.override' | 'discounts.approve' | 'voids.execute' | 'cash.receive' | 'orders.charge_room' | 'payment.split' | 'halls.book' | 'halls.checkin' | 'halls.checkout' | 'halls.mark_clean' | 'halls.manage' | 'halls.create' | 'halls.edit' | 'halls.delete' | 'services.order' | 'services.status_update' | 'services.manage' | 'services.create' | 'services.edit' | 'services.delete' | 'daily.submit' | 'daily.audit_update' | 'audit.stamp' | 'reports.export' | 'maintenance.raise' | 'maintenance.signoff' | 'solar.log' | 'solar.powersaver_toggle' | 'diesel.log' | 'expenses.record' | 'users.onboard' | 'users.manage' | 'users.delete' | 'crm.manage' | 'crm.create_guest' | 'crm.create_deal' | 'messages.view' | 'messages.followup' | 'messages.delete' | 'emails.manage' | 'emails.delete' | 'sidebar.toggle' | 'settings.manage' | 'database.clear' | 'rbac.manage';
 export type HallStatus = 'AVAILABLE' | 'RESERVED' | 'EVENT_IN_PROGRESS' | 'CLEANING_TURNAROUND' | 'MAINTENANCE';
 export interface EventHallVenue {
     id: string;

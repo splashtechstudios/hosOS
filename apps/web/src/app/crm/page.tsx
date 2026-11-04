@@ -26,6 +26,7 @@ import AddStaffModal from '@/components/AddStaffModal';
 import CheckInModal from '@/components/CheckInModal';
 import CheckOutModal from '@/components/CheckOutModal';
 import NewReservationModal from '@/components/NewReservationModal';
+import RecordExpenseModal from '@/components/RecordExpenseModal';
 import {
   AddOrderModal,
   AddMaintenanceModal,
@@ -40,7 +41,7 @@ import {
   ENTERPRISE_ORG,
 } from '@/lib/mockData';
 import { Room, StaffUser, RoomTimelineItem, RoomStatus, UserRole, PaymentMethod, SplitPaymentDetail } from '@hosos/types';
-import { Clock, ShieldCheck, Database, LogOut, Lock, ShieldAlert } from 'lucide-react';
+import { Clock, ShieldCheck, Database, LogOut, Lock, ShieldAlert, Hotel, Calendar, UtensilsCrossed, LayoutDashboard, Menu } from 'lucide-react';
 import { canAccessView, getDefaultViewForRole, VIEW_TITLES, isSidebarEnabledForRole } from '@/lib/rbac';
 
 import { FeedbackProvider, useFeedback } from '@/context/FeedbackContext';
@@ -108,7 +109,23 @@ function HosOSAppInner() {
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
   const [isCheckOutModalOpen, setIsCheckOutModalOpen] = useState(false);
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [targetRoom, setTargetRoom] = useState<Room>(INITIAL_ROOMS[0]);
+
+  // Mobile responsiveness states
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileScreen, setIsMobileScreen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobileScreen(mobile);
+      if (!mobile) setIsMobileMenuOpen(false);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleOpenCheckIn = (room: Room) => {
     setTargetRoom(room);
@@ -128,6 +145,20 @@ function HosOSAppInner() {
   };
 
   const handleCheckOutSuccess = () => {
+    // Immediately transition room status in local state for zero-latency response
+    setRooms((prev) =>
+      prev.map((r) =>
+        r.roomNumber === targetRoom.roomNumber
+          ? {
+              ...r,
+              status: 'VACANT_DIRTY',
+              currentGuestName: undefined,
+              currentFolioId: undefined,
+              currentReservationId: undefined,
+            }
+          : r
+      )
+    );
     loadRooms();
     if (selectedRoom?.roomNumber) {
       loadRoomAudit(selectedRoom.roomNumber);
@@ -625,8 +656,8 @@ function HosOSAppInner() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
       
-      {/* 1. Full Department Sections Sidebar (Controlled by Role RBAC Matrix: Manager is Hub-only; Superadmin and Accountant have multi-menu access) */}
-      {isSidebarEnabledForRole(currentUser.role) && (
+      {/* 1. Full Department Sections Sidebar (Desktop) */}
+      {isSidebarEnabledForRole(currentUser.role) && !isMobileScreen && (
         <Sidebar
           currentView={currentView}
           onNavigate={(view) => {
@@ -638,6 +669,50 @@ function HosOSAppInner() {
           onOpenAddStaffModal={() => setIsAddStaffModalOpen(true)}
           onSeedDatabase={handleSeedDatabase}
         />
+      )}
+
+      {/* Mobile Off-Canvas Drawer Navigation */}
+      {isSidebarEnabledForRole(currentUser.role) && isMobileScreen && isMobileMenuOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1050, display: 'flex' }}>
+          <div
+            onClick={() => setIsMobileMenuOpen(false)}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.55)',
+              backdropFilter: 'blur(3px)',
+            }}
+          />
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 1051,
+              width: '280px',
+              maxWidth: '85vw',
+              height: '100%',
+              backgroundColor: '#FFFFFF',
+              boxShadow: 'var(--shadow-xl)',
+              overflowY: 'auto',
+            }}
+          >
+            <Sidebar
+              currentView={currentView}
+              onNavigate={(view) => {
+                setHubSubView(null);
+                setCurrentView(view);
+                setIsMobileMenuOpen(false);
+              }}
+              activeStaff={currentUser}
+              onLogout={handleLogout}
+              onOpenAddStaffModal={() => {
+                setIsMobileMenuOpen(false);
+                setIsAddStaffModalOpen(true);
+              }}
+              onSeedDatabase={handleSeedDatabase}
+              onCloseMobile={() => setIsMobileMenuOpen(false)}
+            />
+          </div>
+        </div>
       )}
 
       {/* 2. Main Enterprise Content Body */}
@@ -655,10 +730,12 @@ function HosOSAppInner() {
           onOpenAddStaff={() => setIsAddStaffModalOpen(true)}
           onOpenQuickOrder={() => setIsOrderModalOpen(true)}
           onOpenQuickMaintenance={() => setIsMaintenanceModalOpen(true)}
+          onOpenRecordExpense={() => setIsExpenseModalOpen(true)}
+          onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
         {/* Dynamic Submenu View Router with RBAC Role Enforcement */}
-        <main style={{ flex: 1, padding: '0 24px 60px 24px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
+        <main style={{ flex: 1, padding: isMobileScreen ? '0 12px 90px 12px' : '0 24px 60px 24px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
           
           {/* RBAC 403 Security Screen if unauthorized */}
           {!canAccessView(currentUser.role, currentView, currentUser.id) ? (
@@ -962,7 +1039,160 @@ function HosOSAppInner() {
           onReservationSuccess={handleReservationSuccess}
         />
 
+        {/* Quick Operational Expense Outlay Modal */}
+        <RecordExpenseModal
+          isOpen={isExpenseModalOpen}
+          onClose={() => setIsExpenseModalOpen(false)}
+          activeStaff={currentUser}
+          onExpenseRecorded={() => {
+            loadRooms();
+          }}
+        />
+
+        {/* Footer Credit & Licensing */}
+        <div style={{ textAlign: 'center', marginTop: '40px', padding: '16px 0', borderTop: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontSize: '0.72rem' }}>
+          All Rights Reserved. Designed and Licensed By Splashtechstudios (<a href="https://splashtechstudios.com.ng" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand-primary)', textDecoration: 'none', fontWeight: 600 }}>splashtechstudios.com.ng</a>)
+        </div>
+
       </div>
+
+      {/* Mobile Sticky Bottom Navigation Bar for Quick Thumb Access */}
+      {isMobileScreen && (
+        <nav
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '60px',
+            backgroundColor: '#FFFFFF',
+            borderTop: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-around',
+            zIndex: 1000,
+            boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.06)',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setHubSubView(null);
+              setCurrentView('front-desk');
+            }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+              background: 'none',
+              border: 'none',
+              color: currentView === 'front-desk' ? 'var(--brand-primary)' : 'var(--text-muted)',
+              fontSize: '0.67rem',
+              fontWeight: currentView === 'front-desk' ? 700 : 500,
+              cursor: 'pointer',
+              padding: '6px 8px',
+            }}
+          >
+            <Hotel size={18} />
+            <span>Hub</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setHubSubView(null);
+              setCurrentView('daily-operations');
+            }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+              background: 'none',
+              border: 'none',
+              color: currentView === 'daily-operations' ? 'var(--brand-primary)' : 'var(--text-muted)',
+              fontSize: '0.67rem',
+              fontWeight: currentView === 'daily-operations' ? 700 : 500,
+              cursor: 'pointer',
+              padding: '6px 8px',
+            }}
+          >
+            <Calendar size={18} />
+            <span>Ops</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setHubSubView(null);
+              setCurrentView('pos');
+            }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+              background: 'none',
+              border: 'none',
+              color: currentView === 'pos' ? 'var(--brand-primary)' : 'var(--text-muted)',
+              fontSize: '0.67rem',
+              fontWeight: currentView === 'pos' ? 700 : 500,
+              cursor: 'pointer',
+              padding: '6px 8px',
+            }}
+          >
+            <UtensilsCrossed size={18} />
+            <span>F&amp;B / POS</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setHubSubView(null);
+              setCurrentView('dashboard');
+            }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+              background: 'none',
+              border: 'none',
+              color: currentView === 'dashboard' ? 'var(--brand-primary)' : 'var(--text-muted)',
+              fontSize: '0.67rem',
+              fontWeight: currentView === 'dashboard' ? 700 : 500,
+              cursor: 'pointer',
+              padding: '6px 8px',
+            }}
+          >
+            <LayoutDashboard size={18} />
+            <span>Dashboard</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(true)}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+              background: 'none',
+              border: 'none',
+              color: isMobileMenuOpen ? 'var(--brand-primary)' : 'var(--text-muted)',
+              fontSize: '0.67rem',
+              fontWeight: isMobileMenuOpen ? 700 : 500,
+              cursor: 'pointer',
+              padding: '6px 8px',
+            }}
+          >
+            <Menu size={18} />
+            <span>More</span>
+          </button>
+        </nav>
+      )}
 
     </div>
   );

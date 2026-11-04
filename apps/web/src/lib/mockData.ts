@@ -100,8 +100,8 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
       'maintenance.raise', 'maintenance.signoff', 'reports.export',
       'users.onboard', 'users.manage', 'users.delete',
       'crm.manage', 'crm.create_guest', 'crm.create_deal',
-      'solar.log', 'solar.powersaver_toggle', 'diesel.log', 'audit.stamp',
-      'daily.submit', 'daily.audit_update', 'sidebar.toggle', 'database.clear', 'rbac.manage'
+      'solar.log', 'solar.powersaver_toggle', 'diesel.log', 'expenses.record', 'audit.stamp',
+      'daily.submit', 'daily.audit_update', 'sidebar.toggle', 'settings.manage', 'database.clear', 'rbac.manage'
     ],
   },
   {
@@ -121,7 +121,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
       'orders.charge_room', 'cash.receive', 'payment.split',
       'menu.food.create', 'menu.food.edit', 'menu.drink.create', 'menu.drink.edit', 'menu.manage',
       'services.order', 'services.status_update',
-      'maintenance.raise', 'solar.log', 'solar.powersaver_toggle', 'daily.submit'
+      'maintenance.raise', 'solar.log', 'solar.powersaver_toggle', 'expenses.record', 'settings.manage', 'daily.submit'
     ],
   },
   {
@@ -160,8 +160,8 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
       'services.order', 'services.status_update', 'services.manage', 'services.create', 'services.edit',
       'maintenance.raise', 'maintenance.signoff', 'reports.export',
       'users.onboard', 'users.manage', 'crm.manage', 'crm.create_guest', 'crm.create_deal',
-      'solar.log', 'solar.powersaver_toggle', 'diesel.log', 'audit.stamp',
-      'daily.submit', 'daily.audit_update', 'sidebar.toggle', 'rbac.manage'
+      'solar.log', 'solar.powersaver_toggle', 'diesel.log', 'expenses.record', 'audit.stamp',
+      'daily.submit', 'daily.audit_update', 'sidebar.toggle', 'settings.manage', 'rbac.manage'
     ],
   },
   {
@@ -187,7 +187,7 @@ export const RBAC_ROLE_DEFINITIONS: RoleRBACDefinition[] = [
       'services.order', 'services.status_update', 'services.manage', 'services.create', 'services.edit',
       'maintenance.raise', 'maintenance.signoff', 'reports.export',
       'users.onboard', 'users.manage', 'crm.manage', 'crm.create_guest', 'crm.create_deal',
-      'solar.log', 'solar.powersaver_toggle', 'diesel.log', 'daily.submit'
+      'solar.log', 'solar.powersaver_toggle', 'diesel.log', 'expenses.record', 'settings.manage', 'daily.submit'
     ],
   },
   {
@@ -507,6 +507,58 @@ export const VIP_SUITE_AMENITIES = [
   'Tranquil Views',
 ];
 
+export interface RoomTierConfig {
+  id: string;
+  name: string;
+  rate: number;
+  description: string;
+  features: string[];
+  badgeColor: string;
+  badgeBg: string;
+}
+
+export const HOSOS_ROOM_TIERS: RoomTierConfig[] = [
+  {
+    id: 'standard',
+    name: 'Standard Room',
+    rate: 10000,
+    description: STANDARD_ROOM_DESCRIPTION,
+    features: [...STANDARD_ROOM_AMENITIES],
+    badgeColor: '#059669',
+    badgeBg: '#ECFDF5',
+  },
+  {
+    id: 'vip',
+    name: 'Executive VIP Suite',
+    rate: 15000,
+    description: VIP_SUITE_DESCRIPTION,
+    features: [...VIP_SUITE_AMENITIES],
+    badgeColor: '#D97706',
+    badgeBg: '#FFFBEB',
+  },
+  {
+    id: 'royal',
+    name: 'Royal Room',
+    rate: 20000,
+    description: 'Elevated comfort with expanded living space, premium entertainment, and serene garden view.',
+    features: ['100% Off-Grid Solar Power', 'Solar Inverter AC', 'King Bed', 'Room Service', 'Luxury Shower'],
+    badgeColor: '#2563EB',
+    badgeBg: '#EFF6FF',
+  },
+  {
+    id: 'villa',
+    name: 'Villa Suite',
+    rate: 35000,
+    description: 'Exclusive luxury villa lodge with private terrace, executive lounge, and priority 24/7 concierge.',
+    features: ['100% Off-Grid Solar Power', 'Solar Inverter AC', 'Private Balcony', 'Executive King Bed', 'Priority Concierge'],
+    badgeColor: '#7C3AED',
+    badgeBg: '#F5F3FF',
+  },
+];
+
+// Compatibility alias
+export const MMENKO_ROOM_TIERS = HOSOS_ROOM_TIERS;
+
 const OSIEKA_BLOCKS = [
   { block: 'Block A1', floor: 1, defaultTier: 'VIP' as const },
   { block: 'Block A2', floor: 1, defaultTier: 'VIP' as const },
@@ -521,33 +573,11 @@ const OSIEKA_BLOCKS = [
   { block: 'Block C4', floor: 1, defaultTier: 'VIP' as const },
 ];
 
-export const INITIAL_ROOMS: Room[] = OSIEKA_BLOCKS.flatMap(({ block, floor, defaultTier }, bIdx) =>
+export const INITIAL_ROOMS: Room[] = OSIEKA_BLOCKS.flatMap(({ block, floor, defaultTier }) =>
   [1, 2].map((roomIdx) => {
     const roomNumber = `${block} Room ${roomIdx}`;
     const isVip = defaultTier === 'VIP';
     const slug = roomNumber.toLowerCase().replace(/\s+/g, '-');
-
-    // Give a few rooms realistic live statuses while keeping most VACANT_CLEAN
-    let status: Room['status'] = 'VACANT_CLEAN';
-    let currentGuestName: string | undefined;
-    let currentReservationId: string | undefined;
-    let currentFolioId: string | undefined;
-
-    if (roomNumber === 'Block A1 Room 1') {
-      status = 'OCCUPIED';
-      currentGuestName = 'Chief Adeyemi Thomas';
-      currentReservationId = 'RES-A1R1-98';
-      currentFolioId = 'FOL-A1R1-12';
-    } else if (roomNumber === 'Block A2 Room 2') {
-      status = 'OCCUPIED';
-      currentGuestName = 'Dr. Adeleke Bello';
-      currentReservationId = 'RES-A2R2-77';
-      currentFolioId = 'FOL-A2R2-89';
-    } else if (roomNumber === 'Block B1 Room 2') {
-      status = 'VACANT_DIRTY';
-    } else if (roomNumber === 'Block C4 Room 2') {
-      status = 'MAINTENANCE';
-    }
 
     return {
       id: `room-${slug}`,
@@ -561,263 +591,23 @@ export const INITIAL_ROOMS: Room[] = OSIEKA_BLOCKS.flatMap(({ block, floor, defa
       colorBg: isVip ? '#FFFBEB' : '#ECFDF5',
       floor,
       rackRatePerNight: isVip ? 15000 : 10000,
-      status,
-      currentGuestName,
-      currentReservationId,
-      currentFolioId,
-      lastCleanedAt: '2026-10-29T10:30:00Z',
-      lastCleanedByStaffName: 'Blessing Eze',
+      status: 'VACANT_CLEAN' as const,
+      currentGuestName: undefined,
+      currentReservationId: undefined,
+      currentFolioId: undefined,
+      lastCleanedAt: new Date().toISOString(),
+      lastCleanedByStaffName: 'Housekeeping Lead',
       amenities: isVip ? [...VIP_SUITE_AMENITIES] : [...STANDARD_ROOM_AMENITIES],
       occupancyHistory: [],
     };
   })
 );
 
-// Room 204 Comprehensive 360° Timeline Activity Feed
-export const ROOM_204_TIMELINE: RoomTimelineItem[] = [
-  {
-    id: 'tl-01',
-    timestamp: '2026-10-15T14:10:00Z',
-    category: 'OCCUPANCY',
-    headline: 'Guest Check-In & Room Occupancy Activated',
-    details: 'Status transitioned from VACANT CLEAN to OCCUPIED. Folio #FOL-204-89 opened with ₦200,000 credit limit. Keycard KC-204-A programmed.',
-    actor: {
-      staffId: 'staff-02',
-      staffName: 'Mary Okon',
-      role: 'FRONT_DESK',
-    },
-    meta: {
-      receiptNumber: 'FOL-204-89',
-    },
-  },
-  {
-    id: 'tl-02',
-    timestamp: '2026-10-15T14:15:00Z',
-    category: 'PAYMENT',
-    headline: 'Cash Deposit Received & Credited to Room Folio',
-    details: 'Initial stay cash deposit of ₦50,000 received at Front Desk Till-A. Physical notes counted and verified with UV currency detector.',
-    amount: 50000,
-    actor: {
-      staffId: 'staff-04',
-      staffName: 'Fatima Sanusi',
-      role: 'CASHIER',
-    },
-    meta: {
-      receiptNumber: 'RCT-2026-9932',
-    },
-  },
-  {
-    id: 'tl-03',
-    timestamp: '2026-10-15T14:45:00Z',
-    category: 'ORDER',
-    headline: 'Room Service Order Placed (KOT #KOT-044)',
-    details: 'Items: 1x Grilled Croaker Fish & Yam Chips @ ₦14,500, 1x Osieka Chapman Cocktail @ ₦3,800. Fired to Kitchen and Main Bar.',
-    amount: 18300,
-    actor: {
-      staffId: 'staff-03',
-      staffName: 'Chidi Obi',
-      role: 'WAITER',
-    },
-    meta: {
-      orderNumber: 'RS-2026-0044',
-      items: [
-        { name: 'Grilled Croaker Fish & Yam Chips', quantity: 1, unitPrice: 14500 },
-        { name: 'Osieka Chapman Cocktail', quantity: 1, unitPrice: 3800 },
-      ],
-    },
-  },
-  {
-    id: 'tl-04',
-    timestamp: '2026-10-15T15:15:00Z',
-    category: 'ORDER_INCREMENT',
-    headline: 'Order Increment Logged (+2x Heineken Beer)',
-    details: 'Guest phoned room service requesting additional chilled drinks. Waiter added 2x Heineken Draught @ ₦2,500 each (+₦5,000). Total updated from ₦18,300 to ₦23,300.',
-    amount: 5000,
-    actor: {
-      staffId: 'staff-03',
-      staffName: 'Chidi Obi',
-      role: 'WAITER',
-    },
-    meta: {
-      orderNumber: 'RS-2026-0044',
-      priceSnapshot: 2500,
-      items: [{ name: 'Heineken Draught (Cold)', quantity: 2, unitPrice: 2500 }],
-    },
-  },
-  {
-    id: 'tl-05',
-    timestamp: '2026-10-15T15:40:00Z',
-    category: 'MAINTENANCE',
-    headline: 'Maintenance Ticket Raised (#MNT-2026-0109)',
-    details: 'Issue: "Balcony AC outdoor condensation unit dripping water onto tiled patio floor". Priority: HIGH. Room marked for quick turnaround inspection.',
-    actor: {
-      staffId: 'staff-06',
-      staffName: 'Blessing Eze',
-      role: 'HOUSEKEEPING',
-    },
-    meta: {
-      ticketNumber: 'MNT-2026-0109',
-    },
-  },
-  {
-    id: 'tl-06',
-    timestamp: '2026-10-15T16:30:00Z',
-    category: 'MAINTENANCE',
-    headline: 'Maintenance Repair Completed & Inspected',
-    details: 'Technician cleared drain line and replaced rubber gasket. Consumed: 1x 1/2-inch Gasket (Part #GSK-55) from Maintenance Store. Parts Cost: ₦3,200. Tested under full load.',
-    amount: 3200,
-    actor: {
-      staffId: 'staff-05',
-      staffName: 'Engr. Tunde Bakare',
-      role: 'MAINTENANCE',
-    },
-    meta: {
-      ticketNumber: 'MNT-2026-0109',
-    },
-  },
-  {
-    id: 'tl-07',
-    timestamp: '2026-10-15T17:00:00Z',
-    category: 'PAYMENT',
-    headline: 'POS Card Payment Received for Extras',
-    details: 'Guest walked to Front Desk and settled interim charges of ₦25,000 via Stanbic IBTC POS Terminal #STANBIC-02. Transaction Auth Code #884920 verified.',
-    amount: 25000,
-    actor: {
-      staffId: 'staff-02',
-      staffName: 'Mary Okon',
-      role: 'FRONT_DESK',
-    },
-    meta: {
-      receiptNumber: 'POS-TX-884920',
-    },
-  },
-  {
-    id: 'tl-08',
-    timestamp: '2026-10-15T17:35:00Z',
-    category: 'ORDER_INCREMENT',
-    headline: 'Evening Bar Order Placed (+3x Pepper Soup & 2x Hennessy Tots)',
-    details: 'Main Bar tab charged directly to Room 204 folio. 3x Spicy Goat Meat Pepper Soup @ ₦7,500 (₦22,500), 2x Hennessy VSOP 50ml Tots @ ₦6,500 (₦13,000). Total: ₦35,500.',
-    amount: 35500,
-    actor: {
-      staffId: 'staff-03',
-      staffName: 'Chidi Obi',
-      role: 'WAITER',
-    },
-    meta: {
-      orderNumber: 'BAR-2026-0112',
-      items: [
-        { name: 'Spicy Goat Meat Pepper Soup', quantity: 3, unitPrice: 7500 },
-        { name: 'Hennessy VSOP (50ml Tot)', quantity: 2, unitPrice: 6500 },
-      ],
-    },
-  },
-];
+// Room Comprehensive 360° Timeline Activity Feed (Clean Baseline)
+export const ROOM_204_TIMELINE: RoomTimelineItem[] = [];
 
-export const ROOM_204_CONSUMPTION_STATS = [
-  {
-    id: 'item-01',
-    itemName: 'Grilled Croaker Fish & Yam Chips',
-    category: 'KITCHEN_FOOD',
-    totalQuantity: 2,
-    unitPriceCharged: 14500,
-    totalSpent: 29000,
-    lastOrderedAt: '2026-10-15T14:45:00Z',
-    orderedByStaff: 'Chidi Obi (Waiter #03)',
-  },
-  {
-    id: 'item-02',
-    itemName: 'Spicy Goat Meat Pepper Soup',
-    category: 'KITCHEN_FOOD',
-    totalQuantity: 3,
-    unitPriceCharged: 7500,
-    totalSpent: 22500,
-    lastOrderedAt: '2026-10-15T17:35:00Z',
-    orderedByStaff: 'Chidi Obi (Waiter #03)',
-  },
-  {
-    id: 'item-03',
-    itemName: 'Osieka Chapman Cocktail',
-    category: 'BAR_BEVERAGE',
-    totalQuantity: 4,
-    unitPriceCharged: 3800,
-    totalSpent: 15200,
-    lastOrderedAt: '2026-10-15T16:10:00Z',
-    orderedByStaff: 'Chidi Obi (Waiter #03)',
-  },
-  {
-    id: 'item-04',
-    itemName: 'Heineken Draught (Cold)',
-    category: 'BAR_BEVERAGE',
-    totalQuantity: 6,
-    unitPriceCharged: 2500,
-    totalSpent: 15000,
-    lastOrderedAt: '2026-10-15T15:15:00Z',
-    orderedByStaff: 'Chidi Obi (Waiter #03)',
-  },
-  {
-    id: 'item-05',
-    itemName: 'Hennessy VSOP (50ml Tot)',
-    category: 'BAR_BEVERAGE',
-    totalQuantity: 2,
-    unitPriceCharged: 6500,
-    totalSpent: 13000,
-    lastOrderedAt: '2026-10-15T17:35:00Z',
-    orderedByStaff: 'Chidi Obi (Waiter #03)',
-  },
-];
+export const ROOM_204_CONSUMPTION_STATS: any[] = [];
 
-export const INITIAL_MAINTENANCE_TICKETS: MaintenanceTicket[] = [
-  {
-    id: 'mnt-2026-0109',
-    ticketNumber: 'MNT-2026-0109',
-    roomNumber: '204',
-    assetName: 'LG Dual Inverter 1.5HP AC (Balcony)',
-    priority: 'HIGH',
-    category: 'HVAC_AIR_CONDITIONING',
-    issueDescription: 'Balcony AC condensation line dripping water onto balcony tiles.',
-    raisedAt: '2026-10-15T15:40:00Z',
-    raisedByUserId: 'staff-06',
-    raisedByName: 'Blessing Eze',
-    raisedByRole: 'HOUSEKEEPING',
-    status: 'CLOSED_VERIFIED',
-    statusHistory: [],
-    assignedTechnicianId: 'staff-05',
-    assignedTechnicianName: 'Engr. Tunde Bakare',
-    repairDetails: 'Replaced cracked rubber gasket and re-sealed drain clamp.',
-    partsConsumed: [
-      {
-        inventoryItemId: 'inv-gsk-55',
-        partName: '1/2-Inch Heavy Rubber Gasket',
-        quantity: 1,
-        unitCost: 3200,
-        totalCost: 3200,
-      },
-    ],
-    totalRepairCost: 3200,
-    resolvedAt: '2026-10-15T16:30:00Z',
-    verifiedAt: '2026-10-15T16:45:00Z',
-    verifiedByUserId: 'staff-06',
-    verifiedByName: 'Blessing Eze',
-  },
-];
+export const INITIAL_MAINTENANCE_TICKETS: MaintenanceTicket[] = [];
 
-export const INITIAL_GENERATOR_LOGS: GeneratorRunLog[] = [
-  {
-    id: 'gen-log-01',
-    generatorId: 'GEN-250KVA-PERKINS',
-    date: '2026-10-15',
-    startTime: '2026-10-15T10:00:00Z',
-    stopTime: '2026-10-15T18:00:00Z',
-    durationHours: 8.0,
-    meterStart: 4210.5,
-    meterEnd: 4218.5,
-    dieselAddedLitres: 220,
-    fuelCostPerLitre: 1350,
-    burnRateLitresPerHour: 27.5,
-    isAnomaly: false,
-    powerSourceTransition: 'GENERATOR_PRIMARY',
-    loggedByUserId: 'staff-05',
-    loggedByName: 'Engr. Tunde Bakare',
-    notes: 'Resort main load at 65%. Burn rate matches Perkins benchmark.',
-  },
-];
+export const INITIAL_GENERATOR_LOGS: GeneratorRunLog[] = [];

@@ -2,7 +2,8 @@
   "name": "hosos-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "HosOS - Complete Hospitality Operating System for Osieka Resort",
+  "description": "HosOS - Complete Hospitality Operating System for Osieka Resort. Licensed by splashtechstudios.com.ng",
+  "license": "Proprietary - Licensed by splashtechstudios.com.ng",
   "workspaces": [
     "apps/*",
     "packages/*"

@@ -1131,8 +1131,8 @@ function OsiekaResortContent() {
             </div>
           </div>
 
-          <div className="pt-6 sm:pt-8 flex items-center justify-between text-[#F4EFE6]/55 text-xs sm:text-sm">
-            <p>&copy; {new Date().getFullYear()} Osieka Resort. All rights reserved.</p>
+          <div className="pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-[#F4EFE6]/55 text-xs sm:text-sm">
+            <p>&copy; {new Date().getFullYear()} Osieka Resort. All rights reserved. Designed and Licensed by <a href="https://splashtechstudios.com.ng" target="_blank" rel="noopener noreferrer" className="text-[#E8A574] hover:underline font-semibold">splashtechstudios.com.ng</a></p>
             <Link
               href="/crm"
               onClick={() => {

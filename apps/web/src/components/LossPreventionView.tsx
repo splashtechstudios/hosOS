@@ -37,99 +37,32 @@ export default function LossPreventionView({ activeStaff }: LossPreventionViewPr
     }).format(amount);
   };
 
-  const voidItems = [
-    {
-      id: 'VD-9021',
-      timestamp: 'Today, 17:42:10',
-      item: '2x Moët & Chandon Imperial Brut',
-      amount: 190000,
-      outlet: 'Main Bar',
-      staff: 'Emeka Nwosu (Bartender)',
-      approver: 'Dr. Adeleke Bello (GM)',
-      reason: 'Guest changed order to Dom Pérignon before bottle popped',
-      risk: 'HIGH',
-      cctvRef: 'CAM-04 [Bar Counter]',
-      status: 'AUDITED',
-    },
-    {
-      id: 'VD-9018',
-      timestamp: 'Today, 14:15:33',
-      item: '1x Grilled Jumbo Prawns (Continental)',
-      amount: 32000,
-      outlet: 'Main Restaurant',
-      staff: 'Chidi Obi (Waiter)',
-      approver: 'Chef Donald Umeh (Chef)',
-      reason: 'Kitchen delay exceeded 45 mins; guest walked out',
-      risk: 'MEDIUM',
-      cctvRef: 'CAM-02 [Dining Room]',
-      status: 'RESOLVED',
-    },
-    {
-      id: 'VD-8994',
-      timestamp: 'Yesterday, 22:10:45',
-      item: '3x Hennessy XO Double Tots',
-      amount: 105000,
-      outlet: 'Main Bar',
-      staff: 'Emeka Nwosu (Bartender)',
-      approver: 'Unapproved (Override PIN)',
-      reason: 'POS entry error on bill split without supervisor PIN',
-      risk: 'CRITICAL',
-      cctvRef: 'CAM-07 [Bar Storage]',
-      status: 'INVESTIGATING',
-    },
-    {
-      id: 'VD-8950',
-      timestamp: 'Yesterday, 19:30:12',
-      item: 'Room 201 Full Day Room Charge Void',
-      amount: 120000,
-      outlet: 'Front Desk',
-      staff: 'Mary Okon (Front Desk)',
-      approver: 'Dr. Adeleke Bello (GM)',
-      reason: 'Customer air conditioner leakage; relocated to Suite 304 without charge',
-      risk: 'HIGH',
-      cctvRef: 'CAM-01 [Reception]',
-      status: 'APPROVED',
-    },
-  ];
+  const [voidItems, setVoidItems] = useState<Array<{
+    id: string;
+    timestamp: string;
+    item: string;
+    amount: number;
+    outlet: string;
+    staff: string;
+    approver: string;
+    reason: string;
+    risk: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+    cctvRef: string;
+    status: string;
+  }>>([]);
 
-  const barShrinkage = [
-    {
-      bottle: 'Hennessy XO (750ml)',
-      category: 'Cognac',
-      openedAt: '2026-10-14 16:00',
-      totalTots: 25,
-      totsSoldPOS: 18,
-      totsMeasured: 16,
-      varianceTots: -2,
-      varianceCost: 70000,
-      supervisor: 'Emeka Nwosu',
-      status: 'FLAGGED',
-    },
-    {
-      bottle: 'Don Julio 1942 (750ml)',
-      category: 'Tequila',
-      openedAt: '2026-10-15 11:30',
-      totalTots: 25,
-      totsSoldPOS: 10,
-      totsMeasured: 10,
-      varianceTots: 0,
-      varianceCost: 0,
-      supervisor: 'Emeka Nwosu',
-      status: 'BALANCED',
-    },
-    {
-      bottle: 'Macallan 18 Sherry Oak (700ml)',
-      category: 'Single Malt',
-      openedAt: '2026-10-13 19:00',
-      totalTots: 23,
-      totsSoldPOS: 14,
-      totsMeasured: 12,
-      varianceTots: -2,
-      varianceCost: 96000,
-      supervisor: 'Emeka Nwosu',
-      status: 'FLAGGED',
-    },
-  ];
+  const [barShrinkage, setBarShrinkage] = useState<Array<{
+    bottle: string;
+    category: string;
+    openedAt: string;
+    totalTots: number;
+    totsSoldPOS: number;
+    totsMeasured: number;
+    varianceTots: number;
+    varianceCost: number;
+    supervisor: string;
+    status: string;
+  }>>([]);
 
   const filteredVoids = voidItems.filter(v => {
     if (filterSeverity !== 'ALL' && v.risk !== filterSeverity) return false;
@@ -214,13 +147,13 @@ export default function LossPreventionView({ activeStaff }: LossPreventionViewPr
             <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
               Voided Value (MTD)
             </span>
-            <span className="badge badge-danger">4 Incidents</span>
+            <span className="badge badge-clean">{voidItems.length} Incidents</span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--rose-primary)', fontFamily: 'var(--font-mono)' }}>
-            {formatNaira(447000)}
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+            {formatNaira(voidItems.reduce((acc, curr) => acc + curr.amount, 0))}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-            0.91% of gross revenue (Threshold: &lt;1.5%)
+            0.0% of gross revenue (Threshold: &lt;1.5%)
           </div>
         </div>
 
@@ -229,13 +162,13 @@ export default function LossPreventionView({ activeStaff }: LossPreventionViewPr
             <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
               Bar Tot Shrinkage Value
             </span>
-            <span className="badge badge-warning">-4 Tots Unaccounted</span>
+            <span className="badge badge-clean">0 Tots Unaccounted</span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--amber-primary)', fontFamily: 'var(--font-mono)' }}>
-            {formatNaira(166000)}
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+            {formatNaira(barShrinkage.reduce((acc, curr) => acc + curr.varianceCost, 0))}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-            Hennessy XO & Macallan 18 bottles flagged
+            All bottles balanced with physical dipstick
           </div>
         </div>
 
@@ -247,10 +180,10 @@ export default function LossPreventionView({ activeStaff }: LossPreventionViewPr
             <span className="badge badge-brand">Owner/GM Signed</span>
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-            {formatNaira(680000)}
+            {formatNaira(0)}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-            Corporate client volume discounts & VIP comps
+            Standard promotional comps ledger
           </div>
         </div>
 
@@ -259,13 +192,13 @@ export default function LossPreventionView({ activeStaff }: LossPreventionViewPr
             <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
               Cashier Drawer Balance
             </span>
-            <span className="badge badge-clean">99.8% Match</span>
+            <span className="badge badge-clean">100% Match</span>
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--emerald-primary)', fontFamily: 'var(--font-mono)' }}>
             ₦0 Variance
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-            All 4 POS cash drawers balanced yesterday
+            All POS cash drawers balanced
           </div>
         </div>
       </div>
@@ -331,52 +264,64 @@ export default function LossPreventionView({ activeStaff }: LossPreventionViewPr
         </div>
 
         <div className="ent-table-container">
-          <table className="ent-table">
-            <thead>
-              <tr>
-                <th>Ticket ID</th>
-                <th>Timestamp</th>
-                <th>Item & Category</th>
-                <th>Outlet</th>
-                <th>Amount</th>
-                <th>Logged By</th>
-                <th>Approver</th>
-                <th>Reason Logged</th>
-                <th>CCTV Reference</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredVoids.map(v => (
-                <tr key={v.id}>
-                  <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{v.id}</td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{v.timestamp}</td>
-                  <td style={{ fontWeight: 600 }}>{v.item}</td>
-                  <td><span className="badge badge-neutral">{v.outlet}</span></td>
-                  <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--rose-primary)' }}>
-                    {formatNaira(v.amount)}
-                  </td>
-                  <td>{v.staff}</td>
-                  <td style={{ fontWeight: 600, color: v.approver.includes('Unapproved') ? 'var(--rose-primary)' : 'var(--text-primary)' }}>
-                    {v.approver}
-                  </td>
-                  <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', maxWidth: '200px' }}>
-                    {v.reason}
-                  </td>
-                  <td>
-                    <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                      {v.cctvRef}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge ${v.status === 'INVESTIGATING' ? 'badge-danger' : v.status === 'AUDITED' ? 'badge-clean' : 'badge-brand'}`}>
-                      {v.status}
-                    </span>
-                  </td>
+          {filteredVoids.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '36px 16px' }}>
+              <CheckCircle2 size={32} color="var(--emerald-primary)" style={{ margin: '0 auto 8px' }} />
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                No Loss Prevention Incidents or Suspicious Voids
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                All register orders and settlement receipts are 100% balanced and in compliance.
+              </div>
+            </div>
+          ) : (
+            <table className="ent-table">
+              <thead>
+                <tr>
+                  <th>Ticket ID</th>
+                  <th>Timestamp</th>
+                  <th>Item & Category</th>
+                  <th>Outlet</th>
+                  <th>Amount</th>
+                  <th>Logged By</th>
+                  <th>Approver</th>
+                  <th>Reason Logged</th>
+                  <th>CCTV Reference</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredVoids.map(v => (
+                  <tr key={v.id}>
+                    <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{v.id}</td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{v.timestamp}</td>
+                    <td style={{ fontWeight: 600 }}>{v.item}</td>
+                    <td><span className="badge badge-neutral">{v.outlet}</span></td>
+                    <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--rose-primary)' }}>
+                      {formatNaira(v.amount)}
+                    </td>
+                    <td>{v.staff}</td>
+                    <td style={{ fontWeight: 600, color: v.approver.includes('Unapproved') ? 'var(--rose-primary)' : 'var(--text-primary)' }}>
+                      {v.approver}
+                    </td>
+                    <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', maxWidth: '200px' }}>
+                      {v.reason}
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                        {v.cctvRef}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge ${v.status === 'INVESTIGATING' ? 'badge-danger' : v.status === 'AUDITED' ? 'badge-clean' : 'badge-brand'}`}>
+                        {v.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
@@ -392,54 +337,66 @@ export default function LossPreventionView({ activeStaff }: LossPreventionViewPr
         </div>
 
         <div className="ent-table-container">
-          <table className="ent-table">
-            <thead>
-              <tr>
-                <th>Spirit Bottle</th>
-                <th>Category</th>
-                <th>Opened At</th>
-                <th>Total Yield</th>
-                <th>POS Depletions</th>
-                <th>Dipstick Measured</th>
-                <th>Variance (Tots)</th>
-                <th>Estimated Loss</th>
-                <th>Supervisor</th>
-                <th>Audit Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {barShrinkage.map((b, idx) => (
-                <tr key={idx}>
-                  <td style={{ fontWeight: 700 }}>{b.bottle}</td>
-                  <td><span className="badge badge-neutral">{b.category}</span></td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{b.openedAt}</td>
-                  <td style={{ fontFamily: 'var(--font-mono)' }}>{b.totalTots} tots</td>
-                  <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{b.totsSoldPOS} tots</td>
-                  <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{b.totsMeasured} tots</td>
-                  <td style={{
-                    fontWeight: 700,
-                    fontFamily: 'var(--font-mono)',
-                    color: b.varianceTots < 0 ? 'var(--rose-primary)' : 'var(--emerald-primary)',
-                  }}>
-                    {b.varianceTots === 0 ? '0' : `${b.varianceTots} tots`}
-                  </td>
-                  <td style={{
-                    fontWeight: 700,
-                    fontFamily: 'var(--font-mono)',
-                    color: b.varianceCost > 0 ? 'var(--rose-primary)' : 'var(--text-muted)',
-                  }}>
-                    {b.varianceCost > 0 ? formatNaira(b.varianceCost) : '₦0'}
-                  </td>
-                  <td>{b.supervisor}</td>
-                  <td>
-                    <span className={`badge ${b.status === 'FLAGGED' ? 'badge-danger' : 'badge-clean'}`}>
-                      {b.status}
-                    </span>
-                  </td>
+          {barShrinkage.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '36px 16px' }}>
+              <CheckCircle2 size={32} color="var(--emerald-primary)" style={{ margin: '0 auto 8px' }} />
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                No Spirits Shrinkage or Variance Detected
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                All high-value liquor and spirit bottles align with physical tot dipstick measurements.
+              </div>
+            </div>
+          ) : (
+            <table className="ent-table">
+              <thead>
+                <tr>
+                  <th>Spirit Bottle</th>
+                  <th>Category</th>
+                  <th>Opened At</th>
+                  <th>Total Yield</th>
+                  <th>POS Depletions</th>
+                  <th>Dipstick Measured</th>
+                  <th>Variance (Tots)</th>
+                  <th>Estimated Loss</th>
+                  <th>Supervisor</th>
+                  <th>Audit Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {barShrinkage.map((b, idx) => (
+                  <tr key={idx}>
+                    <td style={{ fontWeight: 700 }}>{b.bottle}</td>
+                    <td><span className="badge badge-neutral">{b.category}</span></td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{b.openedAt}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)' }}>{b.totalTots} tots</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{b.totsSoldPOS} tots</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{b.totsMeasured} tots</td>
+                    <td style={{
+                      fontWeight: 700,
+                      fontFamily: 'var(--font-mono)',
+                      color: b.varianceTots < 0 ? 'var(--rose-primary)' : 'var(--emerald-primary)',
+                    }}>
+                      {b.varianceTots === 0 ? '0' : `${b.varianceTots} tots`}
+                    </td>
+                    <td style={{
+                      fontWeight: 700,
+                      fontFamily: 'var(--font-mono)',
+                      color: b.varianceCost > 0 ? 'var(--rose-primary)' : 'var(--text-muted)',
+                    }}>
+                      {b.varianceCost > 0 ? formatNaira(b.varianceCost) : '₦0'}
+                    </td>
+                    <td>{b.supervisor}</td>
+                    <td>
+                      <span className={`badge ${b.status === 'FLAGGED' ? 'badge-danger' : 'badge-clean'}`}>
+                        {b.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

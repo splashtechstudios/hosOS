@@ -4,6 +4,7 @@ import { Room as RoomModel } from '@/models/Room';
 import { AuditLog } from '@/models/AuditLog';
 import {
   INITIAL_ROOMS,
+  HOSOS_ROOM_TIERS,
   STANDARD_ROOM_AMENITIES,
   STANDARD_ROOM_DESCRIPTION,
   VIP_SUITE_AMENITIES,
@@ -119,6 +120,73 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
+
+    // Batch Action: Strip all block naming prefixes from all rooms in store & MongoDB and sync authentic tiers
+    if (body.action === 'cleanAllBlocks') {
+      const store = getFallbackRoomsStore();
+      const cleanRegex = /^(?:Block\s+[A-Za-z0-9]+\s+|Wing\s+[A-Za-z0-9]+\s+|Villa\s+Wing\s+)/i;
+
+      const getTierForRoomNum = (rNum: string) => {
+        const num = parseInt(rNum.replace(/\D/g, ''), 10);
+        if (num <= 5) return HOSOS_ROOM_TIERS[0]; // Standard Room ₦10,000
+        return HOSOS_ROOM_TIERS[1] || HOSOS_ROOM_TIERS[0]; // Executive VIP Suite ₦15,000
+      };
+
+      for (const r of store) {
+        if (cleanRegex.test(r.roomNumber)) {
+          r.roomNumber = r.roomNumber.replace(cleanRegex, '').trim();
+        }
+        r.blockName = '';
+        const tier = getTierForRoomNum(r.roomNumber);
+        r.roomTypeId = tier.id;
+        r.roomTypeName = tier.name;
+        r.customName = tier.name;
+        r.rackRatePerNight = tier.rate;
+        r.colorTag = tier.badgeColor;
+        r.colorBg = tier.badgeBg;
+        r.description = tier.description;
+        r.amenities = [...tier.features];
+      }
+
+      // Persist in MongoDB
+      try {
+        await connectToDatabase();
+        const allDbRooms = await RoomModel.find();
+        for (const dr of allDbRooms) {
+          let updatedNum = dr.roomNumber;
+          if (cleanRegex.test(updatedNum)) {
+            updatedNum = updatedNum.replace(cleanRegex, '').trim();
+          }
+          const tier = getTierForRoomNum(updatedNum);
+          await RoomModel.updateOne(
+            { _id: dr._id },
+            {
+              $set: {
+                roomNumber: updatedNum,
+                blockName: '',
+                roomTypeId: tier.id,
+                roomTypeName: tier.name,
+                customName: tier.name,
+                rackRatePerNight: tier.rate,
+                colorTag: tier.badgeColor,
+                colorBg: tier.badgeBg,
+                description: tier.description,
+                amenities: [...tier.features],
+              },
+            }
+          );
+        }
+      } catch (e: any) {
+        console.warn('MongoDB cleanAllBlocks sync warning:', e.message);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'All block naming prefixes cleaned and normalized successfully.',
+        rooms: store,
+      });
+    }
+
     const {
       roomNumber,
       newRoomNumber,

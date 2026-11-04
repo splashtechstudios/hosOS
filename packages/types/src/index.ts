@@ -542,6 +542,8 @@ export type AppPermission =
   | 'solar.log'
   | 'solar.powersaver_toggle'
   | 'diesel.log'
+  // Operational Expenses & Petty Cash Outlays
+  | 'expenses.record'
   // Staff HR, VIP CRM & System Governance
   | 'users.onboard'
   | 'users.manage'
@@ -555,6 +557,7 @@ export type AppPermission =
   | 'emails.manage'
   | 'emails.delete'
   | 'sidebar.toggle'
+  | 'settings.manage'
   | 'database.clear'
   | 'rbac.manage';
 

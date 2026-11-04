@@ -9,84 +9,9 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-const INITIAL_MESSAGES: IContactMessage[] = [
-  {
-    messageId: 'MSG-2026-8421',
-    firstName: 'Dr. Kayode',
-    lastName: 'Olatunji',
-    fullName: 'Dr. Kayode Olatunji',
-    email: 'k.olatunji@medcare.ng',
-    phone: '+234 803 782 4410',
-    subject: 'Weekend Family Retreat & VIP Suite Inquiry',
-    message:
-      'Good day Osieka Resort team, we are planning a 3-night family getaway next weekend and would like to reserve 2 VIP Suites and arrange a private bonfire dinner on Saturday evening. Please share payment details.',
-    status: 'UNREAD',
-    followUpChannel: 'NONE',
-    source: 'CONTACT_FORM',
-    createdAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
-  },
-  {
-    messageId: 'MSG-2026-8390',
-    firstName: 'Mrs. Amina',
-    lastName: 'Bello',
-    fullName: 'Mrs. Amina Bello',
-    email: 'amina.bello@zenithcorp.com',
-    phone: '+234 809 334 1122',
-    subject: 'Corporate Strategy Retreat & Dining Package',
-    message:
-      'Hello, our executive team of 8 guests is visiting Ogori next month. Since you are 100% solar powered with uninterrupted power and Wi-Fi, we would love to book rooms and daily breakfast/dinner catering.',
-    status: 'FOLLOWED_UP',
-    followUpChannel: 'WHATSAPP',
-    followedUpBy: 'Concierge Desk',
-    followedUpAt: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
-    staffNotes: 'Sent pro-forma invoice and account details via WhatsApp.',
-    source: 'CONTACT_FORM',
-    createdAt: new Date(Date.now() - 1000 * 60 * 210).toISOString(),
-  },
-];
+const INITIAL_MESSAGES: IContactMessage[] = [];
 
-const INITIAL_SUBSCRIBERS: IEmailSubscriber[] = [
-  {
-    subscriberId: 'SUB-2026-5011',
-    name: 'Dr. Kayode Olatunji',
-    email: 'k.olatunji@medcare.ng',
-    phone: '+234 803 782 4410',
-    source: 'CONTACT_FORM',
-    status: 'ACTIVE',
-    tags: ['VIP Inquiry', 'Weekend Retreat'],
-    subscribedAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
-  },
-  {
-    subscriberId: 'SUB-2026-4982',
-    name: 'Mrs. Amina Bello',
-    email: 'amina.bello@zenithcorp.com',
-    phone: '+234 809 334 1122',
-    source: 'CONTACT_FORM',
-    status: 'ACTIVE',
-    tags: ['Corporate', 'Dining'],
-    subscribedAt: new Date(Date.now() - 1000 * 60 * 210).toISOString(),
-  },
-  {
-    subscriberId: 'SUB-2026-4910',
-    name: 'Engr. Segun Adeyemi',
-    email: 'segun.adeyemi@gmail.com',
-    phone: '+234 805 221 9087',
-    source: 'NEWSLETTER_FORM',
-    status: 'ACTIVE',
-    tags: ['Osieka Dispatch', 'Seasonal Offers'],
-    subscribedAt: new Date(Date.now() - 1000 * 60 * 600).toISOString(),
-  },
-  {
-    subscriberId: 'SUB-2026-4875',
-    name: 'Barrister Folake Coker',
-    email: 'fcoker@chambers.ng',
-    phone: '+234 809 111 2233',
-    source: 'RESERVATION_PORTAL',
-    status: 'ACTIVE',
-    tags: ['VIP Suite Guest'],
-    subscribedAt: new Date(Date.now() - 1000 * 60 * 1440).toISOString(),
-  },
-];
+const INITIAL_SUBSCRIBERS: IEmailSubscriber[] = [];
 
 declare global {
   // eslint-disable-next-line no-var

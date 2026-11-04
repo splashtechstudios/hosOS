@@ -70,6 +70,12 @@ export default function RoomAuditView({
 }: RoomAuditViewProps) {
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [auditRoomStatusFilter, setAuditRoomStatusFilter] = useState<'ALL' | 'OCCUPIED' | 'VACANT_CLEAN' | 'VACANT_DIRTY' | 'MAINTENANCE'>('ALL');
+
+  const displayedRooms = rooms.filter((r) => {
+    if (auditRoomStatusFilter === 'ALL') return true;
+    return r.status === auditRoomStatusFilter;
+  });
 
   const filteredTimeline = timeline.filter((item) => {
     if (filterCategory === 'ALL') return true;
@@ -137,29 +143,77 @@ export default function RoomAuditView({
       
       {/* 1. TOP ROOM SELECTOR STRIP: See occupancy state of EVERY room */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              All Resort Rooms & Live Occupancy State
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+              All Resort Rooms &amp; Live Occupancy State
             </h2>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
               Click any room to open its internal 360° audit timeline, order increments, and maintenance logs.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <span className="badge badge-brand">{rooms.filter(r => r.status === 'OCCUPIED').length} Occupied</span>
-            <span className="badge badge-clean">{rooms.filter(r => r.status === 'VACANT_CLEAN').length} Clean</span>
-            <span className="badge badge-dirty">{rooms.filter(r => r.status === 'VACANT_DIRTY').length} Dirty</span>
-            <span className="badge badge-maintenance">{rooms.filter(r => r.status === 'MAINTENANCE').length} Maint</span>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%', paddingBottom: '4px' }}>
+            <button
+              type="button"
+              onClick={() => setAuditRoomStatusFilter('ALL')}
+              style={{
+                background: auditRoomStatusFilter === 'ALL' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                color: auditRoomStatusFilter === 'ALL' ? '#FFFFFF' : 'var(--text-secondary)',
+                border: 'none',
+                padding: '4px 10px',
+                borderRadius: '20px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              All ({rooms.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuditRoomStatusFilter(auditRoomStatusFilter === 'OCCUPIED' ? 'ALL' : 'OCCUPIED')}
+              style={{ cursor: 'pointer', border: 'none', background: 'transparent', padding: 0 }}
+            >
+              <span className={`badge ${auditRoomStatusFilter === 'OCCUPIED' ? 'badge-danger' : 'badge-brand'}`} style={{ cursor: 'pointer' }}>
+                {rooms.filter(r => r.status === 'OCCUPIED').length} Occupied
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuditRoomStatusFilter(auditRoomStatusFilter === 'VACANT_CLEAN' ? 'ALL' : 'VACANT_CLEAN')}
+              style={{ cursor: 'pointer', border: 'none', background: 'transparent', padding: 0 }}
+            >
+              <span className="badge badge-clean" style={{ cursor: 'pointer', outline: auditRoomStatusFilter === 'VACANT_CLEAN' ? '2px solid #059669' : 'none' }}>
+                {rooms.filter(r => r.status === 'VACANT_CLEAN').length} Clean
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuditRoomStatusFilter(auditRoomStatusFilter === 'VACANT_DIRTY' ? 'ALL' : 'VACANT_DIRTY')}
+              style={{ cursor: 'pointer', border: 'none', background: 'transparent', padding: 0 }}
+            >
+              <span className="badge badge-dirty" style={{ cursor: 'pointer', outline: auditRoomStatusFilter === 'VACANT_DIRTY' ? '2px solid #D97706' : 'none' }}>
+                {rooms.filter(r => r.status === 'VACANT_DIRTY').length} Dirty
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuditRoomStatusFilter(auditRoomStatusFilter === 'MAINTENANCE' ? 'ALL' : 'MAINTENANCE')}
+              style={{ cursor: 'pointer', border: 'none', background: 'transparent', padding: 0 }}
+            >
+              <span className="badge badge-maintenance" style={{ cursor: 'pointer', outline: auditRoomStatusFilter === 'MAINTENANCE' ? '2px solid #DC2626' : 'none' }}>
+                {rooms.filter(r => r.status === 'MAINTENANCE').length} Maint
+              </span>
+            </button>
           </div>
         </div>
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-          gap: '12px',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(135px, 1fr))',
+          gap: '10px',
         }}>
-          {rooms.map((room) => {
+          {displayedRooms.map((room) => {
             const isSelected = room.roomNumber === selectedRoom.roomNumber;
             return (
               <button
@@ -167,7 +221,7 @@ export default function RoomAuditView({
                 onClick={() => onSelectRoom(room)}
                 style={{
                   textAlign: 'left',
-                  padding: '14px',
+                  padding: '12px',
                   borderRadius: 'var(--radius-sm)',
                   backgroundColor: isSelected ? 'var(--brand-bg)' : '#FFFFFF',
                   border: isSelected ? '1.5px solid var(--brand-primary)' : '1px solid var(--border-color)',
@@ -178,7 +232,7 @@ export default function RoomAuditView({
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <span style={{
-                    fontSize: '1.2rem',
+                    fontSize: '1.1rem',
                     fontWeight: 800,
                     fontFamily: 'var(--font-mono)',
                     color: isSelected ? 'var(--brand-primary)' : 'var(--text-primary)',
@@ -215,8 +269,8 @@ export default function RoomAuditView({
           gap: '16px',
         }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                 Room {selectedRoom.roomNumber} Internal 360° Audit
               </h2>
               {getStatusBadge(selectedRoom.status)}
@@ -226,7 +280,10 @@ export default function RoomAuditView({
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px' }}>
               {selectedRoom.currentGuestName ? (
                 <span>
-                  Occupied by <strong style={{ color: 'var(--text-primary)' }}>{selectedRoom.currentGuestName}</strong> • Active Folio: <strong style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)' }}>{selectedRoom.currentFolioId || '#FOL-204-89'}</strong> • Check-In: 14:10 WAT (Mary Okon)
+                  Occupied by <strong style={{ color: 'var(--text-primary)' }}>{selectedRoom.currentGuestName}</strong>
+                  {selectedRoom.currentFolioId ? (
+                    <> • Active Folio: <strong style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)' }}>{selectedRoom.currentFolioId}</strong></>
+                  ) : null}
                 </span>
               ) : (
                 <span>Currently {selectedRoom.status.replace(/_/g, ' ')} • Floor {selectedRoom.floor} • Rack Rate: {formatNaira(selectedRoom.rackRatePerNight)}/night</span>
@@ -250,13 +307,24 @@ export default function RoomAuditView({
 
             {selectedRoom.status === 'OCCUPIED' && onOpenCheckOut && (
               <button
-                onClick={() => onOpenCheckOut(selectedRoom)}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenCheckOut(selectedRoom);
+                }}
                 className="btn-primary"
-                style={{ backgroundColor: 'var(--danger-primary)', borderColor: 'var(--danger-primary)' }}
+                style={{
+                  backgroundColor: '#DC2626',
+                  borderColor: '#DC2626',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(220, 38, 38, 0.35)',
+                }}
                 title="Review folio and finalize checkout"
               >
-                <LogOut size={15} />
-                <span>Review & Check-Out</span>
+                <LogOut size={15} color="#FFFFFF" />
+                <span style={{ color: '#FFFFFF', fontWeight: 700 }}>Review &amp; Check-Out</span>
               </button>
             )}
 
@@ -375,62 +443,74 @@ export default function RoomAuditView({
           <span className="badge badge-brand">{consumptionStats.length} Unique Menu Items</span>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table className="ent-table">
-            <thead>
-              <tr>
-                <th>Item Ordered</th>
-                <th>Station</th>
-                <th style={{ textAlign: 'center' }}>Times Ordered</th>
-                <th style={{ textAlign: 'right' }}>Price Sold At</th>
-                <th style={{ textAlign: 'right' }}>Total Billed</th>
-                <th>Logged By Staff</th>
-                <th>Last Order Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {consumptionStats.map((item) => (
-                <tr key={item.id}>
-                  <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {item.itemName}
-                  </td>
-                  <td>
-                    <span className={item.category === 'KITCHEN_FOOD' ? 'badge badge-brand' : 'badge badge-purple'}>
-                      {item.category === 'KITCHEN_FOOD' ? 'Kitchen Food' : 'Bar / Beverage'}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <span style={{
-                      backgroundColor: 'var(--brand-bg)',
-                      color: 'var(--brand-primary)',
-                      padding: '2px 8px',
-                      borderRadius: '10px',
-                      fontWeight: 700,
-                      fontFamily: 'var(--font-mono)',
-                    }}>
-                      {item.totalQuantity}x
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                    {formatNaira(item.unitPriceCharged)}
-                  </td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--brand-primary)' }}>
-                    {formatNaira(item.totalSpent)}
-                  </td>
-                  <td style={{ color: 'var(--text-secondary)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <User size={13} color="var(--brand-primary)" />
-                      <span>{item.orderedByStaff}</span>
-                    </div>
-                  </td>
-                  <td style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-                    {formatTimestamp(item.lastOrderedAt)}
-                  </td>
+        {consumptionStats.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-muted)', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)' }}>
+            <UtensilsCrossed size={32} style={{ opacity: 0.35, marginBottom: '8px' }} />
+            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+              No Food or Drink Orders Billed Yet
+            </div>
+            <p style={{ fontSize: '0.78rem', margin: '4px 0 0 0' }}>
+              Orders added via POS, Kitchen, or Room Service will automatically display here with itemized quantities and staff attribution.
+            </p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="ent-table">
+              <thead>
+                <tr>
+                  <th>Item Ordered</th>
+                  <th>Station</th>
+                  <th style={{ textAlign: 'center' }}>Times Ordered</th>
+                  <th style={{ textAlign: 'right' }}>Price Sold At</th>
+                  <th style={{ textAlign: 'right' }}>Total Billed</th>
+                  <th>Logged By Staff</th>
+                  <th>Last Order Time</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {consumptionStats.map((item) => (
+                  <tr key={item.id}>
+                    <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {item.itemName}
+                    </td>
+                    <td>
+                      <span className={item.category === 'KITCHEN_FOOD' ? 'badge badge-brand' : 'badge badge-purple'}>
+                        {item.category === 'KITCHEN_FOOD' ? 'Kitchen Food' : 'Bar / Beverage'}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <span style={{
+                        backgroundColor: 'var(--brand-bg)',
+                        color: 'var(--brand-primary)',
+                        padding: '2px 8px',
+                        borderRadius: '10px',
+                        fontWeight: 700,
+                        fontFamily: 'var(--font-mono)',
+                      }}>
+                        {item.totalQuantity}x
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                      {formatNaira(item.unitPriceCharged)}
+                    </td>
+                    <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--brand-primary)' }}>
+                      {formatNaira(item.totalSpent)}
+                    </td>
+                    <td style={{ color: 'var(--text-secondary)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <User size={13} color="var(--brand-primary)" />
+                        <span>{item.orderedByStaff}</span>
+                      </div>
+                    </td>
+                    <td style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+                      {formatTimestamp(item.lastOrderedAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* 4. SECTION B: 360° ACTIVITY TIMELINE (INCREMENTS, MAINTENANCE, PAYMENTS, STAFF & DATE) */}
@@ -484,24 +564,35 @@ export default function RoomAuditView({
         </div>
 
         {/* Timeline Event Feed */}
-        <div style={{
-          position: 'relative',
-          paddingLeft: '32px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
-        }}>
-          {/* Vertical Timeline Axis */}
+        {filteredTimeline.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-muted)', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)' }}>
+            <Clock size={32} style={{ opacity: 0.35, marginBottom: '8px' }} />
+            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+              No Activity Recorded for this Room
+            </div>
+            <p style={{ fontSize: '0.78rem', margin: '4px 0 0 0' }}>
+              All guest check-ins, room service orders, maintenance tickets, and folios will automatically log here in real time.
+            </p>
+          </div>
+        ) : (
           <div style={{
-            position: 'absolute',
-            left: '11px',
-            top: '8px',
-            bottom: '8px',
-            width: '2px',
-            backgroundColor: 'var(--border-color)',
-          }}></div>
+            position: 'relative',
+            paddingLeft: '32px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+          }}>
+            {/* Vertical Timeline Axis */}
+            <div style={{
+              position: 'absolute',
+              left: '11px',
+              top: '8px',
+              bottom: '8px',
+              width: '2px',
+              backgroundColor: 'var(--border-color)',
+            }}></div>
 
-          {filteredTimeline.map((event) => {
+            {filteredTimeline.map((event) => {
             let badgeClass = 'badge badge-brand';
             if (event.category === 'ORDER_INCREMENT') badgeClass = 'badge badge-brand';
             else if (event.category === 'MAINTENANCE') badgeClass = 'badge badge-dirty';
@@ -642,7 +733,8 @@ export default function RoomAuditView({
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
 
     </div>

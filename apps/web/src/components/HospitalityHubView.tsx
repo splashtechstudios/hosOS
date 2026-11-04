@@ -73,11 +73,20 @@ export default function HospitalityHubView({
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isDesktop, setIsDesktop] = useState(true);
+  const [isMobileScreen, setIsMobileScreen] = useState(false);
 
   // Live Reservations & Follow-Up Desk State
-  const [reservations, setReservations] = useState<LiveReservationItem[]>([]);
+  const [reservations, setReservations] = useState<LiveReservationItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('hosos_reservations_cache');
+        if (cached) return JSON.parse(cached);
+      } catch (_) {}
+    }
+    return [];
+  });
   const [isLoadingReservations, setIsLoadingReservations] = useState(true);
-  const [resFilter, setResFilter] = useState<'ALL' | 'AWAITING_PAYMENT' | 'HONOURED'>('ALL');
+  const [resFilter, setResFilter] = useState<'ALL' | 'AWAITING_PAYMENT' | 'HONOURED' | 'REJECTED'>('ALL');
   const [updatingResId, setUpdatingResId] = useState<string | null>(null);
 
   const fetchReservations = useCallback(async () => {
@@ -87,6 +96,9 @@ export default function HospitalityHubView({
       const data = await res.json();
       if (data.success && Array.isArray(data.reservations)) {
         setReservations(data.reservations);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('hosos_reservations_cache', JSON.stringify(data.reservations));
+        }
       }
     } catch (err) {
       console.warn('Could not load reservations in Hospitality Hub:', err);
@@ -102,7 +114,10 @@ export default function HospitalityHubView({
   }, [fetchReservations]);
 
   useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+      setIsMobileScreen(window.innerWidth < 768);
+    };
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -268,6 +283,19 @@ export default function HospitalityHubView({
       async () => {
         setUpdatingResId(resItem.reservationNumber);
         try {
+          // Optimistically update local state & cache
+          setReservations((prev) => {
+            const next = prev.map((r) =>
+              r.reservationNumber === resItem.reservationNumber
+                ? { ...r, status: 'CANCELLED' as const }
+                : r
+            );
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('hosos_reservations_cache', JSON.stringify(next));
+            }
+            return next;
+          });
+
           await fetch('/api/reservations', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -280,7 +308,7 @@ export default function HospitalityHubView({
           showToast({
             type: 'info',
             title: 'Unpaid Reservation Released',
-            message: `${resItem.reservationNumber} marked as cancelled.`,
+            message: `${resItem.reservationNumber} marked as cancelled and moved to Rejected tab.`,
           });
           fetchReservations();
         } finally {
@@ -295,7 +323,43 @@ export default function HospitalityHubView({
     );
   };
 
+  const handleRestoreReservation = async (resItem: LiveReservationItem) => {
+    setUpdatingResId(resItem.reservationNumber);
+    try {
+      setReservations((prev) => {
+        const next = prev.map((r) =>
+          r.reservationNumber === resItem.reservationNumber
+            ? { ...r, status: 'PENDING_PAYMENT' as const }
+            : r
+        );
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('hosos_reservations_cache', JSON.stringify(next));
+        }
+        return next;
+      });
+
+      await fetch('/api/reservations', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reservationNumber: resItem.reservationNumber,
+          status: 'PENDING_PAYMENT',
+          staffName: activeStaff.name,
+        }),
+      });
+      showToast({
+        type: 'success',
+        title: 'Reservation Restored',
+        message: `${resItem.reservationNumber} restored to Active Queue.`,
+      });
+      fetchReservations();
+    } finally {
+      setUpdatingResId(null);
+    }
+  };
+
   const activeReservations = reservations.filter((r) => r.status !== 'CANCELLED');
+  const rejectedList = reservations.filter((r) => r.status === 'CANCELLED' || (r as any).status === 'REJECTED');
   const awaitingPaymentList = activeReservations.filter(
     (r) => r.paymentStatus === 'AWAITING_PAYMENT' || r.depositPaid <= 0
   );
@@ -308,6 +372,8 @@ export default function HospitalityHubView({
       ? awaitingPaymentList
       : resFilter === 'HONOURED'
       ? honouredList
+      : resFilter === 'REJECTED'
+      ? rejectedList
       : activeReservations;
 
   // Total canonical groups requested by user: Rooms, Kitchen, Drinks, Halls and Events
@@ -566,8 +632,8 @@ export default function HospitalityHubView({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '16px',
+            gridTemplateColumns: isMobileScreen ? '1fr' : isDesktop ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)',
+            gap: isMobileScreen ? '10px' : '16px',
             marginTop: '28px',
             paddingTop: '20px',
             borderTop: '1px solid rgba(255,255,255,0.08)',
@@ -938,6 +1004,20 @@ export default function HospitalityHubView({
               >
                 Paid &amp; Honoured ({honouredList.length})
               </button>
+              <button
+                onClick={() => setResFilter('REJECTED')}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  borderRadius: '6px',
+                  backgroundColor: resFilter === 'REJECTED' ? '#FEF2F2' : 'transparent',
+                  color: resFilter === 'REJECTED' ? '#DC2626' : 'var(--text-secondary)',
+                  boxShadow: resFilter === 'REJECTED' ? 'var(--shadow-xs)' : 'none',
+                }}
+              >
+                Rejected ({rejectedList.length})
+              </button>
             </div>
 
             <button
@@ -968,10 +1048,12 @@ export default function HospitalityHubView({
           <div style={{ padding: '42px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
             <Calendar size={32} style={{ margin: '0 auto 10px', opacity: 0.5 }} />
             <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
-              No Reservations in This Filter
+              {resFilter === 'REJECTED' ? 'No Rejected Reservations' : 'No Reservations in This Queue'}
             </div>
             <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>
-              New bookings submitted from the website or front desk will appear here automatically with guest WhatsApp &amp; phone contacts.
+              {resFilter === 'REJECTED'
+                ? 'When unpaid or duplicate reservations are released, they will be safely archived here for your review.'
+                : 'New bookings submitted from the website or front desk will appear here automatically with guest WhatsApp & phone contacts.'}
             </p>
           </div>
         ) : (
@@ -1282,7 +1364,38 @@ export default function HospitalityHubView({
 
                     {/* Payment Confirmation / Honour Trigger */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {!isPaid ? (
+                      {resItem.status === 'CANCELLED' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span
+                            style={{
+                              fontSize: '0.72rem',
+                              color: '#DC2626',
+                              fontWeight: 700,
+                              backgroundColor: '#FEF2F2',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              border: '1px solid #FECACA',
+                            }}
+                          >
+                            ✕ Rejected / Cancelled
+                          </span>
+                          {canCancelReservation && (
+                            <button
+                              disabled={isBusy}
+                              onClick={() => handleRestoreReservation(resItem)}
+                              className="btn-secondary"
+                              style={{
+                                padding: '5px 10px',
+                                fontSize: '0.72rem',
+                                color: 'var(--brand-primary)',
+                              }}
+                              title="Restore to Active Queue"
+                            >
+                              Restore
+                            </button>
+                          )}
+                        </div>
+                      ) : !isPaid ? (
                         <>
                           {canConfirmReservationPayment && (
                             <button

@@ -1,15 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Room, StaffUser } from '@hosos/types';
 import { useFeedback } from '@/context/FeedbackContext';
 import { hasPermission } from '@/lib/rbac';
 import {
+  MMENKO_ROOM_TIERS,
   STANDARD_ROOM_AMENITIES,
   STANDARD_ROOM_DESCRIPTION,
   VIP_SUITE_AMENITIES,
   VIP_SUITE_DESCRIPTION,
 } from '@/lib/mockData';
+import {
+  getEnableBlocksSetting,
+  cleanRoomNumberString,
+} from '@/lib/systemSettings';
+import SettingsModal from '@/components/SettingsModal';
 import {
   Hotel,
   UserPlus,
@@ -33,6 +39,7 @@ import {
   Building2,
   Trash2,
   Check,
+  Sliders,
 } from 'lucide-react';
 
 interface FrontDeskViewProps {
@@ -46,7 +53,7 @@ interface FrontDeskViewProps {
   onBack?: () => void;
 }
 
-type RoomTab = 'ALL_STATUS' | 'VACANT_CLEAN' | 'VACANT_DIRTY' | 'OCCUPIED' | 'MAINTENANCE';
+type RoomTab = 'ALL_STATUS' | 'VACANT_ALL' | 'VACANT_CLEAN' | 'VACANT_DIRTY' | 'OCCUPIED' | 'MAINTENANCE';
 type ViewMode = 'CARDS' | 'LIST';
 
 const COLOR_PRESETS = [
@@ -118,10 +125,25 @@ export default function FrontDeskView({
   const { showConfirm, showSuccess, showFailed, showToast } = useFeedback();
   const [activeTab, setActiveTab] = useState<RoomTab>('ALL_STATUS');
   const [blockFilter, setBlockFilter] = useState<string>('ALL');
-  const [tierFilter, setTierFilter] = useState<'ALL' | 'STANDARD' | 'VIP'>('ALL');
+  const [tierFilter, setTierFilter] = useState<string>('ALL');
   const [viewMode, setViewMode] = useState<ViewMode>('CARDS');
   const [searchTerm, setSearchTerm] = useState('');
   const [isDesktop, setIsDesktop] = useState(true);
+  const [enableBlocks, setEnableBlocks] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
+  useEffect(() => {
+    setEnableBlocks(getEnableBlocksSetting());
+    const onSettingsUpdate = (e: any) => {
+      if (e.detail?.enableBlocks !== undefined) {
+        setEnableBlocks(e.detail.enableBlocks);
+      } else {
+        setEnableBlocks(getEnableBlocksSetting());
+      }
+    };
+    window.addEventListener('hosos_settings_updated', onSettingsUpdate);
+    return () => window.removeEventListener('hosos_settings_updated', onSettingsUpdate);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 900);
@@ -139,12 +161,12 @@ export default function FrontDeskView({
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [editRoomNumber, setEditRoomNumber] = useState('');
   const [editBlockName, setEditBlockName] = useState('');
-  const [editTier, setEditTier] = useState<'Standard Room' | 'Executive VIP Suite'>('Standard Room');
+  const [editTier, setEditTier] = useState<string>('Standard Room');
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [editColor, setEditColor] = useState('#059669');
-  const [editColorBg, setEditColorBg] = useState('#ECFDF5');
-  const [editPrice, setEditPrice] = useState(10000);
+  const [editColor, setEditColor] = useState('#FEA116');
+  const [editColorBg, setEditColorBg] = useState('#FFFBEB');
+  const [editPrice, setEditPrice] = useState(40000);
   const [editAmenities, setEditAmenities] = useState<string[]>([]);
   const [editCustomAmenityInput, setEditCustomAmenityInput] = useState('');
   const [priceEdits, setPriceEdits] = useState<Record<string, number>>({});
@@ -170,34 +192,29 @@ export default function FrontDeskView({
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const [selectedBlockBuilder, setSelectedBlockBuilder] = useState('Block A1');
   const [selectedUnitBuilder, setSelectedUnitBuilder] = useState('Room 1');
-  const [newRoomNumber, setNewRoomNumber] = useState('Block A4 Room 1');
-  const [newRoomTypeName, setNewRoomTypeName] = useState<'Standard Room' | 'Executive VIP Suite'>('Standard Room');
+  const [newRoomNumber, setNewRoomNumber] = useState('Room 16');
+  const [newRoomTypeName, setNewRoomTypeName] = useState<string>('Standard Room');
   const [newCustomName, setNewCustomName] = useState('Standard Room');
-  const [newDescription, setNewDescription] = useState(STANDARD_ROOM_DESCRIPTION);
+  const [newDescription, setNewDescription] = useState(MMENKO_ROOM_TIERS[0].description);
   const [newFloor, setNewFloor] = useState(1);
-  const [newRackRate, setNewRackRate] = useState(10000);
-  const [newColorTag, setNewColorTag] = useState('#059669');
-  const [newColorBg, setNewColorBg] = useState('#ECFDF5');
-  const [newAmenities, setNewAmenities] = useState<string[]>([...STANDARD_ROOM_AMENITIES]);
+  const [newRackRate, setNewRackRate] = useState(40000);
+  const [newColorTag, setNewColorTag] = useState('#FEA116');
+  const [newColorBg, setNewColorBg] = useState('#FFFBEB');
+  const [newAmenities, setNewAmenities] = useState<string[]>([...MMENKO_ROOM_TIERS[0].features]);
   const [customAmenityInput, setCustomAmenityInput] = useState('');
   const [isSubmittingRoom, setIsSubmittingRoom] = useState(false);
 
-  const handleSelectCreateTier = (tier: 'Standard Room' | 'Executive VIP Suite') => {
-    setNewRoomTypeName(tier);
-    setNewCustomName(tier);
-    if (tier === 'Executive VIP Suite') {
-      setNewRackRate(15000);
-      setNewDescription(VIP_SUITE_DESCRIPTION);
-      setNewAmenities([...VIP_SUITE_AMENITIES]);
-      setNewColorTag('#D97706');
-      setNewColorBg('#FFFBEB');
-    } else {
-      setNewRackRate(10000);
-      setNewDescription(STANDARD_ROOM_DESCRIPTION);
-      setNewAmenities([...STANDARD_ROOM_AMENITIES]);
-      setNewColorTag('#059669');
-      setNewColorBg('#ECFDF5');
-    }
+  const handleSelectCreateTier = (tierName: string) => {
+    const tier =
+      MMENKO_ROOM_TIERS.find((t) => t.name.toLowerCase() === tierName.toLowerCase()) ||
+      MMENKO_ROOM_TIERS[0];
+    setNewRoomTypeName(tier.name);
+    setNewCustomName(tier.name);
+    setNewRackRate(tier.rate);
+    setNewDescription(tier.description);
+    setNewAmenities([...tier.features]);
+    setNewColorTag(tier.colorTag);
+    setNewColorBg(tier.colorBg);
   };
 
   const toggleNewAmenity = (name: string) => {
@@ -302,10 +319,11 @@ export default function FrontDeskView({
     bg: string;
   }> = [
     { id: 'ALL_STATUS', label: 'All Rooms', emoji: '🏨', color: '#2563eb', border: '#BFDBFE', bg: '#EFF6FF' },
+    { id: 'VACANT_ALL', label: 'All Vacant', emoji: '✨', color: '#059669', border: '#A7F3D0', bg: '#ECFDF5' },
     { id: 'VACANT_CLEAN', label: 'Vacant Clean', emoji: '✓', color: '#059669', border: '#BBF7D0', bg: '#F0FDF4' },
     { id: 'VACANT_DIRTY', label: 'Vacant Dirty', emoji: '⚠', color: '#D97706', border: '#FDE68A', bg: '#FFFBEB' },
-    { id: 'OCCUPIED', label: 'Occupied', emoji: '●', color: '#2563eb', border: 'var(--brand-border)', bg: 'var(--brand-bg)' },
-    { id: 'MAINTENANCE', label: 'Maintenance', emoji: '🔧', color: '#E11D48', border: '#FECACA', bg: '#FEF2F2' },
+    { id: 'OCCUPIED', label: 'Occupied', emoji: '●', color: '#DC2626', border: '#FECACA', bg: '#FEF2F2' },
+    { id: 'MAINTENANCE', label: 'Maintenance', emoji: '🔧', color: '#7C3AED', border: '#DDD6FE', bg: '#F5F3FF' },
   ];
 
   const formatNaira = (amount: number) =>
@@ -315,67 +333,123 @@ export default function FrontDeskView({
       maximumFractionDigits: 0,
     }).format(amount);
 
-  const isRoomVip = (room: Room) =>
-    /vip/i.test(room.roomTypeName || '') || /vip/i.test(roomMeta[room.roomNumber]?.displayName || '');
+  const getRoomTier = (room: Room) => {
+    const tName = (room.roomTypeName || room.customName || '').trim();
+    return (
+      MMENKO_ROOM_TIERS.find(
+        (t) =>
+          t.name.toLowerCase() === tName.toLowerCase() ||
+          t.id.toLowerCase() === (room.roomTypeId || '').toLowerCase()
+      ) || MMENKO_ROOM_TIERS[0]
+    );
+  };
+
+  const isRoomVip = (room: Room) => {
+    const tier = getRoomTier(room);
+    return tier.rate >= 100000 || /suite|executive|vip/i.test(tier.name);
+  };
 
   const getRoomBlock = (room: Room) => {
     if (room.blockName) return room.blockName;
-    const m = room.roomNumber.match(/^(Block\s+[A-Za-z0-9]+)/i);
+    const m = room.roomNumber.match(/^([A-Za-z0-9]+(?:\s+[A-Za-z0-9]+)?)/i);
     return m ? m[1] : 'Resort Wing';
   };
 
-  const tabCounts = {
+  const availableBlocks = useMemo(() => {
+    const set = new Set<string>();
+    rooms.forEach((r) => {
+      const b = getRoomBlock(r);
+      if (b) set.add(b);
+    });
+    return Array.from(set).sort();
+  }, [rooms]);
+
+  const tabCounts = useMemo(() => ({
     ALL_STATUS: rooms.length,
+    VACANT_ALL: rooms.filter((r) => r.status === 'VACANT_CLEAN' || r.status === 'VACANT_DIRTY').length,
     VACANT_CLEAN: rooms.filter((r) => r.status === 'VACANT_CLEAN').length,
     VACANT_DIRTY: rooms.filter((r) => r.status === 'VACANT_DIRTY').length,
     OCCUPIED: rooms.filter((r) => r.status === 'OCCUPIED').length,
     MAINTENANCE: rooms.filter((r) => r.status === 'MAINTENANCE' || r.status === 'OUT_OF_ORDER').length,
-  };
+  }), [rooms]);
+
+  const tierCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    MMENKO_ROOM_TIERS.forEach((t) => {
+      counts[t.name] = 0;
+    });
+    rooms.forEach((r) => {
+      const tier = getRoomTier(r);
+      counts[tier.name] = (counts[tier.name] || 0) + 1;
+    });
+    return counts;
+  }, [rooms]);
+
   const totalRooms = rooms.length;
-  const standardCount = rooms.filter((r) => !isRoomVip(r)).length;
-  const vipCount = rooms.filter((r) => isRoomVip(r)).length;
   const occupancyPct = totalRooms > 0 ? Math.round((tabCounts.OCCUPIED / totalRooms) * 100) : 0;
 
-  const filteredRooms = rooms.filter((r) => {
-    const tabMatch =
-      activeTab === 'ALL_STATUS'
-        ? true
-        : activeTab === 'MAINTENANCE'
-        ? r.status === 'MAINTENANCE' || r.status === 'OUT_OF_ORDER'
-        : r.status === activeTab;
-    if (!tabMatch) return false;
+  const filteredRooms = useMemo(() => {
+    return rooms.filter((r) => {
+      const tabMatch =
+        activeTab === 'ALL_STATUS'
+          ? true
+          : activeTab === 'VACANT_ALL'
+          ? r.status === 'VACANT_CLEAN' || r.status === 'VACANT_DIRTY'
+          : activeTab === 'MAINTENANCE'
+          ? r.status === 'MAINTENANCE' || r.status === 'OUT_OF_ORDER'
+          : r.status === activeTab;
+      if (!tabMatch) return false;
 
-    if (blockFilter !== 'ALL') {
-      const b = getRoomBlock(r).toUpperCase();
-      if (blockFilter === 'BLOCK_A' && !b.startsWith('BLOCK A')) return false;
-      if (blockFilter === 'BLOCK_B' && !b.startsWith('BLOCK B')) return false;
-      if (blockFilter === 'BLOCK_C' && !b.startsWith('BLOCK C')) return false;
-      if (
-        blockFilter !== 'BLOCK_A' &&
-        blockFilter !== 'BLOCK_B' &&
-        blockFilter !== 'BLOCK_C' &&
-        b !== blockFilter.toUpperCase()
-      ) {
-        return false;
+      if (enableBlocks && blockFilter !== 'ALL') {
+        const b = getRoomBlock(r).toUpperCase();
+        const target = blockFilter.toUpperCase();
+        const isMatch =
+          b === target ||
+          b.startsWith(target) ||
+          target.startsWith(b) ||
+          (target === 'BLOCK_A' && (b.includes('WING A') || b.includes('BLOCK A'))) ||
+          (target === 'BLOCK_B' && (b.includes('WING B') || b.includes('BLOCK B'))) ||
+          (target === 'BLOCK_C' && (b.includes('WING C') || b.includes('BLOCK C') || b.includes('VILLA')));
+        if (!isMatch) return false;
       }
-    }
 
-    if (tierFilter === 'VIP' && !isRoomVip(r)) return false;
-    if (tierFilter === 'STANDARD' && isRoomVip(r)) return false;
+      if (tierFilter !== 'ALL') {
+        const tier = getRoomTier(r);
+        if (
+          tier.name.toLowerCase() !== tierFilter.toLowerCase() &&
+          tier.id.toLowerCase() !== tierFilter.toLowerCase()
+        ) {
+          return false;
+        }
+      }
 
-    if (searchTerm) {
-      const q = searchTerm.toLowerCase();
-      const meta = roomMeta[r.roomNumber];
-      return (
-        r.roomNumber.toLowerCase().includes(q) ||
-        getRoomBlock(r).toLowerCase().includes(q) ||
-        r.currentGuestName?.toLowerCase().includes(q) ||
-        r.roomTypeName.toLowerCase().includes(q) ||
-        meta?.displayName?.toLowerCase().includes(q)
-      );
+      if (searchTerm) {
+        const q = searchTerm.toLowerCase().trim();
+        const meta = roomMeta[r.roomNumber];
+        const statusClean = r.status.toLowerCase().replace(/_/g, ' ');
+        return (
+          r.roomNumber.toLowerCase().includes(q) ||
+          getRoomBlock(r).toLowerCase().includes(q) ||
+          r.currentGuestName?.toLowerCase().includes(q) ||
+          r.roomTypeName.toLowerCase().includes(q) ||
+          meta?.displayName?.toLowerCase().includes(q) ||
+          statusClean.includes(q) ||
+          (q === 'vacant' && (r.status === 'VACANT_CLEAN' || r.status === 'VACANT_DIRTY')) ||
+          (q === 'occupied' && r.status === 'OCCUPIED') ||
+          (q === 'clean' && r.status === 'VACANT_CLEAN') ||
+          (q === 'dirty' && r.status === 'VACANT_DIRTY')
+        );
+      }
+      return true;
+    });
+  }, [rooms, activeTab, blockFilter, tierFilter, searchTerm, roomMeta, enableBlocks]);
+
+  const formatRoomHeading = (roomNumber: string) => {
+    if (!enableBlocks) {
+      return cleanRoomNumberString(roomNumber);
     }
-    return true;
-  });
+    return roomNumber;
+  };
 
   const handleMarkRoomClean = (room: Room) => {
     if (!canStatusOverride) {
@@ -424,23 +498,22 @@ export default function FrontDeskView({
     );
   };
 
-  // Quick 1-click toggle between Standard Room and Executive VIP Suite directly on card or inside settings
+  // Quick 1-click cycle through authentic landing page tiers
   const handleQuickToggleRoomTier = async (room: Room) => {
     if (!canCustomizeRooms) {
       showToast({
         type: 'error',
         title: 'Permission Required',
-        message: 'You need the Edit Room Settings permission to switch between Standard and VIP.',
+        message: 'You need the Edit Room Settings permission to switch room tier.',
       });
       return;
     }
-    const currentlyVip = isRoomVip(room);
-    const nextTier = currentlyVip ? 'Standard Room' : 'Executive VIP Suite';
-    const nextRate = currentlyVip ? 10000 : 15000;
-    const nextColor = currentlyVip ? '#059669' : '#D97706';
-    const nextBg = currentlyVip ? '#ECFDF5' : '#FFFBEB';
-    const nextDesc = currentlyVip ? STANDARD_ROOM_DESCRIPTION : VIP_SUITE_DESCRIPTION;
-    const nextAmenities = currentlyVip ? [...STANDARD_ROOM_AMENITIES] : [...VIP_SUITE_AMENITIES];
+    const currentTier = getRoomTier(room);
+    const currentIndex = MMENKO_ROOM_TIERS.findIndex(
+      (t) => t.name.toLowerCase() === currentTier.name.toLowerCase()
+    );
+    const nextIndex = (currentIndex + 1) % MMENKO_ROOM_TIERS.length;
+    const nextTier = MMENKO_ROOM_TIERS[nextIndex];
 
     try {
       const res = await fetch('/api/rooms', {
@@ -448,30 +521,30 @@ export default function FrontDeskView({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           roomNumber: room.roomNumber,
-          roomTypeName: nextTier,
-          customName: nextTier,
-          description: nextDesc,
-          rackRatePerNight: nextRate,
-          colorTag: nextColor,
-          colorBg: nextBg,
-          amenities: nextAmenities,
+          roomTypeName: nextTier.name,
+          customName: nextTier.name,
+          description: nextTier.description,
+          rackRatePerNight: nextTier.rate,
+          colorTag: nextTier.colorTag,
+          colorBg: nextTier.colorBg,
+          amenities: [...nextTier.features],
           staff: activeStaff,
-          notes: `Switched ${room.roomNumber} tier to ${nextTier} (₦${nextRate.toLocaleString()}/night).`,
+          notes: `Switched ${room.roomNumber} tier to ${nextTier.name} (₦${nextTier.rate.toLocaleString()}/night).`,
         }),
       });
       const data = await res.json();
       if (data.success) {
         const updated = {
           ...roomMeta,
-          [room.roomNumber]: { displayName: nextTier, colorTag: nextColor, colorBg: nextBg },
+          [room.roomNumber]: { displayName: nextTier.name, colorTag: nextTier.colorTag, colorBg: nextTier.colorBg },
         };
         setRoomMeta(updated);
         saveRoomMeta(updated);
-        setPriceEdits((prev) => ({ ...prev, [room.roomNumber]: nextRate }));
+        setPriceEdits((prev) => ({ ...prev, [room.roomNumber]: nextTier.rate }));
         showToast({
           type: 'success',
-          title: `Switched to ${nextTier}`,
-          message: `${room.roomNumber} is now configured as ${nextTier} (${formatNaira(nextRate)}/night).`,
+          title: `Switched to ${nextTier.name}`,
+          message: `${room.roomNumber} is now configured as ${nextTier.name} (${formatNaira(nextTier.rate)}/night).`,
         });
         onRefreshRooms();
       }
@@ -482,44 +555,35 @@ export default function FrontDeskView({
 
   const openRoomAdmin = (room: Room) => {
     const meta = roomMeta[room.roomNumber] || {};
-    const vip = isRoomVip(room);
+    const tier = getRoomTier(room);
     setEditingRoom(room);
     setEditRoomNumber(room.roomNumber);
-    setEditBlockName(getRoomBlock(room));
-    setEditTier(vip ? 'Executive VIP Suite' : 'Standard Room');
-    setEditName(meta.displayName || room.customName || room.roomTypeName);
-    setEditDescription(
-      room.description || (vip ? VIP_SUITE_DESCRIPTION : STANDARD_ROOM_DESCRIPTION)
-    );
-    setEditColor(meta.colorTag || room.colorTag || (vip ? '#D97706' : '#059669'));
-    setEditColorBg(meta.colorBg || room.colorBg || (vip ? '#FFFBEB' : '#ECFDF5'));
-    setEditPrice(priceEdits[room.roomNumber] ?? room.rackRatePerNight);
+    setEditBlockName(room.blockName || getRoomBlock(room));
+    setEditTier(tier.name);
+    setEditName(meta.displayName || room.customName || tier.name);
+    setEditDescription(room.description || tier.description);
+    setEditColor(meta.colorTag || room.colorTag || tier.colorTag);
+    setEditColorBg(meta.colorBg || room.colorBg || tier.colorBg);
+    setEditPrice(priceEdits[room.roomNumber] ?? (room.rackRatePerNight || tier.rate));
     setEditAmenities(
       room.amenities && room.amenities.length > 0
         ? [...room.amenities]
-        : vip
-        ? [...VIP_SUITE_AMENITIES]
-        : [...STANDARD_ROOM_AMENITIES]
+        : [...tier.features]
     );
     setIsAdminModalOpen(true);
   };
 
-  const handleSelectEditTierPreset = (tier: 'Standard Room' | 'Executive VIP Suite') => {
-    setEditTier(tier);
-    setEditName(tier);
-    if (tier === 'Executive VIP Suite') {
-      setEditPrice(15000);
-      setEditDescription(VIP_SUITE_DESCRIPTION);
-      setEditAmenities([...VIP_SUITE_AMENITIES]);
-      setEditColor('#D97706');
-      setEditColorBg('#FFFBEB');
-    } else {
-      setEditPrice(10000);
-      setEditDescription(STANDARD_ROOM_DESCRIPTION);
-      setEditAmenities([...STANDARD_ROOM_AMENITIES]);
-      setEditColor('#059669');
-      setEditColorBg('#ECFDF5');
-    }
+  const handleSelectEditTierPreset = (tierName: string) => {
+    const tier =
+      MMENKO_ROOM_TIERS.find((t) => t.name.toLowerCase() === tierName.toLowerCase()) ||
+      MMENKO_ROOM_TIERS[0];
+    setEditTier(tier.name);
+    setEditName(tier.name);
+    setEditPrice(tier.rate);
+    setEditDescription(tier.description);
+    setEditAmenities([...tier.features]);
+    setEditColor(tier.colorTag);
+    setEditColorBg(tier.colorBg);
   };
 
   const saveRoomAdmin = async () => {
@@ -622,9 +686,6 @@ export default function FrontDeskView({
     roomMeta[room.roomNumber]?.colorBg || room.colorBg || (isRoomVip(room) ? '#FFFBEB' : '#ECFDF5');
   const getRoomDisplayName = (room: Room) =>
     roomMeta[room.roomNumber]?.displayName || room.customName || room.roomTypeName;
-
-  const formatRoomHeading = (roomNumber: string) =>
-    /^Block\s+/i.test(roomNumber) ? roomNumber : `Room #${roomNumber}`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px 0' }}>
@@ -743,14 +804,23 @@ export default function FrontDeskView({
                 <Download size={15} color="var(--brand-primary)" /> <span>Export Report</span>
               </button>
             )}
+
+            <button
+              onClick={() => setIsSettingsModalOpen(true)}
+              className="btn-secondary"
+              style={{ fontSize: '0.85rem', gap: '6px' }}
+              title="Resort Architecture, Blocks & System Settings"
+            >
+              <Sliders size={15} /> <span>Settings</span>
+            </button>
           </div>
         </div>
 
-        {/* Stats strip */}
+        {/* Stats strip - Clickable Quick Filters */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(125px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
             gap: '12px',
             marginTop: '20px',
             paddingTop: '16px',
@@ -758,20 +828,66 @@ export default function FrontDeskView({
           }}
         >
           {[
-            { label: 'Total Block Rooms', value: totalRooms, bg: 'var(--bg-secondary)', border: 'var(--border-color)', color: 'var(--text-primary)' },
-            { label: 'Standard Rooms', value: standardCount, bg: '#ECFDF5', border: '#A7F3D0', color: '#059669' },
-            { label: 'Executive VIP Suites', value: vipCount, bg: '#FFFBEB', border: '#FDE68A', color: '#D97706' },
-            { label: 'Vacant Clean', value: tabCounts.VACANT_CLEAN, bg: '#F0FDF4', border: '#BBF7D0', color: '#059669' },
-            { label: 'Occupied', value: `${tabCounts.OCCUPIED} (${occupancyPct}%)`, bg: 'var(--brand-bg)', border: 'var(--brand-border)', color: 'var(--brand-primary)' },
-            { label: 'Dirty / Maint.', value: tabCounts.VACANT_DIRTY + tabCounts.MAINTENANCE, bg: '#FEF2F2', border: '#FECACA', color: '#E11D48' },
+            {
+              label: 'Total Hotel Rooms',
+              value: totalRooms,
+              bg: activeTab === 'ALL_STATUS' && tierFilter === 'ALL' ? '#DBEAFE' : 'var(--bg-secondary)',
+              border: activeTab === 'ALL_STATUS' && tierFilter === 'ALL' ? '#3B82F6' : 'var(--border-color)',
+              color: 'var(--text-primary)',
+              action: () => {
+                setActiveTab('ALL_STATUS');
+                setTierFilter('ALL');
+                setBlockFilter('ALL');
+              },
+            },
+            ...MMENKO_ROOM_TIERS.map((tier) => ({
+              label: tier.name,
+              value: tierCounts[tier.name] || 0,
+              bg: tierFilter === tier.name ? tier.colorBg : '#FFFFFF',
+              border: tierFilter === tier.name ? tier.colorTag : 'var(--border-color)',
+              color: tier.colorTag,
+              action: () => {
+                setTierFilter(tier.name);
+                setActiveTab('ALL_STATUS');
+              },
+            })),
+            {
+              label: 'Vacant Clean',
+              value: tabCounts.VACANT_CLEAN,
+              bg: activeTab === 'VACANT_CLEAN' ? '#BBF7D0' : '#F0FDF4',
+              border: activeTab === 'VACANT_CLEAN' ? '#059669' : '#BBF7D0',
+              color: '#059669',
+              action: () => setActiveTab('VACANT_CLEAN'),
+            },
+            {
+              label: 'Occupied',
+              value: `${tabCounts.OCCUPIED} (${occupancyPct}%)`,
+              bg: activeTab === 'OCCUPIED' ? '#FECACA' : '#FEF2F2',
+              border: activeTab === 'OCCUPIED' ? '#DC2626' : '#FECACA',
+              color: '#DC2626',
+              action: () => setActiveTab('OCCUPIED'),
+            },
+            {
+              label: 'Dirty / Maint.',
+              value: tabCounts.VACANT_DIRTY + tabCounts.MAINTENANCE,
+              bg: activeTab === 'VACANT_DIRTY' || activeTab === 'MAINTENANCE' ? '#FED7AA' : '#FFF7ED',
+              border: activeTab === 'VACANT_DIRTY' || activeTab === 'MAINTENANCE' ? '#EA580C' : '#FDBA74',
+              color: '#C2410C',
+              action: () => setActiveTab('VACANT_DIRTY'),
+            },
           ].map((s) => (
-            <div
+            <button
               key={s.label}
+              type="button"
+              onClick={s.action}
               style={{
                 background: s.bg,
-                border: `1px solid ${s.border}`,
+                border: `1.5px solid ${s.border}`,
                 padding: '10px 14px',
                 borderRadius: 'var(--radius-sm)',
+                textAlign: 'left',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
               }}
             >
               <span style={{ fontSize: '0.68rem', color: s.color, fontWeight: 700, textTransform: 'uppercase' }}>
@@ -780,7 +896,7 @@ export default function FrontDeskView({
               <div style={{ fontSize: '1.15rem', fontWeight: 800, color: s.color, fontFamily: 'var(--font-mono)' }}>
                 {s.value}
               </div>
-            </div>
+            </button>
           ))}
         </div>
 
@@ -797,51 +913,68 @@ export default function FrontDeskView({
             borderTop: '1px dashed var(--border-color)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', marginRight: '4px' }}>
-              BLOCKS:
-            </span>
-            {[
-              { id: 'ALL', label: 'All Blocks (A, B, C)' },
-              { id: 'BLOCK_A', label: 'Block A (A1–A3)' },
-              { id: 'BLOCK_B', label: 'Block B (B1–B4)' },
-              { id: 'BLOCK_C', label: 'Block C (C1–C4)' },
-            ].map((b) => (
+          {enableBlocks && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', marginRight: '4px' }}>
+                BLOCK / WING:
+              </span>
               <button
-                key={b.id}
-                onClick={() => setBlockFilter(b.id)}
-                className={blockFilter === b.id ? 'btn-primary' : 'btn-secondary'}
+                type="button"
+                onClick={() => setBlockFilter('ALL')}
+                className={blockFilter === 'ALL' ? 'btn-primary' : 'btn-secondary'}
                 style={{ padding: '5px 11px', fontSize: '0.74rem' }}
               >
                 <Building2 size={12} />
-                <span>{b.label}</span>
+                <span>All Blocks ({totalRooms})</span>
               </button>
-            ))}
-          </div>
+              {availableBlocks.map((bName) => {
+                const countInBlock = rooms.filter((r) => getRoomBlock(r) === bName).length;
+                return (
+                  <button
+                    key={bName}
+                    type="button"
+                    onClick={() => setBlockFilter(bName)}
+                    className={blockFilter === bName ? 'btn-primary' : 'btn-secondary'}
+                    style={{ padding: '5px 11px', fontSize: '0.74rem' }}
+                  >
+                    <Building2 size={12} />
+                    <span>
+                      {bName} ({countInBlock})
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', marginRight: '4px' }}>
               TIER:
             </span>
-            {[
-              { id: 'ALL' as const, label: `All Tiers (${totalRooms})` },
-              { id: 'STANDARD' as const, label: `Standard Room (${standardCount})` },
-              { id: 'VIP' as const, label: `Executive VIP Suite (${vipCount})` },
-            ].map((t) => (
+            <button
+              onClick={() => setTierFilter('ALL')}
+              className={tierFilter === 'ALL' ? 'btn-primary' : 'btn-secondary'}
+              style={{ padding: '5px 11px', fontSize: '0.74rem' }}
+            >
+              <span>All Tiers ({totalRooms})</span>
+            </button>
+            {MMENKO_ROOM_TIERS.map((tier) => (
               <button
-                key={t.id}
-                onClick={() => setTierFilter(t.id)}
-                className={tierFilter === t.id ? 'btn-primary' : 'btn-secondary'}
+                key={tier.id}
+                onClick={() => setTierFilter(tier.name)}
+                className={tierFilter === tier.name ? 'btn-primary' : 'btn-secondary'}
                 style={{
                   padding: '5px 11px',
                   fontSize: '0.74rem',
-                  ...(tierFilter === t.id && t.id === 'VIP'
-                    ? { backgroundColor: '#D97706', borderColor: '#D97706' }
+                  ...(tierFilter === tier.name
+                    ? { backgroundColor: tier.colorTag, borderColor: tier.colorTag, color: '#FFFFFF' }
                     : {}),
                 }}
               >
-                {t.id === 'VIP' && <Star size={12} />}
-                <span>{t.label}</span>
+                {tier.rate >= 100000 && <Star size={12} />}
+                <span>
+                  {tier.name} ({tierCounts[tier.name] || 0})
+                </span>
               </button>
             ))}
           </div>
@@ -948,20 +1081,18 @@ export default function FrontDeskView({
           }}
         >
           {filteredRooms.map((room) => {
+            const roomTier = getRoomTier(room);
             const vip = isRoomVip(room);
-            const accent = getRoomColor(room);
-            const accBg = getRoomBg(room);
+            const accent = roomTier.colorTag;
+            const accBg = roomTier.colorBg;
             const displayName = getRoomDisplayName(room);
             const blockLabel = getRoomBlock(room);
-            const price = priceEdits[room.roomNumber] ?? room.rackRatePerNight;
-            const roomDesc =
-              room.description || (vip ? VIP_SUITE_DESCRIPTION : STANDARD_ROOM_DESCRIPTION);
+            const price = priceEdits[room.roomNumber] ?? room.rackRatePerNight ?? roomTier.rate;
+            const roomDesc = room.description || roomTier.description;
             const amenitiesList =
               room.amenities && room.amenities.length > 0
                 ? room.amenities
-                : vip
-                ? VIP_SUITE_AMENITIES
-                : STANDARD_ROOM_AMENITIES;
+                : [...roomTier.features];
 
             return (
               <div
@@ -987,34 +1118,37 @@ export default function FrontDeskView({
                     }}
                   >
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                        <span
-                          style={{
-                            fontSize: '0.65rem',
-                            fontWeight: 800,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.06em',
-                            padding: '2px 7px',
-                            borderRadius: '4px',
-                            backgroundColor: 'var(--bg-secondary)',
-                            color: 'var(--text-secondary)',
-                            border: '1px solid var(--border-color)',
-                          }}
-                        >
-                          {blockLabel}
-                        </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                        {enableBlocks && blockLabel && (
+                          <span
+                            style={{
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.06em',
+                              padding: '2px 7px',
+                              borderRadius: '4px',
+                              backgroundColor: 'var(--bg-secondary)',
+                              color: 'var(--text-secondary)',
+                              border: '1px solid var(--border-color)',
+                            }}
+                          >
+                            {blockLabel}
+                          </span>
+                        )}
                         <span
                           style={{
                             fontSize: '0.68rem',
                             fontWeight: 800,
                             padding: '2px 8px',
                             borderRadius: '20px',
-                            backgroundColor: vip ? '#FFFBEB' : '#ECFDF5',
-                            color: vip ? '#B45309' : '#047857',
-                            border: `1px solid ${vip ? '#FDE68A' : '#A7F3D0'}`,
+                            backgroundColor: roomTier.colorBg,
+                            color: roomTier.colorTag,
+                            border: `1px solid ${roomTier.colorTag}40`,
                           }}
                         >
-                          {vip ? '★ Executive VIP Suite' : 'Standard Room'}
+                          {roomTier.rate >= 100000 && '★ '}
+                          {roomTier.name}
                         </span>
                       </div>
 
@@ -1030,8 +1164,7 @@ export default function FrontDeskView({
                       </div>
 
                       {displayName &&
-                        displayName !== 'Standard Room' &&
-                        displayName !== 'Executive VIP Suite' && (
+                        displayName !== roomTier.name && (
                           <div style={{ fontSize: '0.75rem', color: accent, fontWeight: 700, marginTop: '2px' }}>
                             <Tag size={11} style={{ marginRight: '4px' }} />
                             {displayName}
@@ -1228,16 +1361,25 @@ export default function FrontDeskView({
                   )}
                   {room.status === 'OCCUPIED' && canCheckOut && (
                     <button
-                      onClick={() => onOpenCheckOut(room)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenCheckOut(room);
+                      }}
                       className="btn-primary"
                       style={{
                         width: '100%',
                         justifyContent: 'center',
-                        fontSize: '0.8rem',
-                        backgroundColor: '#E11D48',
+                        fontSize: '0.825rem',
+                        backgroundColor: '#DC2626',
+                        borderColor: '#DC2626',
+                        color: '#FFFFFF',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 6px rgba(220, 38, 38, 0.35)',
                       }}
                     >
-                      <LogOut size={14} /> <span>Review &amp; Check-Out</span>
+                      <LogOut size={15} color="#FFFFFF" /> <span style={{ color: '#FFFFFF', fontWeight: 700 }}>Review &amp; Check-Out</span>
                     </button>
                   )}
                   {room.status === 'VACANT_DIRTY' && canStatusOverride && (
@@ -1341,7 +1483,84 @@ export default function FrontDeskView({
                     </td>
                     <td style={{ padding: '12px 14px', fontSize: '0.8rem' }}>{room.currentGuestName || '—'}</td>
                     <td style={{ padding: '12px 14px' }}>
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        {room.status === 'OCCUPIED' && canCheckOut && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenCheckOut(room);
+                            }}
+                            style={{
+                              backgroundColor: '#DC2626',
+                              borderColor: '#DC2626',
+                              color: '#FFFFFF',
+                              fontWeight: 700,
+                              fontSize: '0.72rem',
+                              padding: '5px 10px',
+                              borderRadius: '5px',
+                              border: 'none',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                          >
+                            <LogOut size={12} color="#FFFFFF" />
+                            <span style={{ color: '#FFFFFF', fontWeight: 700 }}>Check-Out</span>
+                          </button>
+                        )}
+                        {room.status === 'VACANT_CLEAN' && canCheckIn && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenCheckIn(room);
+                            }}
+                            style={{
+                              backgroundColor: '#059669',
+                              borderColor: '#059669',
+                              color: '#FFFFFF',
+                              fontWeight: 700,
+                              fontSize: '0.72rem',
+                              padding: '5px 10px',
+                              borderRadius: '5px',
+                              border: 'none',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                          >
+                            <UserPlus size={12} color="#FFFFFF" />
+                            <span style={{ color: '#FFFFFF', fontWeight: 700 }}>Check-In</span>
+                          </button>
+                        )}
+                        {room.status === 'VACANT_DIRTY' && canStatusOverride && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkRoomClean(room);
+                            }}
+                            style={{
+                              backgroundColor: '#FFFBEB',
+                              border: '1px solid #FDE68A',
+                              color: '#D97706',
+                              fontWeight: 700,
+                              fontSize: '0.72rem',
+                              padding: '5px 10px',
+                              borderRadius: '5px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                          >
+                            <Sparkles size={12} color="#D97706" />
+                            <span>Mark Clean</span>
+                          </button>
+                        )}
                         {canCustomizeRooms && (
                           <button
                             onClick={() => handleQuickToggleRoomTier(room)}
@@ -1454,68 +1673,97 @@ export default function FrontDeskView({
                     fontSize: '0.78rem',
                     fontWeight: 700,
                     color: 'var(--text-secondary)',
-                    marginBottom: '6px',
+                    marginBottom: '8px',
                   }}
                 >
-                  1. Website Accommodation Tier (Standard vs Executive VIP Suite)
+                  1. Room Tier Preset (Landing Page Rates &amp; Amenities)
                 </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectEditTierPreset('Standard Room')}
-                    style={{
-                      padding: '12px 14px',
-                      borderRadius: '10px',
-                      border:
-                        editTier === 'Standard Room'
-                          ? '2px solid #059669'
-                          : '1px solid var(--border-color)',
-                      backgroundColor: editTier === 'Standard Room' ? '#ECFDF5' : '#FFFFFF',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#047857' }}>
-                        Standard Room
-                      </span>
-                      {editTier === 'Standard Room' && <Check size={15} color="#059669" />}
-                    </div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '3px' }}>
-                      Default ₦10,000/night • Solar Inverter AC, En-Suite Bath
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSelectEditTierPreset('Executive VIP Suite')}
-                    style={{
-                      padding: '12px 14px',
-                      borderRadius: '10px',
-                      border:
-                        editTier === 'Executive VIP Suite'
-                          ? '2px solid #D97706'
-                          : '1px solid var(--border-color)',
-                      backgroundColor: editTier === 'Executive VIP Suite' ? '#FFFBEB' : '#FFFFFF',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#B45309' }}>
-                        ★ Executive VIP Suite
-                      </span>
-                      {editTier === 'Executive VIP Suite' && <Check size={15} color="#D97706" />}
-                    </div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '3px' }}>
-                      Default ₦15,000/night • Executive Layout, Priority Concierge
-                    </div>
-                  </button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px' }}>
+                  {MMENKO_ROOM_TIERS.map((tier) => {
+                    const isSelected = editTier.toLowerCase() === tier.name.toLowerCase();
+                    return (
+                      <button
+                        type="button"
+                        key={tier.id}
+                        onClick={() => handleSelectEditTierPreset(tier.name)}
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          border: isSelected ? `2px solid ${tier.colorTag}` : '1px solid var(--border-color)',
+                          backgroundColor: isSelected ? tier.colorBg : '#FFFFFF',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 800, fontSize: '0.82rem', color: tier.colorTag }}>
+                            {tier.name}
+                          </span>
+                          {isSelected && <Check size={14} color={tier.colorTag} />}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
+                          {formatNaira(tier.rate)}/night
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          {tier.features.slice(0, 2).join(' • ')}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* 2. CRM Room Naming & Block */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {enableBlocks ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        color: 'var(--text-secondary)',
+                        marginBottom: '6px',
+                      }}
+                    >
+                      CRM Room Name / Identifier
+                    </label>
+                    <input
+                      type="text"
+                      value={editRoomNumber}
+                      onChange={(e) => setEditRoomNumber(e.target.value)}
+                      placeholder="e.g. Block A1 Room 1"
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        color: 'var(--text-secondary)',
+                        marginBottom: '6px',
+                      }}
+                    >
+                      Block Group
+                    </label>
+                    <input
+                      type="text"
+                      list="mmenko-block-presets"
+                      value={editBlockName}
+                      onChange={(e) => setEditBlockName(e.target.value)}
+                      placeholder="e.g. Block A1"
+                      style={{ width: '100%' }}
+                    />
+                    <datalist id="mmenko-block-presets">
+                      {BLOCK_PRESETS.map((b) => (
+                        <option key={b} value={b} />
+                      ))}
+                    </datalist>
+                  </div>
+                </div>
+              ) : (
                 <div>
                   <label
                     style={{
@@ -1526,43 +1774,17 @@ export default function FrontDeskView({
                       marginBottom: '6px',
                     }}
                   >
-                    CRM Room Name / Identifier
+                    CRM Room Name / Number
                   </label>
                   <input
                     type="text"
                     value={editRoomNumber}
                     onChange={(e) => setEditRoomNumber(e.target.value)}
-                    placeholder="e.g. Block A1 Room 1"
+                    placeholder="e.g. Room 1"
                     style={{ width: '100%' }}
                   />
                 </div>
-                <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      color: 'var(--text-secondary)',
-                      marginBottom: '6px',
-                    }}
-                  >
-                    Block Group
-                  </label>
-                  <input
-                    type="text"
-                    list="osieka-block-presets"
-                    value={editBlockName}
-                    onChange={(e) => setEditBlockName(e.target.value)}
-                    placeholder="e.g. Block A1"
-                    style={{ width: '100%' }}
-                  />
-                  <datalist id="osieka-block-presets">
-                    {BLOCK_PRESETS.map((b) => (
-                      <option key={b} value={b} />
-                    ))}
-                  </datalist>
-                </div>
-              </div>
+              )}
 
               {/* 3. Custom Subtitle & Rack Rate */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -1865,50 +2087,52 @@ export default function FrontDeskView({
             </div>
 
             <form onSubmit={handleCreateRoom} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Quick Block & Room Builder */}
-              <div
-                style={{
-                  backgroundColor: 'var(--bg-secondary)',
-                  padding: '12px 14px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border-color)',
-                }}
-              >
-                <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                  Quick Block Naming Builder (or type custom room name below)
+              {/* Quick Block & Room Builder (Shown only when Room Blocks are enabled in Settings) */}
+              {enableBlocks && (
+                <div
+                  style={{
+                    backgroundColor: 'var(--bg-secondary)',
+                    padding: '12px 14px',
+                    borderRadius: '10px',
+                    border: '1px solid var(--border-color)',
+                  }}
+                >
+                  <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                    Quick Block Naming Builder (or type custom room name below)
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', alignItems: 'center' }}>
+                    <select
+                      value={selectedBlockBuilder}
+                      onChange={(e) => {
+                        setSelectedBlockBuilder(e.target.value);
+                        setNewRoomNumber(`${e.target.value} ${selectedUnitBuilder}`);
+                      }}
+                    >
+                      {[...BLOCK_PRESETS, 'Block A4', 'Block B5', 'Block C5', 'Block D1', 'Block D2'].map((b) => (
+                        <option key={b} value={b}>
+                          {b}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={selectedUnitBuilder}
+                      onChange={(e) => {
+                        setSelectedUnitBuilder(e.target.value);
+                        setNewRoomNumber(`${selectedBlockBuilder} ${e.target.value}`);
+                      }}
+                    >
+                      {['Room 1', 'Room 2', 'Room 3', 'Room 4'].map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="badge badge-brand" style={{ padding: '6px 10px' }}>
+                      → {newRoomNumber}
+                    </span>
+                  </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', alignItems: 'center' }}>
-                  <select
-                    value={selectedBlockBuilder}
-                    onChange={(e) => {
-                      setSelectedBlockBuilder(e.target.value);
-                      setNewRoomNumber(`${e.target.value} ${selectedUnitBuilder}`);
-                    }}
-                  >
-                    {[...BLOCK_PRESETS, 'Block A4', 'Block B5', 'Block C5', 'Block D1', 'Block D2'].map((b) => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={selectedUnitBuilder}
-                    onChange={(e) => {
-                      setSelectedUnitBuilder(e.target.value);
-                      setNewRoomNumber(`${selectedBlockBuilder} ${e.target.value}`);
-                    }}
-                  >
-                    {['Room 1', 'Room 2', 'Room 3', 'Room 4'].map((u) => (
-                      <option key={u} value={u}>
-                        {u}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="badge badge-brand" style={{ padding: '6px 10px' }}>
-                    → {newRoomNumber}
-                  </span>
-                </div>
-              </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
                 <div>
@@ -1928,7 +2152,7 @@ export default function FrontDeskView({
                     required
                     value={newRoomNumber}
                     onChange={(e) => setNewRoomNumber(e.target.value)}
-                    placeholder="e.g. Block A1 Room 1"
+                    placeholder={enableBlocks ? 'e.g. Block A1 Room 1' : 'e.g. Room 16'}
                     style={{ width: '100%' }}
                   />
                 </div>
@@ -1956,7 +2180,7 @@ export default function FrontDeskView({
                 </div>
               </div>
 
-              {/* Tier Toggle: Standard Room vs Executive VIP Suite */}
+              {/* Room Tier Preset: Authentic 5 Landing Page Tiers */}
               <div>
                 <label
                   style={{
@@ -1967,52 +2191,40 @@ export default function FrontDeskView({
                     marginBottom: '6px',
                   }}
                 >
-                  Select Room Tier (Pre-loads Standard or VIP Features)
+                  Select Room Tier Preset (Landing Page Rates &amp; Amenities)
                 </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectCreateTier('Standard Room')}
-                    style={{
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      border:
-                        newRoomTypeName === 'Standard Room'
-                          ? '2px solid #059669'
-                          : '1px solid var(--border-color)',
-                      backgroundColor: newRoomTypeName === 'Standard Room' ? '#ECFDF5' : '#FFFFFF',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#047857' }}>Standard Room</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                      ₦10,000/night • 100% Off-Grid Solar, Inverter AC, En-Suite
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSelectCreateTier('Executive VIP Suite')}
-                    style={{
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      border:
-                        newRoomTypeName === 'Executive VIP Suite'
-                          ? '2px solid #D97706'
-                          : '1px solid var(--border-color)',
-                      backgroundColor: newRoomTypeName === 'Executive VIP Suite' ? '#FFFBEB' : '#FFFFFF',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#B45309' }}>
-                      ★ Executive VIP Suite
-                    </div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                      ₦15,000/night • Executive Layout, Priority VIP Concierge
-                    </div>
-                  </button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px' }}>
+                  {MMENKO_ROOM_TIERS.map((tier) => {
+                    const isSelected = newRoomTypeName.toLowerCase() === tier.name.toLowerCase();
+                    return (
+                      <button
+                        type="button"
+                        key={tier.id}
+                        onClick={() => handleSelectCreateTier(tier.name)}
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          border: isSelected ? `2px solid ${tier.colorTag}` : '1px solid var(--border-color)',
+                          backgroundColor: isSelected ? tier.colorBg : '#FFFFFF',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 800, fontSize: '0.82rem', color: tier.colorTag }}>
+                            {tier.name}
+                          </span>
+                          {isSelected && <Check size={14} color={tier.colorTag} />}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
+                          {formatNaira(tier.rate)}/night
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          {tier.features.slice(0, 2).join(' • ')}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -2130,6 +2342,12 @@ export default function FrontDeskView({
           </div>
         </div>
       )}
+      {/* Architecture, Room Blocks & System Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        onRoomsRefreshed={onRefreshRooms}
+      />
     </div>
   );
 }
