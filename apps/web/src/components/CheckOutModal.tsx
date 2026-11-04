@@ -198,18 +198,7 @@ export default function CheckOutModal({
   };
 
   const handleExecuteCheckout = () => {
-    const amountToSettle = balance > 0 ? (settlementAmount > 0 ? settlementAmount : balance) : 0;
-    showConfirm(
-      `Confirm Final Guest Check-Out: Room #${room.roomNumber}`,
-      `Are you ready to finalize checkout for ${guestName}? This will settle Folio #${folioNumber}, post settlement of ${formatNaira(amountToSettle)}, release keycard, and transition Room #${room.roomNumber} to VACANT_DIRTY for Housekeeping inspection.`,
-      executeCheckoutNow,
-      {
-        confirmText: 'Settle Folio & Check-Out',
-        cancelText: 'Back to Folio',
-        variant: 'primary',
-        details: `Guest: ${guestName} | Room: #${room.roomNumber} (${room.roomTypeName}) | Settlement: ${formatNaira(amountToSettle)} via ${settlementMethod.replace(/_/g, ' ')} | Audit ID: ${folioNumber}`
-      }
-    );
+    executeCheckoutNow();
   };
 
   const handlePrintReceipt = () => {
@@ -622,12 +611,13 @@ export default function CheckOutModal({
               </div>
             )}
 
-            {/* Check-Out Action Footer */}
+            {/* Check-Out Action Footer: Single Direct Checkout Action */}
             <div style={{
               display: 'flex',
               justifyContent: 'flex-end',
-              gap: '10px',
-              paddingTop: '12px',
+              alignItems: 'center',
+              gap: '12px',
+              paddingTop: '16px',
               borderTop: '1px solid var(--border-color)',
             }}>
               <button
@@ -635,36 +625,10 @@ export default function CheckOutModal({
                 onClick={onClose}
                 className="btn-secondary"
                 disabled={isSubmitting}
+                style={{ padding: '9px 18px', fontSize: '0.85rem' }}
               >
                 Cancel
               </button>
-
-              {balance > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSettlementAmount(balance);
-                    executeCheckoutNow();
-                  }}
-                  disabled={isSubmitting}
-                  style={{
-                    backgroundColor: '#059669',
-                    border: '1px solid #059669',
-                    color: '#FFFFFF',
-                    fontWeight: 700,
-                    fontSize: '0.8125rem',
-                    padding: '7px 14px',
-                    borderRadius: 'var(--radius-sm)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <CheckCircle2 size={15} color="#FFFFFF" />
-                  <span style={{ color: '#FFFFFF', fontWeight: 700 }}>Settle Balance &amp; Check-Out</span>
-                </button>
-              )}
 
               <button
                 type="button"
@@ -672,21 +636,23 @@ export default function CheckOutModal({
                 disabled={isSubmitting}
                 style={{
                   backgroundColor: '#DC2626',
-                  borderColor: '#DC2626',
+                  border: '1.5px solid #DC2626',
                   color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: '0.8125rem',
-                  padding: '7px 16px',
+                  fontWeight: 800,
+                  fontSize: '0.875rem',
+                  padding: '9px 22px',
                   borderRadius: 'var(--radius-sm)',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '6px',
+                  gap: '8px',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 2px 6px rgba(220, 38, 38, 0.35)',
+                  boxShadow: '0 3px 10px rgba(220, 38, 38, 0.4)',
+                  transition: 'all 0.15s ease',
+                  opacity: isSubmitting ? 0.7 : 1,
                 }}
               >
-                <LogOut size={15} color="#FFFFFF" />
-                <span style={{ color: '#FFFFFF', fontWeight: 700 }}>
+                <LogOut size={16} color="#FFFFFF" strokeWidth={2.5} />
+                <span style={{ color: '#FFFFFF', fontWeight: 800 }}>
                   {isSubmitting ? 'Processing Check-Out...' : 'Complete Check-Out & Release Room'}
                 </span>
               </button>

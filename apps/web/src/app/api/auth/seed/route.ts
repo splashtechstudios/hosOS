@@ -13,7 +13,22 @@ export async function POST() {
   try {
     await connectToDatabase();
 
-    // 1. Seed Staff Users with Hashed Passwords
+    // 1. Purge obsolete demo users from mmenkopalmhotel.com
+    await User.deleteMany({
+      $or: [
+        { email: { $regex: /mmenkopalmhotel\.com$/i } },
+        { email: { $in: [
+          'accountant@mmenkopalmhotel.com',
+          'manager@mmenkopalmhotel.com',
+          'andrew.frontdesk@mmenkopalmhotel.com',
+          'joy.frontdesk@mmenkopalmhotel.com',
+          'admin@mmenkopalmhotel.com',
+          'owner@mmenkopalmhotel.com'
+        ] } }
+      ]
+    });
+
+    // 2. Seed Staff Users with Hashed Passwords
     const seededStaff = [];
     for (const acc of SEEDED_ACCOUNTS) {
       const hashedPassword = await hashPassword(acc.password);
@@ -35,7 +50,7 @@ export async function POST() {
       }
     }
 
-    // 2. Seed Rooms
+    // 3. Seed Rooms (Clean Point Zero Baseline)
     let seededRoomsCount = 0;
     for (const r of INITIAL_ROOMS) {
       const existingRoom = await Room.findOne({ roomNumber: r.roomNumber });
@@ -45,82 +60,27 @@ export async function POST() {
           roomTypeName: r.roomTypeName,
           floor: r.floor,
           rackRatePerNight: r.rackRatePerNight,
-          status: r.status,
-          currentGuestName: r.currentGuestName,
-          currentFolioId: r.currentFolioId,
-          lastCleanedAt: r.lastCleanedAt,
-          lastCleanedByStaffName: r.lastCleanedByStaffName,
-          amenities: ['Air Conditioning', 'High Speed Wi-Fi', 'Smart TV', 'Balcony', 'En-suite Jacuzzi'],
+          status: 'VACANT_CLEAN',
+          currentGuestName: undefined,
+          currentFolioId: undefined,
+          lastCleanedAt: new Date().toISOString(),
+          lastCleanedByStaffName: 'Housekeeping Lead',
+          amenities: ['100% Off-Grid Solar Power', 'Solar Inverter AC', 'Smart TV', 'Balcony', 'En-suite Shower'],
         });
         seededRoomsCount++;
+      } else {
+        // Reset room to clean baseline
+        existingRoom.status = 'VACANT_CLEAN';
+        existingRoom.currentGuestName = undefined;
+        existingRoom.currentFolioId = undefined;
+        existingRoom.currentReservationId = undefined;
+        await existingRoom.save();
       }
     }
 
-    // 3. Seed Guest Folio for Room 204
-    const existingFolio = await Folio.findOne({ roomNumber: '204', status: 'OPEN' });
-    if (!existingFolio) {
-      await Folio.create({
-        folioNumber: 'FOL-2026-204',
-        roomNumber: '204',
-        guestName: 'Chief Emeka Nwosu',
-        guestPhone: '+234 803 555 0192',
-        status: 'OPEN',
-        checkInDate: '2026-10-14T14:30:00Z',
-        checkOutDate: '2026-10-18T11:00:00Z',
-        charges: [
-          {
-            id: 'chg-1',
-            category: 'ROOM_RATE',
-            description: 'Room Charge - Deluxe Ocean View Suite (Night 1)',
-            amount: 95000,
-            postedAt: '2026-10-14T23:59:00Z',
-            postedByStaffName: 'Night Auditor',
-          },
-          {
-            id: 'chg-2',
-            category: 'F_AND_B',
-            description: 'Main Restaurant - Spicy Goat Meat Pepper Soup & Hennessy VSOP',
-            amount: 72500,
-            postedAt: '2026-10-15T13:20:00Z',
-            postedByStaffName: 'Chidi Obi (WAITER)',
-          },
-        ],
-        payments: [
-          {
-            id: 'pay-1',
-            method: 'BANK_TRANSFER',
-            amount: 150000,
-            reference: 'GTB-TRF-9028110',
-            receivedAt: '2026-10-14T14:35:00Z',
-            receivedByStaffName: 'Mary Okon (FRONT_DESK)',
-          },
-        ],
-        totalCharges: 167500,
-        totalPayments: 150000,
-        balance: 17500,
-      });
-    }
-
-    // 4. Seed Audit Logs for Room 204
-    const existingLogs = await AuditLog.countDocuments({ roomNumber: '204' });
-    if (existingLogs === 0) {
-      for (const item of ROOM_204_TIMELINE) {
-        await AuditLog.create({
-          roomNumber: '204',
-          category: item.category,
-          headline: item.headline,
-          details: item.details,
-          amount: item.amount || 0,
-          actor: {
-            staffId: item.actor.staffId,
-            staffName: item.actor.staffName,
-            role: item.actor.role,
-          },
-          meta: item.meta,
-          timestamp: item.timestamp,
-        });
-      }
-    }
+    // 4. Clean baseline for folios and logs (Start from Point Zero)
+    await Folio.deleteMany({ roomNumber: '204' });
+    await AuditLog.deleteMany({ roomNumber: '204' });
 
     // 5. Seed Inventory Items
     const initialInventory: IInventoryItem[] = [

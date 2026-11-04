@@ -448,7 +448,7 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
               16kVA Hybrid System
             </span>
             <span className="badge badge-clean" style={{ fontSize: '0.6rem', padding: '1px 5px' }}>
-              ₦{currentMetrics.dieselOpex.toLocaleString()} Diesel OPEX
+              ₦{(currentMetrics.dieselOpex || 0).toLocaleString()} Diesel OPEX
             </span>
           </div>
           <div style={{ fontSize: isMobile ? '1.15rem' : '1.4rem', fontWeight: 800, color: 'var(--emerald-primary)', fontFamily: 'var(--font-mono)' }}>
@@ -583,7 +583,7 @@ export default function DashboardView({ activeStaff }: { activeStaff: StaffUser 
                 managerSheets.map((sheet) => {
                   const totalInflow = (sheet.rooms?.roomRevenueTotal || 0) + (sheet.fbSales?.totalSalesAmount || 0);
                   return (
-                    <tr key={sheet.sheetId} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                    <tr key={sheet.sheetId || sheet.id || sheet._id || String(Math.random())} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                       <td style={{ padding: '10px 14px', fontWeight: 800 }}>{sheet.date}</td>
                       <td style={{ padding: '10px 14px' }}>{sheet.managerName}</td>
                       <td style={{ padding: '10px 14px' }}>{sheet.rooms?.occupiedCount || 0} / 60 Rooms</td>

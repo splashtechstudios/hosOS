@@ -398,14 +398,14 @@ export default function CommandCenterHeader({
                 fontSize: '0.75rem',
                 fontWeight: 700,
               }}>
-                {currentUser.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                {(currentUser?.name || 'Staff User').split(' ').map(n => n[0]).join('').slice(0, 2)}
               </div>
               <div style={{ textAlign: 'left', lineHeight: 1.2 }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {currentUser.name}
+                  {currentUser?.name || 'Staff Member'}
                 </div>
                 <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                  {currentUser.role.replace(/_/g, ' ')}
+                  {(currentUser?.role || 'Staff').replace(/_/g, ' ')}
                 </div>
               </div>
               <ChevronDown size={14} color="var(--text-muted)" />
@@ -426,11 +426,11 @@ export default function CommandCenterHeader({
                 zIndex: 70,
               }}>
                 <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-subtle)' }}>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>{currentUser.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{currentUser.email}</div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>{currentUser?.name || 'Staff Member'}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{currentUser?.email}</div>
                   <div style={{ marginTop: '6px', display: 'flex', gap: '4px' }}>
-                    <span className="badge badge-purple">{currentUser.role.replace(/_/g, ' ')}</span>
-                    <span className="badge badge-neutral">{currentUser.department}</span>
+                    <span className="badge badge-purple">{(currentUser?.role || 'Staff').replace(/_/g, ' ')}</span>
+                    <span className="badge badge-neutral">{currentUser?.department || 'Operations'}</span>
                   </div>
                 </div>
 

@@ -433,7 +433,7 @@ export default function Sidebar({
               fontWeight: 700,
               flexShrink: 0,
             }}>
-              {activeStaff.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              {(activeStaff?.name || 'Staff User').split(' ').map(n => n[0]).join('').slice(0, 2)}
             </div>
             <div style={{ minWidth: 0, lineHeight: 1.2 }}>
               <div style={{
@@ -444,10 +444,10 @@ export default function Sidebar({
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
               }}>
-                {activeStaff.name}
+                {activeStaff?.name || 'Staff Member'}
               </div>
               <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                {activeStaff.role.replace(/_/g, ' ')}
+                {(activeStaff?.role || 'Staff').replace(/_/g, ' ')}
               </div>
             </div>
           </div>

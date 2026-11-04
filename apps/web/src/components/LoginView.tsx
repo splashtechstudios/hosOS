@@ -43,23 +43,33 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   // Seed status state
   const [seedStatus, setSeedStatus] = useState<string | null>(null);
   const [liveAccounts, setLiveAccounts] = useState<any[]>(SEEDED_ACCOUNTS);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Synchronize live staff from MongoDB Atlas API
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 860);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Synchronize live staff from MongoDB Atlas API (filtering out any obsolete demo accounts)
   React.useEffect(() => {
     fetch('/api/staff')
       .then(res => res.json())
       .then(data => {
         if (data.success && data.staff && data.staff.length > 0) {
-          const merged = data.staff.map((s: any) => {
+          const authenticStaff = data.staff.filter((s: any) => !s.email?.toLowerCase().includes('mmenkopalmhotel.com'));
+          const listToUse = authenticStaff.length > 0 ? authenticStaff : SEEDED_ACCOUNTS;
+          const merged = listToUse.map((s: any) => {
             const seedMatch = SEEDED_ACCOUNTS.find(a => a.email.toLowerCase() === s.email.toLowerCase());
             return {
               id: s.id,
-              name: s.name,
+              name: s.name || 'Staff User',
               email: s.email,
-              password: seedMatch?.password || 'Pass123!',
-              role: s.role,
-              department: s.department,
-              pinCode: s.pinCode || seedMatch?.pinCode || '1234',
+              password: seedMatch?.password || (s.role === 'SUPERADMIN' ? 'Admin123!' : s.role === 'MANAGER' ? 'Manager123!' : 'Account123!'),
+              role: s.role || 'FRONT_DESK',
+              department: s.department || 'OPERATIONS',
+              pinCode: s.pinCode || seedMatch?.pinCode || '1001',
             };
           });
           setLiveAccounts(merged);
@@ -218,7 +228,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
-      padding: '40px 20px',
+      padding: isMobile ? '20px 12px' : '40px 20px',
     }}>
       
       {/* Container Card */}
@@ -230,29 +240,34 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '48px',
-            height: '48px',
+            width: isMobile ? '40px' : '48px',
+            height: isMobile ? '40px' : '48px',
             borderRadius: 'var(--radius-sm)',
             backgroundColor: 'var(--brand-primary)',
             color: '#FFFFFF',
             boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
-            marginBottom: '12px',
+            marginBottom: '10px',
           }}>
-            <Building2 size={28} />
+            <Building2 size={isMobile ? 24 : 28} />
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: isMobile ? '1.4rem' : '1.75rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             HosOS Enterprise Portal
           </h1>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            {ENTERPRISE_ORG.name} • {ENTERPRISE_ORG.registrationNumber} • Lekki Phase 1, Lagos
+          <p style={{ fontSize: isMobile ? '0.78rem' : '0.875rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+            {ENTERPRISE_ORG.name} • {ENTERPRISE_ORG.registrationNumber} • Ogori, Kogi State, Nigeria
           </p>
         </div>
 
-        {/* Main Grid: Login Box + Seed Accounts Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '20px', alignItems: 'stretch' }}>
+        {/* Main Grid: Login Box + Seed Accounts Grid (Responsive Stacking on Mobile) */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1.3fr',
+          gap: isMobile ? '16px' : '20px',
+          alignItems: 'stretch',
+        }}>
           
           {/* Left Column: Form Box */}
-          <div className="ent-card" style={{ padding: '32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div className="ent-card" style={{ padding: isMobile ? '20px 16px' : '32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
               {/* Tab Switcher: Login vs Create Admin */}
               <div style={{
@@ -509,7 +524,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                         {acc.name}
                       </span>
                       <span className="badge badge-purple" style={{ fontSize: '0.625rem' }}>
-                        {acc.role.replace(/_/g, ' ')}
+                        {acc.role ? acc.role.replace(/_/g, ' ') : 'STAFF'}
                       </span>
                     </div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>

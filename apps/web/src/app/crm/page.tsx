@@ -672,7 +672,7 @@ function HosOSAppInner() {
       )}
 
       {/* Mobile Off-Canvas Drawer Navigation */}
-      {isSidebarEnabledForRole(currentUser.role) && isMobileScreen && isMobileMenuOpen && (
+      {isMobileScreen && isMobileMenuOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1050, display: 'flex' }}>
           <div
             onClick={() => setIsMobileMenuOpen(false)}
@@ -735,10 +735,10 @@ function HosOSAppInner() {
         />
 
         {/* Dynamic Submenu View Router with RBAC Role Enforcement */}
-        <main style={{ flex: 1, padding: isMobileScreen ? '0 12px 90px 12px' : '0 24px 60px 24px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
+        <main style={{ flex: 1, padding: isMobileScreen ? '0 12px 30px 12px' : '0 24px 60px 24px', maxWidth: '1440px', width: '100%', margin: '0 auto' }}>
           
           {/* RBAC 403 Security Screen if unauthorized */}
-          {!canAccessView(currentUser.role, currentView, currentUser.id) ? (
+          {!canAccessView(currentUser?.role, currentView, currentUser?.id) ? (
             <div className="ent-card" style={{ padding: '48px 32px', textAlign: 'center', margin: '40px auto', maxWidth: '640px' }}>
               <div style={{
                 width: '64px',
@@ -758,16 +758,16 @@ function HosOSAppInner() {
                 Access Restricted: 403 Forbidden
               </h2>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
-                Your account is assigned the <strong>{currentUser.role.replace(/_/g, ' ')}</strong> role.
+                Your account is assigned the <strong>{(currentUser?.role || 'Staff').replace(/_/g, ' ')}</strong> role.
                 You do not have security clearance to access the <strong>{VIEW_TITLES[currentView] || currentView}</strong> module.
               </p>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <button
-                  onClick={() => setCurrentView(getDefaultViewForRole(currentUser.role))}
+                  onClick={() => setCurrentView(getDefaultViewForRole(currentUser?.role))}
                   className="btn-primary"
                   style={{ padding: '8px 18px', fontSize: '0.85rem' }}
                 >
-                  Return to {currentUser.role.replace(/_/g, ' ')} Workspace ({VIEW_TITLES[getDefaultViewForRole(currentUser.role)] || 'Dashboard'})
+                  Return to {(currentUser?.role || 'Staff').replace(/_/g, ' ')} Workspace ({VIEW_TITLES[getDefaultViewForRole(currentUser?.role)] || 'Dashboard'})
                 </button>
               </div>
             </div>
@@ -1055,144 +1055,6 @@ function HosOSAppInner() {
         </div>
 
       </div>
-
-      {/* Mobile Sticky Bottom Navigation Bar for Quick Thumb Access */}
-      {isMobileScreen && (
-        <nav
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '60px',
-            backgroundColor: '#FFFFFF',
-            borderTop: '1px solid var(--border-color)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-around',
-            zIndex: 1000,
-            boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.06)',
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => {
-              setHubSubView(null);
-              setCurrentView('front-desk');
-            }}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '2px',
-              background: 'none',
-              border: 'none',
-              color: currentView === 'front-desk' ? 'var(--brand-primary)' : 'var(--text-muted)',
-              fontSize: '0.67rem',
-              fontWeight: currentView === 'front-desk' ? 700 : 500,
-              cursor: 'pointer',
-              padding: '6px 8px',
-            }}
-          >
-            <Hotel size={18} />
-            <span>Hub</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setHubSubView(null);
-              setCurrentView('daily-operations');
-            }}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '2px',
-              background: 'none',
-              border: 'none',
-              color: currentView === 'daily-operations' ? 'var(--brand-primary)' : 'var(--text-muted)',
-              fontSize: '0.67rem',
-              fontWeight: currentView === 'daily-operations' ? 700 : 500,
-              cursor: 'pointer',
-              padding: '6px 8px',
-            }}
-          >
-            <Calendar size={18} />
-            <span>Ops</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setHubSubView(null);
-              setCurrentView('pos');
-            }}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '2px',
-              background: 'none',
-              border: 'none',
-              color: currentView === 'pos' ? 'var(--brand-primary)' : 'var(--text-muted)',
-              fontSize: '0.67rem',
-              fontWeight: currentView === 'pos' ? 700 : 500,
-              cursor: 'pointer',
-              padding: '6px 8px',
-            }}
-          >
-            <UtensilsCrossed size={18} />
-            <span>F&amp;B / POS</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setHubSubView(null);
-              setCurrentView('dashboard');
-            }}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '2px',
-              background: 'none',
-              border: 'none',
-              color: currentView === 'dashboard' ? 'var(--brand-primary)' : 'var(--text-muted)',
-              fontSize: '0.67rem',
-              fontWeight: currentView === 'dashboard' ? 700 : 500,
-              cursor: 'pointer',
-              padding: '6px 8px',
-            }}
-          >
-            <LayoutDashboard size={18} />
-            <span>Dashboard</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsMobileMenuOpen(true)}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '2px',
-              background: 'none',
-              border: 'none',
-              color: isMobileMenuOpen ? 'var(--brand-primary)' : 'var(--text-muted)',
-              fontSize: '0.67rem',
-              fontWeight: isMobileMenuOpen ? 700 : 500,
-              cursor: 'pointer',
-              padding: '6px 8px',
-            }}
-          >
-            <Menu size={18} />
-            <span>More</span>
-          </button>
-        </nav>
-      )}
 
     </div>
   );

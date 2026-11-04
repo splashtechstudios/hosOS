@@ -246,10 +246,10 @@ export function canAccessView(role: string | undefined | null, viewId: string, u
         const elevatedNorm = userOverride.elevatedRole.toUpperCase();
         if (elevatedNorm === 'SUPERADMIN' || elevatedNorm === 'OWNER') return true;
         const elevatedDef = getActiveRoleDefinition(elevatedNorm);
-        if (elevatedDef?.allowedViews.includes(viewId)) return true;
+        if (Array.isArray(elevatedDef?.allowedViews) && elevatedDef.allowedViews.includes(viewId)) return true;
       }
       // Extra views granted to this specific user
-      if (userOverride.allowedViews.includes(viewId)) return true;
+      if (Array.isArray(userOverride.allowedViews) && userOverride.allowedViews.includes(viewId)) return true;
     }
   }
 
@@ -306,18 +306,24 @@ export function hasPermission(role: string | undefined | null, permission: AppPe
     const userOverride = getUserPermissionOverrides(userId);
     if (userOverride) {
       // Explicit deny always blocks the action
-      if (userOverride.deniedPermissions?.includes(permission)) return false;
+      if (Array.isArray(userOverride.deniedPermissions) && userOverride.deniedPermissions.includes(permission)) return false;
       // Explicit grant always allows the action
-      if (userOverride.grantedPermissions?.includes(permission)) return true;
+      if (Array.isArray(userOverride.grantedPermissions) && userOverride.grantedPermissions.includes(permission)) return true;
       // If user has an elevated role, check that elevated role's active permissions
       if (userOverride.elevatedRole) {
         const elevatedNorm = userOverride.elevatedRole.toUpperCase() === 'ADMIN' ? 'SUPERADMIN' : userOverride.elevatedRole.toUpperCase();
+        if (elevatedNorm === 'SUPERADMIN' || elevatedNorm === 'OWNER') return true;
         const elevatedDef = getActiveRoleDefinition(elevatedNorm);
         if (elevatedDef && elevatedDef.isEnabled !== false) {
-          return elevatedDef.permissions.includes(permission);
+          return Array.isArray(elevatedDef.permissions) && elevatedDef.permissions.includes(permission);
         }
       }
     }
+  }
+
+  // Superadmin & Owner hold full administrative clearance by default
+  if (normalized === 'SUPERADMIN' || normalized === 'OWNER') {
+    return true;
   }
 
   // 2. Check Role-Level Matrix permissions
@@ -329,7 +335,7 @@ export function hasPermission(role: string | undefined | null, permission: AppPe
     return false;
   }
 
-  return def.permissions.includes(permission);
+  return Array.isArray(def.permissions) && def.permissions.includes(permission);
 }
 
 /**

@@ -15,6 +15,13 @@ export async function POST(req: Request) {
       );
     }
 
+    if (email.toLowerCase().includes('mmenkopalmhotel.com')) {
+      return NextResponse.json(
+        { success: false, error: 'This account has been retired. Please use your official Osieka Resort credentials (e.g. admin@osiekaresort.ng).' },
+        { status: 401 }
+      );
+    }
+
     let user: any = null;
 
     try {

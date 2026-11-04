@@ -121,33 +121,13 @@ const INITIAL_DEMO_SHEETS = [
 export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
-    let sheets = await DailyOperationSheet.find().sort({ date: -1 }).limit(30);
+    
+    // Purge obsolete demo sheets so operations start from point zero
+    await DailyOperationSheet.deleteMany({
+      sheetId: { $in: ['SHEET-2026-10-22', 'SHEET-2026-10-23'] }
+    });
 
-    if (!sheets || sheets.length === 0) {
-      for (const item of INITIAL_DEMO_SHEETS) {
-        await DailyOperationSheet.create(item as any);
-      }
-      sheets = await DailyOperationSheet.find().sort({ date: -1 }).limit(30);
-    } else {
-      // If demo sheets were seeded with old 8.5 generator hours, reset them to 100% off-grid solar zero generator
-      for (const s of sheets) {
-        if (s.sheetId === 'SHEET-2026-10-23' && s.energyExpenses?.generatorRunHours === 8.5) {
-          s.energyExpenses.generatorRunHours = 0;
-          s.energyExpenses.dieselLitresPurchased = 0;
-          s.energyExpenses.dieselPricePerLitre = 0;
-          s.energyExpenses.totalDieselCost = 0;
-          s.energyExpenses.totalExpenses = 108000;
-          await s.save();
-        }
-      }
-    }
-
-    if (!sheets || sheets.length === 0) {
-      for (const item of INITIAL_DEMO_SHEETS) {
-        await DailyOperationSheet.create(item as any);
-      }
-      sheets = await DailyOperationSheet.find().sort({ date: -1 }).limit(30);
-    }
+    const sheets = await DailyOperationSheet.find().sort({ date: -1 }).limit(30);
 
     return NextResponse.json({
       success: true,

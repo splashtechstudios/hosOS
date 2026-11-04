@@ -10,36 +10,62 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await connectToDatabase();
-    let users = await User.find({}).sort({ createdAt: -1 });
 
-    if (!users || users.length === 0) {
-      // Auto seed if empty
-      users = await User.insertMany(
-        SEEDED_ACCOUNTS.map(a => ({ ...a, isActive: true, createdAt: new Date() }))
-      );
+    // 1. Purge obsolete demo users from mmenkopalmhotel.com
+    await User.deleteMany({
+      $or: [
+        { email: { $regex: /mmenkopalmhotel\.com$/i } },
+        { email: { $in: [
+          'accountant@mmenkopalmhotel.com',
+          'manager@mmenkopalmhotel.com',
+          'andrew.frontdesk@mmenkopalmhotel.com',
+          'joy.frontdesk@mmenkopalmhotel.com',
+          'admin@mmenkopalmhotel.com',
+          'owner@mmenkopalmhotel.com'
+        ] } }
+      ]
+    });
+
+    // 2. Ensure authentic Osieka Resort accounts are present
+    for (const acc of SEEDED_ACCOUNTS) {
+      const existing = await User.findOne({ email: acc.email.toLowerCase().trim() });
+      if (!existing) {
+        const hashedPassword = await hashPassword(acc.password);
+        await User.create({
+          ...acc,
+          email: acc.email.toLowerCase().trim(),
+          password: hashedPassword,
+          isActive: true,
+          createdAt: new Date(),
+        });
+      }
     }
+
+    const users = await User.find({
+      email: { $not: { $regex: /mmenkopalmhotel\.com$/i } }
+    }).sort({ createdAt: 1 });
 
     return NextResponse.json({
       success: true,
       staff: users.map(u => ({
         id: u._id,
-        name: u.name,
+        name: u.name || 'Staff User',
         email: u.email,
-        role: u.role,
-        department: u.department,
-        pinCode: u.pinCode,
+        role: u.role || 'FRONT_DESK',
+        department: u.department || 'OPERATIONS',
+        pinCode: u.pinCode || '1001',
         phone: u.phone,
         nin: u.nin,
         salaryTier: u.salaryTier,
         bankName: u.bankName,
         bankAccountNumber: u.bankAccountNumber,
         onboardedBy: u.onboardedBy,
-        isActive: u.isActive,
+        isActive: u.isActive !== false,
         createdAt: u.createdAt,
       })),
     });
   } catch (error: any) {
-    console.warn('MongoDB query failed, returning fallback seeded staff:', error.message);
+    console.warn('MongoDB query failed, returning authentic seeded staff:', error.message);
     return NextResponse.json({
       success: true,
       staff: SEEDED_ACCOUNTS.map((a, i) => ({

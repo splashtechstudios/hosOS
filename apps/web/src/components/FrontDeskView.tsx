@@ -857,7 +857,12 @@ export default function FrontDeskView({
               bg: activeTab === 'VACANT_CLEAN' ? '#BBF7D0' : '#F0FDF4',
               border: activeTab === 'VACANT_CLEAN' ? '#059669' : '#BBF7D0',
               color: '#059669',
-              action: () => setActiveTab('VACANT_CLEAN'),
+              action: () => {
+                setActiveTab(activeTab === 'VACANT_CLEAN' ? 'ALL_STATUS' : 'VACANT_CLEAN');
+                setTierFilter('ALL');
+                setBlockFilter('ALL');
+                setSearchTerm('');
+              },
             },
             {
               label: 'Occupied',
@@ -865,7 +870,12 @@ export default function FrontDeskView({
               bg: activeTab === 'OCCUPIED' ? '#FECACA' : '#FEF2F2',
               border: activeTab === 'OCCUPIED' ? '#DC2626' : '#FECACA',
               color: '#DC2626',
-              action: () => setActiveTab('OCCUPIED'),
+              action: () => {
+                setActiveTab(activeTab === 'OCCUPIED' ? 'ALL_STATUS' : 'OCCUPIED');
+                setTierFilter('ALL');
+                setBlockFilter('ALL');
+                setSearchTerm('');
+              },
             },
             {
               label: 'Dirty / Maint.',
@@ -873,7 +883,12 @@ export default function FrontDeskView({
               bg: activeTab === 'VACANT_DIRTY' || activeTab === 'MAINTENANCE' ? '#FED7AA' : '#FFF7ED',
               border: activeTab === 'VACANT_DIRTY' || activeTab === 'MAINTENANCE' ? '#EA580C' : '#FDBA74',
               color: '#C2410C',
-              action: () => setActiveTab('VACANT_DIRTY'),
+              action: () => {
+                setActiveTab(activeTab === 'VACANT_DIRTY' ? 'ALL_STATUS' : 'VACANT_DIRTY');
+                setTierFilter('ALL');
+                setBlockFilter('ALL');
+                setSearchTerm('');
+              },
             },
           ].map((s) => (
             <button
@@ -995,7 +1010,9 @@ export default function FrontDeskView({
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(activeTab === tab.id && tab.id !== 'ALL_STATUS' ? 'ALL_STATUS' : tab.id);
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
